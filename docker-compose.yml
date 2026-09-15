@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: clinics-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: clinics
+      POSTGRES_USER: clinics
+      POSTGRES_PASSWORD: clinics_password
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
