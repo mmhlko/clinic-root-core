@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { BootstrapModule } from './database/bootstrap/bootstrap.module.js';
 import { DoctorsModule } from './modules/doctors/doctors.module.js';
+import { ServiceDirectionModule } from './modules/services/directions/service-direction.module.js';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { DoctorsModule } from './modules/doctors/doctors.module.js';
     AuthModule,
     BootstrapModule,
     DoctorsModule,
+    ServiceDirectionModule,
   ],
 })
 export class AppModule { }
