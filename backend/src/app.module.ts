@@ -4,6 +4,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { BootstrapModule } from './database/bootstrap/bootstrap.module.js';
+import { DoctorsModule } from './modules/doctors/doctors.module.js';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { BootstrapModule } from './database/bootstrap/bootstrap.module.js';
     UsersModule,
     AuthModule,
     BootstrapModule,
+    DoctorsModule,
   ],
 })
 export class AppModule { }
