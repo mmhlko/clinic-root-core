@@ -81,4 +81,14 @@ export class UpdateDoctorDto {
   @ValidateNested({ each: true })
   @Type(() => UpdateDoctorEducationDto)
   educations?: UpdateDoctorEducationDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  directionIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  skillIds?: string[];
 }

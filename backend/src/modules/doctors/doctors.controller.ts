@@ -31,6 +31,32 @@ export class DoctorsController {
     return this.doctorsService.findAll(onlyActive);
   }
 
+  @Get(':id')
+  async findOnePublic(
+    @Param('id') id: string,
+  ) {
+    return this.doctorsService.findById({
+      id,
+      onlyActive: true,
+    });
+  }
+
+  @Get(':id/admin')
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async findOneAdmin(
+    @Param('id') id: string,
+  ) {
+    return this.doctorsService.findById({
+      id,
+      onlyActive: false,
+    });
+  }
+
   @Get('admin')
   @Roles(
     UserRole.ROOT,

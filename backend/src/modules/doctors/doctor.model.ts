@@ -6,6 +6,8 @@ import {
   HasMany,
 } from 'sequelize-typescript';
 import { DoctorEducationModel } from './doctor-education.model.js';
+import { DoctorDirectionModel } from './doctor-direction.model.js';
+import { DoctorSkillModel } from './skills/doctor-skill.model.js';
 
 export interface DoctorCreationAttributes {
   id?: string;
@@ -84,4 +86,10 @@ export class DoctorModel extends Model<
 
   @HasMany(() => DoctorEducationModel)
   declare educations: DoctorEducationModel[];
+
+  @HasMany(() => DoctorDirectionModel, 'doctorId')
+  declare directions: DoctorDirectionModel[];
+
+  @HasMany(() => DoctorSkillModel, 'doctorId')
+  declare skills: DoctorSkillModel[];
 }

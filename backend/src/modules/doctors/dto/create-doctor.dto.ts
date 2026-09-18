@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   Min,
   ValidateNested,
@@ -72,4 +73,14 @@ export class CreateDoctorDto {
   @ValidateNested({ each: true })
   @Type(() => CreateDoctorEducationDto)
   educations?: CreateDoctorEducationDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  directionIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  skillIds?: string[];
 }
