@@ -3,7 +3,9 @@ import {
   Column,
   Model,
   DataType,
+  HasMany,
 } from 'sequelize-typescript';
+import { DoctorDirectionModel } from '../../doctors/doctor-direction.model.js';
 
 export interface ServiceDirectionCreationAttributes {
   id?: string;
@@ -53,4 +55,7 @@ export class ServiceDirectionModel extends Model<
     defaultValue: true,
   })
   declare isActive: boolean;
+
+  @HasMany(() => DoctorDirectionModel)
+  declare doctors: DoctorDirectionModel[];
 }

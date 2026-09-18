@@ -6,6 +6,8 @@ import { UsersModule } from './modules/users/users.module.js';
 import { BootstrapModule } from './database/bootstrap/bootstrap.module.js';
 import { DoctorsModule } from './modules/doctors/doctors.module.js';
 import { ServiceDirectionModule } from './modules/services/directions/service-direction.module.js';
+import { ServicesModule } from './modules/services/services.module.js';
+import { SkillsModule } from './modules/doctors/skills/skills.module.js';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { ServiceDirectionModule } from './modules/services/directions/service-di
     BootstrapModule,
     DoctorsModule,
     ServiceDirectionModule,
+    ServicesModule,
+    SkillsModule,
   ],
 })
 export class AppModule { }
