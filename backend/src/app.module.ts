@@ -9,6 +9,7 @@ import { ServiceDirectionModule } from './modules/services/directions/service-di
 import { ServicesModule } from './modules/services/services.module.js';
 import { SkillsModule } from './modules/doctors/skills/skills.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
+import { ClinicLocationModule } from './modules/clinic/clinic-location.module.js';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module.js';
     ServicesModule,
     SkillsModule,
     ReviewsModule,
+    ClinicLocationModule,
   ],
 })
 export class AppModule { }

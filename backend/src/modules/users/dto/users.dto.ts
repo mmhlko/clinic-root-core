@@ -1,6 +1,15 @@
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
-import { UserRole } from "../user-role.enum.js";
-import { Transform } from "class-transformer";
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MinLength,
+} from 'class-validator';
+
+import { UserRole } from '../user-role.enum.js';
+
+import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
   @IsString()
@@ -18,6 +27,10 @@ export class CreateUserDto {
 
   @IsEnum(UserRole)
   role: UserRole;
+
+  @IsOptional()
+  @IsUUID('4')
+  locationId?: string;
 }
 
 export class UpdateUserDto {
@@ -42,4 +55,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  @IsUUID('4')
+  locationId?: string | null;
 }
