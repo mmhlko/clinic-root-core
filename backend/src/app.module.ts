@@ -8,6 +8,7 @@ import { DoctorsModule } from './modules/doctors/doctors.module.js';
 import { ServiceDirectionModule } from './modules/services/directions/service-direction.module.js';
 import { ServicesModule } from './modules/services/services.module.js';
 import { SkillsModule } from './modules/doctors/skills/skills.module.js';
+import { ReviewsModule } from './modules/reviews/reviews.module.js';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { SkillsModule } from './modules/doctors/skills/skills.module.js';
     ServiceDirectionModule,
     ServicesModule,
     SkillsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule { }

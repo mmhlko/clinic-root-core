@@ -85,6 +85,9 @@ export class ServicesController {
   async findOne(
     @Param('id') id: string,
   ) {
-    return this.servicesService.findById(id);
+    return this.servicesService.findById({
+      id,
+      onlyActive: true,
+    });
   }
 }

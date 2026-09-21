@@ -24,9 +24,12 @@ export class ServicesService {
 
   async create(dto: CreateServiceDto) {
     const direction =
-      await this.serviceDirectionModel.findByPk(
-        dto.directionId,
-      );
+      await this.serviceDirectionModel.findOne({
+        where: {
+          id: dto.directionId,
+          isActive: true,
+        },
+      });
 
     if (!direction) {
       throw new NotFoundException(
@@ -64,16 +67,16 @@ export class ServicesService {
         ? { isActive: true }
         : undefined,
       order: [['sortOrder', 'ASC']],
-      // Если нужно вложить направление услуги
-      // include: [
-      //   {
-      //     model: ServiceDirectionModel,
-      //     as: 'direction',
-      //     where: onlyActive
-      //       ? { isActive: true }
-      //       : undefined,
-      //   },
-      // ],
+      include: [
+        {
+          model: ServiceDirectionModel,
+          as: 'direction',
+          where: onlyActive
+            ? { isActive: true }
+            : undefined,
+          required: onlyActive,
+        },
+      ],
     });
   }
 
@@ -86,9 +89,12 @@ export class ServicesService {
 
     if (dto.directionId !== undefined) {
       const direction =
-        await this.serviceDirectionModel.findByPk(
-          dto.directionId,
-        );
+        await this.serviceDirectionModel.findOne({
+          where: {
+            id: dto.directionId,
+            isActive: true,
+          },
+        });
 
       if (!direction) {
         throw new NotFoundException(
@@ -155,18 +161,38 @@ export class ServicesService {
     return service;
   }
 
-  async findById(id: string) {
-    const service = await this.serviceModel.findByPk(id, {
-      include: [
-        {
-          model: ServiceDirectionModel,
-          as: 'direction',
+  async findById({
+    id,
+    onlyActive = false,
+  }: {
+    id: string;
+    onlyActive?: boolean;
+  }) {
+    const service =
+      await this.serviceModel.findOne({
+        where: {
+          id,
+          ...(onlyActive
+            ? { isActive: true }
+            : {}),
         },
-      ],
-    });
+
+        include: [
+          {
+            model: ServiceDirectionModel,
+            as: 'direction',
+            where: onlyActive
+              ? { isActive: true }
+              : undefined,
+            required: onlyActive,
+          },
+        ],
+      });
 
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException(
+        'Service not found',
+      );
     }
 
     return service;
