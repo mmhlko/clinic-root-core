@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 
-import { ClinicLocationModel } from './clinic-location.model.js';
-import { ClinicLocationService } from './clinic-location.service.js';
-import { ClinicLocationController } from './clinic-location.controller.js';
+import { ClinicLocationModel } from './models/clinic-location.model.js';
+import { ClinicLocationController } from './controllers/clinic-location.controller.js';
+import { ClinicLocationService } from './services/clinic-location.service.js';
 
 @Module({
   imports: [

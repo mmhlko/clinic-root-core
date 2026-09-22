@@ -6,10 +6,10 @@ import {
 
 import { InjectModel } from '@nestjs/sequelize';
 
-import { ClinicLocationModel } from './clinic-location.model.js';
 
-import { CreateClinicLocationDto } from './dto/create-clinic-location.dto.js';
-import { UpdateClinicLocationDto } from './dto/update-clinic-location.dto.js';
+import { CreateClinicLocationDto } from '../dto/create-clinic-location.dto.js';
+import { UpdateClinicLocationDto } from '../dto/update-clinic-location.dto.js';
+import { ClinicLocationModel } from '../models/clinic-location.model.js';
 
 @Injectable()
 export class ClinicLocationService {

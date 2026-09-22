@@ -2,7 +2,7 @@ import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize
 
 import { UserRole } from './user-role.enum.js';
 import { CreateUserDto } from './dto/users.dto.js';
-import { ClinicLocationModel } from '../clinic/clinic-location.model.js';
+import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
 
 export interface UserCreationAttributes {
   id?: string;

@@ -31,6 +31,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsUUID('4')
   locationId?: string;
+
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string | null;
 }
 
 export class UpdateUserDto {
@@ -59,4 +63,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsUUID('4')
   locationId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string | null;
 }

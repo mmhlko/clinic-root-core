@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto.js';
 import { UserRole } from './user-role.enum.js';
 import * as bcrypt from 'bcrypt';
-import { ClinicLocationModel } from '../clinic/clinic-location.model.js';
+import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
 
 @Injectable()
 export class UsersService {
@@ -168,6 +168,10 @@ export class UsersService {
 
 		if (dto.password !== undefined) {
 			user.password = await bcrypt.hash(dto.password, 12);
+		}
+
+		if (dto.avatarUrl !== undefined) {
+			user.avatarUrl = dto.avatarUrl;
 		}
 
 		await user.save();

@@ -12,14 +12,14 @@ import {
 
 import { AuthGuard } from '@nestjs/passport';
 
-import { ClinicLocationService } from './clinic-location.service.js';
 
-import { CreateClinicLocationDto } from './dto/create-clinic-location.dto.js';
-import { UpdateClinicLocationDto } from './dto/update-clinic-location.dto.js';
+import { CreateClinicLocationDto } from '../dto/create-clinic-location.dto.js';
+import { UpdateClinicLocationDto } from '../dto/update-clinic-location.dto.js';
 
-import { Roles } from '../auth/decorators/roles.decorator.js';
-import { RolesGuard } from '../auth/guards/roles.guard.js';
-import { UserRole } from '../users/user-role.enum.js';
+import { Roles } from '../../auth/decorators/roles.decorator.js';
+import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { UserRole } from '../../users/user-role.enum.js';
+import { ClinicLocationService } from '../services/clinic-location.service.js';
 
 @Controller('clinic/locations')
 export class ClinicLocationController {

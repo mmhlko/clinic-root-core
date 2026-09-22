@@ -3,7 +3,7 @@ import { UsersService } from './users.service.js';
 import { UsersController } from './users.controller.js';
 import { UserModel } from './user.model.js';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { ClinicLocationModel } from '../clinic/clinic-location.model.js';
+import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
 
 @Module({
   imports: [SequelizeModule.forFeature([UserModel, ClinicLocationModel])],

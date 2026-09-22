@@ -10,6 +10,8 @@ import { ServicesModule } from './modules/services/services.module.js';
 import { SkillsModule } from './modules/doctors/skills/skills.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { ClinicLocationModule } from './modules/clinic/clinic-location.module.js';
+import { ClinicModule } from './modules/clinic/clinic.module.js';
+import { MediaModule } from './modules/media/media.module.js';
 
 @Module({
   imports: [
@@ -57,6 +59,8 @@ import { ClinicLocationModule } from './modules/clinic/clinic-location.module.js
     SkillsModule,
     ReviewsModule,
     ClinicLocationModule,
+    ClinicModule,
+    MediaModule,
   ],
 })
 export class AppModule { }
