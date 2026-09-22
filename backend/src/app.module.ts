@@ -13,6 +13,8 @@ import { ClinicLocationModule } from './modules/clinic/clinic-location.module.js
 import { ClinicModule } from './modules/clinic/clinic.module.js';
 import { MediaModule } from './modules/media/media.module.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
+import { WorksModule } from './modules/works/works.module.js';
+import { FaqModule } from './modules/faq/faq.module.js';
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { PromotionsModule } from './modules/promotions/promotions.module.js';
     ClinicModule,
     MediaModule,
     PromotionsModule,
+    WorksModule,
+    FaqModule,
   ],
 })
 export class AppModule { }

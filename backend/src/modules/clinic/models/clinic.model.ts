@@ -11,8 +11,6 @@ export interface ClinicCreationAttributes {
   shortDescription?: string | null;
   description?: string | null;
   slogan?: string | null;
-  logoUrl?: string | null;
-  faviconUrl?: string | null;
   phone?: string | null;
   email?: string | null;
   legalName?: string | null;
