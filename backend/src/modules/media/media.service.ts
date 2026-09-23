@@ -11,24 +11,92 @@ import {
   writeFileSync,
 } from 'fs';
 
-import { basename, extname, join } from 'path';
+import {
+  basename,
+  extname,
+  join,
+} from 'path';
 
 import { randomUUID } from 'crypto';
 
 @Injectable()
 export class MediaService {
-  private readonly uploadDir = join(
+  private readonly imagesDir = join(
     process.cwd(),
     'uploads',
     'images',
   );
 
+  private readonly filesDir = join(
+    process.cwd(),
+    'uploads',
+    'files',
+  );
+
   constructor() {
-    if (!existsSync(this.uploadDir)) {
-      mkdirSync(this.uploadDir, {
+    this.ensureDirectory(
+      this.imagesDir,
+    );
+
+    this.ensureDirectory(
+      this.filesDir,
+    );
+  }
+
+  private ensureDirectory(
+    directory: string,
+  ) {
+    if (!existsSync(directory)) {
+      mkdirSync(directory, {
         recursive: true,
       });
     }
+  }
+
+  private generateFilename(
+    originalName: string,
+  ): string {
+    const date = new Date();
+
+    const timestamp =
+      date
+        .toISOString()
+        .replace(/\D/g, '')
+        .slice(0, 14);
+
+    const random =
+      randomUUID()
+        .split('-')[0];
+
+    const extension =
+      extname(originalName).toLowerCase();
+
+    return `${timestamp}-${random}${extension}`;
+  }
+
+  private saveFile(
+    file: Express.Multer.File,
+    directory: string,
+  ) {
+    const filename =
+      this.generateFilename(file.originalname);
+
+    const filepath = join(
+      directory,
+      filename,
+    );
+
+    writeFileSync(
+      filepath,
+      file.buffer,
+    );
+
+    return {
+      filename,
+      originalName: file.originalname,
+      size: file.size,
+      mimeType: file.mimetype,
+    };
   }
 
   async uploadImage(
@@ -40,41 +108,53 @@ export class MediaService {
       );
     }
 
-    const extension =
-      extname(file.originalname).toLowerCase();
-
-    const filename =
-      `${randomUUID()}${extension}`;
-
-    const filepath = join(
-      this.uploadDir,
-      filename,
-    );
-
-    writeFileSync(
-      filepath,
-      file.buffer,
+    const savedFile = this.saveFile(
+      file,
+      this.imagesDir,
     );
 
     return {
-      filename,
-      url: `/uploads/images/${filename}`,
-      size: file.size,
-      mimeType: file.mimetype,
+      ...savedFile,
+      url: `/uploads/images/${savedFile.filename}`,
     };
   }
 
-  async removeImage(filename: string) {
-    const safeFilename = basename(filename);
+  async uploadFile(
+    file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException(
+        'File is required',
+      );
+    }
 
-    if (safeFilename !== filename) {
+    const savedFile = this.saveFile(
+      file,
+      this.filesDir,
+    );
+
+    return {
+      ...savedFile,
+      url: `/uploads/files/${savedFile.filename}`,
+    };
+  }
+
+  async removeImage(
+    filename: string,
+  ) {
+    const safeFilename =
+      basename(filename);
+
+    if (
+      safeFilename !== filename
+    ) {
       throw new BadRequestException(
         'Invalid filename',
       );
     }
 
     const filepath = join(
-      this.uploadDir,
+      this.imagesDir,
       safeFilename,
     );
 
@@ -88,6 +168,38 @@ export class MediaService {
 
     return {
       message: 'Image deleted',
+    };
+  }
+
+  async removeFile(
+    filename: string,
+  ) {
+    const safeFilename =
+      basename(filename);
+
+    if (
+      safeFilename !== filename
+    ) {
+      throw new BadRequestException(
+        'Invalid filename',
+      );
+    }
+
+    const filepath = join(
+      this.filesDir,
+      safeFilename,
+    );
+
+    if (!existsSync(filepath)) {
+      throw new NotFoundException(
+        'File not found',
+      );
+    }
+
+    unlinkSync(filepath);
+
+    return {
+      message: 'File deleted',
     };
   }
 }
