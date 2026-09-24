@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -30,6 +31,7 @@ export class ClinicSocialLinkItemDto {
   sortOrder?: number;
 
   @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }
 

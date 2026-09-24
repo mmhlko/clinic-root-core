@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsInt,
   IsOptional,
   IsString,
@@ -26,6 +27,7 @@ export class ClinicStatisticItemDto {
   sortOrder: number;
 
   @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }
 

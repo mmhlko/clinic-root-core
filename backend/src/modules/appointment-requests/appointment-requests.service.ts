@@ -22,6 +22,18 @@ export class AppointmentRequestsService {
 
   async create(dto: CreateAppointmentRequestDto) {
     const phone = normalizeRussianPhone(dto.phone);
+    if (dto.serviceId) {
+      const service = await ServiceModel.findByPk(dto.serviceId);
+      if (!service) {
+        throw new NotFoundException('Service not found');
+      }
+    }
+    if (dto.doctorId) {
+      const doctor = await DoctorModel.findByPk(dto.doctorId);
+      if (!doctor) {
+        throw new NotFoundException('Doctor not found');
+      }
+    }
     return this.appointmentRequestModel.create({
       name: dto.name,
       phone,
@@ -78,6 +90,20 @@ export class AppointmentRequestsService {
       throw new NotFoundException(
         'Appointment request not found',
       );
+    }
+
+    if (dto.serviceId) {
+      const service = await ServiceModel.findByPk(dto.serviceId);
+      if (!service) {
+        throw new NotFoundException('Service not found');
+      }
+    }
+
+    if (dto.doctorId) {
+      const doctor = await DoctorModel.findByPk(dto.doctorId);
+      if (!doctor) {
+        throw new NotFoundException('Doctor not found');
+      }
     }
 
     await request.update({
