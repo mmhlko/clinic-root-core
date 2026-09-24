@@ -36,7 +36,12 @@ export class FaqService {
   }
 
   async findById(id: string) {
-    const faq = await this.faqModel.findByPk(id);
+    const faq = await this.faqModel.findOne({
+      where: {
+        id,
+        isActive: true,
+      },
+    });
 
     if (!faq) {
       throw new NotFoundException(

@@ -65,7 +65,11 @@ export class WorksService {
   }
 
   async findById(id: string) {
-    const work = await this.workModel.findByPk(id, {
+    const work = await this.workModel.findOne({
+      where: {
+        id,
+        isActive: true,
+      },
       include: [
         {
           model: ServiceModel,

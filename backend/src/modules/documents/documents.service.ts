@@ -60,7 +60,12 @@ export class DocumentsService {
    */
   async findById(id: string) {
     const document =
-      await this.documentModel.findByPk(id);
+      await this.documentModel.findOne({
+        where: {
+          id,
+          isActive: true,
+        },
+      });
 
     if (!document) {
       throw new NotFoundException(

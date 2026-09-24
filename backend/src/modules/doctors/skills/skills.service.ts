@@ -47,7 +47,12 @@ export class SkillsService {
   }
 
   async findById(id: string) {
-    const skill = await this.skillModel.findByPk(id);
+    const skill = await this.skillModel.findOne({
+      where: {
+        id,
+        isActive: true,
+      },
+    });
 
     if (!skill) {
       throw new NotFoundException('Skill not found');

@@ -87,7 +87,11 @@ export class PromotionsService {
 
   async findById(id: string) {
     const promotion =
-      await this.promotionModel.findByPk(id, {
+      await this.promotionModel.findOne({
+        where: {
+          id,
+          isActive: true,
+        },
         include: [
           {
             model: ServiceModel,
