@@ -16,6 +16,9 @@ import { PromotionsModule } from './modules/promotions/promotions.module.js';
 import { WorksModule } from './modules/works/works.module.js';
 import { FaqModule } from './modules/faq/faq.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
+import { AppointmentRequestsModule } from './modules/appointment-requests/appointment-requests.module.js';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 
 @Module({
   imports: [
@@ -54,6 +57,14 @@ import { DocumentsModule } from './modules/documents/documents.module.js';
         logging: false,
       }),
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 600000,
+          limit: 3,
+        },
+      ],
+    }),
     UsersModule,
     AuthModule,
     BootstrapModule,
@@ -68,7 +79,9 @@ import { DocumentsModule } from './modules/documents/documents.module.js';
     PromotionsModule,
     WorksModule,
     FaqModule,
-    DocumentsModule
+    DocumentsModule,
+    AppointmentRequestsModule,
+    DashboardModule,
   ],
 })
 export class AppModule { }
