@@ -8,10 +8,18 @@ import { RolesGuard } from './guards/roles.guard.js';
 import { Roles } from './decorators/roles.decorator.js';
 import { UserRole } from '../users/user-role.enum.js';
 
+interface RefreshRequest extends Request {
+  user: {
+    sub: string;
+    refreshToken: string;
+  };
+}
+
 const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    path: '/auth/refresh', // only for refresh request
+    secure: process.env.NODE_ENV === 'production',
+    path: '/auth', // only for refresh request
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     sameSite: 'lax', // CSRF protection
   });
@@ -28,9 +36,47 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.login(dto)
+    const {accessToken, refreshToken, user} = await this.authService.login(dto);
+    setRefreshTokenCookie(res, refreshToken);
+    return { accessToken, user };
   }
 
+  @Post('refresh')
+  @UseGuards(AuthGuard('jwt-refresh'))
+  async refresh(
+    @Req() req: RefreshRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.refreshTokens(
+      req.user.sub,
+      req.user.refreshToken,
+    );
+
+    setRefreshTokenCookie(res, result.refreshToken);
+
+    return {
+      accessToken: result.accessToken,
+      user: result.user,
+    };
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt-refresh'))
+  async logout(
+    @Req() req: RefreshRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(req.user.sub);
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/auth',
+    });
+
+    return { message: 'Logged out' };
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')

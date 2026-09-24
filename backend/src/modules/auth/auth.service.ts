@@ -58,6 +58,57 @@ export class AuthService {
     };
   }
 
+  async refreshTokens(
+    userId: string,
+    refreshToken: string,
+  ) {
+    const user = await this.usersService.findById(userId);
+
+    if (!user.isActive) {
+      throw new ForbiddenException('User account is inactive');
+    }
+
+    if (
+      !user.hashedRefreshToken ||
+      !(await bcrypt.compare(
+        refreshToken,
+        user.hashedRefreshToken,
+      ))
+    ) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokens = await this.getTokens(
+      user.id,
+      user.email,
+      user.role,
+    );
+
+    await this.updateRefreshToken(
+      user.id,
+      tokens.refreshToken,
+    );
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+      },
+    };
+  }
+
+  async logout(userId: string) {
+    await this.usersService.updateRefreshToken(
+      userId,
+      null,
+    );
+  }
+
   private async updateRefreshToken(
     userId: string,
     refreshToken: string | null,
