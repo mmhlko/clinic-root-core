@@ -15,6 +15,7 @@ import { MediaModule } from './modules/media/media.module.js';
 import { PromotionsModule } from './modules/promotions/promotions.module.js';
 import { WorksModule } from './modules/works/works.module.js';
 import { FaqModule } from './modules/faq/faq.module.js';
+import { DocumentsModule } from './modules/documents/documents.module.js';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { FaqModule } from './modules/faq/faq.module.js';
     PromotionsModule,
     WorksModule,
     FaqModule,
+    DocumentsModule
   ],
 })
 export class AppModule { }

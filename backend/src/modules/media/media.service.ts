@@ -19,6 +19,8 @@ import {
 
 import { randomUUID } from 'crypto';
 
+type MediaType = 'image' | 'document';
+
 @Injectable()
 export class MediaService {
   private readonly imagesDir = join(
@@ -34,18 +36,11 @@ export class MediaService {
   );
 
   constructor() {
-    this.ensureDirectory(
-      this.imagesDir,
-    );
-
-    this.ensureDirectory(
-      this.filesDir,
-    );
+    this.ensureDirectory(this.imagesDir);
+    this.ensureDirectory(this.filesDir);
   }
 
-  private ensureDirectory(
-    directory: string,
-  ) {
+  private ensureDirectory(directory: string) {
     if (!existsSync(directory)) {
       mkdirSync(directory, {
         recursive: true,
@@ -65,8 +60,7 @@ export class MediaService {
         .slice(0, 14);
 
     const random =
-      randomUUID()
-        .split('-')[0];
+      randomUUID().split('-')[0];
 
     const extension =
       extname(originalName).toLowerCase();
@@ -79,7 +73,9 @@ export class MediaService {
     directory: string,
   ) {
     const filename =
-      this.generateFilename(file.originalname);
+      this.generateFilename(
+        file.originalname,
+      );
 
     const filepath = join(
       directory,
@@ -99,28 +95,9 @@ export class MediaService {
     };
   }
 
-  async uploadImage(
+  async save(
     file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException(
-        'Image file is required',
-      );
-    }
-
-    const savedFile = this.saveFile(
-      file,
-      this.imagesDir,
-    );
-
-    return {
-      ...savedFile,
-      url: `/uploads/images/${savedFile.filename}`,
-    };
-  }
-
-  async uploadFile(
-    file: Express.Multer.File,
+    type: MediaType,
   ) {
     if (!file) {
       throw new BadRequestException(
@@ -128,15 +105,44 @@ export class MediaService {
       );
     }
 
-    const savedFile = this.saveFile(
-      file,
-      this.filesDir,
-    );
+    const directory =
+      type === 'image'
+        ? this.imagesDir
+        : this.filesDir;
+
+    const urlPrefix =
+      type === 'image'
+        ? '/uploads/images'
+        : '/uploads/files';
+
+    const savedFile =
+      this.saveFile(
+        file,
+        directory,
+      );
+
+    const fileType =
+      extname(file.originalname)
+        .replace('.', '')
+        .toLowerCase();
 
     return {
       ...savedFile,
-      url: `/uploads/files/${savedFile.filename}`,
+      fileType,
+      url: `${urlPrefix}/${savedFile.filename}`,
     };
+  }
+
+  async uploadImage(
+    file: Express.Multer.File,
+  ) {
+    return this.save(file, 'image');
+  }
+
+  async uploadFile(
+    file: Express.Multer.File,
+  ) {
+    return this.save(file, 'document');
   }
 
   async removeImage(

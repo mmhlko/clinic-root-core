@@ -9,6 +9,12 @@ async function bootstrap() {
     AppModule,
   );
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
 
   const uploadsPath = join(process.cwd(), 'uploads');
   app.useStaticAssets(uploadsPath, { prefix: '/uploads/' });
