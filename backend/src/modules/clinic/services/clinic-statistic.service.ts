@@ -122,6 +122,7 @@ export class ClinicStatisticService {
 
         return this.findAll(
           false,
+          transaction,
         );
       },
     );

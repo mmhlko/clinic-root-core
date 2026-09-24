@@ -4,26 +4,20 @@ import {
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
 
 import { FaqModel } from './faq.model.js';
 
-import { CreateFaqDto } from './dto/create-faq.dto.js';
-import { UpdateFaqDto } from './dto/update-faq.dto.js';
+import { SaveFaqDto } from './dto/save-faq.dto.js';
 
 @Injectable()
 export class FaqService {
   constructor(
     @InjectModel(FaqModel)
     private readonly faqModel: typeof FaqModel,
-  ) {}
 
-  async create(dto: CreateFaqDto) {
-    return this.faqModel.create({
-      question: dto.question,
-      answer: dto.answer,
-      sortOrder: dto.sortOrder ?? 0,
-    });
-  }
+    private readonly sequelize: Sequelize,
+  ) {}
 
   async findAll(onlyActive = false) {
     return this.faqModel.findAll({
@@ -35,84 +29,57 @@ export class FaqService {
     });
   }
 
-  async findById(id: string) {
-    const faq = await this.faqModel.findOne({
-      where: {
-        id,
-        isActive: true,
-      },
+  async saveAll(dto: SaveFaqDto) {
+    return this.sequelize.transaction(async (transaction) => {
+      const existingFaqs = await this.faqModel.findAll({
+        transaction,
+      });
+
+      const incomingIds = dto.faqs
+        .filter((faq) => faq.id)
+        .map((faq) => faq.id!);
+
+      for (const faq of existingFaqs) {
+        if (!incomingIds.includes(faq.id)) {
+          await faq.destroy({ transaction });
+        }
+      }
+
+      for (const faqDto of dto.faqs) {
+        if (faqDto.id) {
+          const faq = existingFaqs.find(
+            (item) => item.id === faqDto.id,
+          );
+
+          if (!faq) {
+            throw new NotFoundException(
+              `FAQ ${faqDto.id} not found`,
+            );
+          }
+
+          faq.question = faqDto.question;
+          faq.answer = faqDto.answer;
+          faq.sortOrder = faqDto.sortOrder;
+          faq.isActive = faqDto.isActive ?? true;
+
+          await faq.save({ transaction });
+        } else {
+          await this.faqModel.create(
+            {
+              question: faqDto.question,
+              answer: faqDto.answer,
+              sortOrder: faqDto.sortOrder,
+              isActive: faqDto.isActive ?? true,
+            },
+            { transaction },
+          );
+        }
+      }
+
+      return this.faqModel.findAll({
+        transaction,
+        order: [['sortOrder', 'ASC']],
+      });
     });
-
-    if (!faq) {
-      throw new NotFoundException(
-        'FAQ not found',
-      );
-    }
-
-    return faq;
-  }
-
-  async update(
-    id: string,
-    dto: UpdateFaqDto,
-  ) {
-    const faq = await this.faqModel.findByPk(id);
-
-    if (!faq) {
-      throw new NotFoundException(
-        'FAQ not found',
-      );
-    }
-
-    if (dto.question !== undefined) {
-      faq.question = dto.question;
-    }
-
-    if (dto.answer !== undefined) {
-      faq.answer = dto.answer;
-    }
-
-    if (dto.sortOrder !== undefined) {
-      faq.sortOrder = dto.sortOrder;
-    }
-
-    await faq.save();
-
-    return faq;
-  }
-
-  async setActive(
-    id: string,
-    isActive: boolean,
-  ) {
-    const faq = await this.faqModel.findByPk(id);
-
-    if (!faq) {
-      throw new NotFoundException(
-        'FAQ not found',
-      );
-    }
-
-    faq.isActive = isActive;
-
-    await faq.save();
-
-    return faq;
-  }
-
-  async remove(id: string) {
-    const faq = await this.faqModel.findByPk(id);
-
-    if (!faq) {
-      throw new NotFoundException(
-        'FAQ not found',
-      );
-    }
-
-    await faq.destroy();
-
-    return {
-      message: 'FAQ deleted',
-    };
   }
 }

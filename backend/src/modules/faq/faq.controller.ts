@@ -1,12 +1,7 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
-  Param,
-  ParseBoolPipe,
-  Patch,
-  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -15,8 +10,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { FaqService } from './faq.service.js';
 
-import { CreateFaqDto } from './dto/create-faq.dto.js';
-import { UpdateFaqDto } from './dto/update-faq.dto.js';
+import { SaveFaqDto } from './dto/save-faq.dto.js';
 
 
 import { UserRole } from '../users/user-role.enum.js';
@@ -45,67 +39,14 @@ export class FaqController {
     return this.faqService.findAll(false);
   }
 
-  @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-  ) {
-    return this.faqService.findById(id);
-  }
-
-  @Post()
+  @Put()
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
     UserRole.MANAGER,
   )
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async create(
-    @Body() dto: CreateFaqDto,
-  ) {
-    return this.faqService.create(dto);
-  }
-
-  @Patch(':id')
-  @Roles(
-    UserRole.ROOT,
-    UserRole.ADMIN,
-    UserRole.MANAGER,
-  )
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateFaqDto,
-  ) {
-    return this.faqService.update(id, dto);
-  }
-
-  @Put(':id/active')
-  @Roles(
-    UserRole.ROOT,
-    UserRole.ADMIN,
-    UserRole.MANAGER,
-  )
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async setActive(
-    @Param('id') id: string,
-    @Body('isActive', ParseBoolPipe) isActive: boolean,
-  ) {
-    return this.faqService.setActive(
-      id,
-      isActive,
-    );
-  }
-
-  @Delete(':id')
-  @Roles(
-    UserRole.ROOT,
-    UserRole.ADMIN,
-    UserRole.MANAGER,
-  )
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async remove(
-    @Param('id') id: string,
-  ) {
-    return this.faqService.remove(id);
+  async saveAll(@Body() dto: SaveFaqDto) {
+    return this.faqService.saveAll(dto);
   }
 }
