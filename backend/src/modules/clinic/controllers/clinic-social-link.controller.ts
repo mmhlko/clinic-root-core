@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Put,
@@ -121,7 +122,7 @@ export class ClinicSocialLinkController {
   )
   async setActive(
     @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
+    @Body('isActive', ParseBoolPipe) isActive: boolean,
   ) {
     return this.clinicSocialLinkService.setActive(
       id,

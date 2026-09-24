@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Put,
@@ -103,7 +104,7 @@ export class DoctorsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async setActive(
     @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
+    @Body('isActive', ParseBoolPipe) isActive: boolean,
   ) {
     return this.doctorsService.setActive(
       id,

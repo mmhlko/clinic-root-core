@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Put,
@@ -155,7 +156,7 @@ export class DocumentsController {
   )
   async setActive(
     @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
+    @Body('isActive', ParseBoolPipe) isActive: boolean,
   ) {
     if (
       typeof isActive !== 'boolean'

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Get,
   Param,
+  ParseBoolPipe,
   Patch,
   Post,
   Put,
@@ -130,7 +131,7 @@ export class UsersController {
   async setActive(
     @Req() req: AuthRequest,
     @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
+    @Body('isActive', ParseBoolPipe) isActive: boolean,
   ) {
     const currentUser = req.user;
     const targetUser = await this.usersService.findById(id);
