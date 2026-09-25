@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { FaqService } from './faq.service.js';
 
@@ -17,6 +18,7 @@ import { UserRole } from '../users/user-role.enum.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 
+@ApiBearerAuth('access-token')
 @Controller('faq')
 export class FaqController {
   constructor(

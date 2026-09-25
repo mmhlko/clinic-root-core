@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 
 import { SaveClinicFeaturesDto } from '../dto/save-clinic-features.dto.js';
@@ -16,6 +17,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { UserRole } from '../../users/user-role.enum.js';
 import { ClinicFeatureService } from '../services/clinic-feature.service.js';
 
+@ApiBearerAuth('access-token')
 @Controller('clinic/features')
 export class ClinicFeatureController {
   constructor(
@@ -36,6 +38,7 @@ export class ClinicFeatureController {
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
+    UserRole.MANAGER
   )
   @UseGuards(
     AuthGuard('jwt'),
@@ -52,6 +55,7 @@ export class ClinicFeatureController {
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
+    UserRole.MANAGER
   )
   @UseGuards(
     AuthGuard('jwt'),

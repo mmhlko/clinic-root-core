@@ -10,7 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { DoctorsService } from './doctors.service.js';
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
@@ -20,6 +22,8 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 
+@ApiTags('Doctors')
+@ApiBearerAuth('access-token')
 @Controller('doctors')
 export class DoctorsController {
   constructor(
@@ -27,12 +31,26 @@ export class DoctorsController {
   ) { }
 
   @Get()
+  @ApiOperation({ summary: 'Получить список активных врачей' })
   async findAll() {
     const onlyActive = true;
     return this.doctorsService.findAll(onlyActive);
   }
 
+  @Get('admin')
+  @ApiOperation({ summary: 'Получить список врачей для админки' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async findAllAdmin() {
+    return this.doctorsService.findAll(false);
+  }
+
   @Get(':id')
+  @ApiOperation({ summary: 'Получить публичную карточку врача' })
   async findOnePublic(
     @Param('id') id: string,
   ) {
@@ -43,6 +61,7 @@ export class DoctorsController {
   }
 
   @Get(':id/admin')
+  @ApiOperation({ summary: 'Получить карточку врача для админки' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
@@ -58,19 +77,10 @@ export class DoctorsController {
     });
   }
 
-  @Get('admin')
-  @Roles(
-    UserRole.ROOT,
-    UserRole.ADMIN,
-    UserRole.MANAGER,
-  )
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async findAllAdmin() {
-    const onlyActive = false;
-    return this.doctorsService.findAll(onlyActive);
-  }
+
 
   @Post()
+  @ApiOperation({ summary: 'Создать врача' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
@@ -82,6 +92,7 @@ export class DoctorsController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Обновить врача' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
@@ -96,11 +107,13 @@ export class DoctorsController {
   }
 
   @Put(':id/active')
+  @ApiOperation({ summary: 'Изменить активность врача' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
     UserRole.MANAGER,
   )
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async setActive(
     @Param('id') id: string,

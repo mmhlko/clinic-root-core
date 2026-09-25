@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 import { SkillsService } from './skills.service.js';
 import { CreateSkillDto } from './dto/create-skill.dto.js';
@@ -21,6 +22,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { UpdateSkillDto } from './dto/update-skill.dto.js';
 
 
+@ApiBearerAuth('access-token')
 @Controller('skills')
 export class SkillsController {
   constructor(
@@ -83,6 +85,7 @@ export class SkillsController {
     UserRole.ADMIN,
     UserRole.MANAGER,
   )
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async setActive(
     @Param('id') id: string,

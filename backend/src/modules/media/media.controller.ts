@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { MediaService } from './media.service.js';
 import { UploadMedia } from './decorators/upload-media.decorator.js';
@@ -16,6 +17,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 
+@ApiBearerAuth('access-token')
 @Controller('media')
 export class MediaController {
   constructor(

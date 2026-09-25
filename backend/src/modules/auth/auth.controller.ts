@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/auth.dto.js';
 import { type Response } from 'express';
@@ -25,6 +26,8 @@ const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   });
 };
 
+@ApiTags('Auth')
+@ApiBearerAuth('access-token')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -32,6 +35,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @ApiOperation({ summary: 'Вход в систему' })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -42,6 +46,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'Обновление access token' })
   @UseGuards(AuthGuard('jwt-refresh'))
   async refresh(
     @Req() req: RefreshRequest,
@@ -61,6 +66,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: 'Выход из системы' })
   @UseGuards(AuthGuard('jwt-refresh'))
   async logout(
     @Req() req: RefreshRequest,
@@ -80,6 +86,8 @@ export class AuthController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Получить данные текущего пользователя' })
   async getMe(@Req() req: Request) {
     return req.user
   }
@@ -87,6 +95,7 @@ export class AuthController {
   @Roles(UserRole.ROOT)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Get('root-test')
+  @ApiOperation({ summary: 'Проверка доступа root-пользователя' })
   rootTest(@Req() req: Request) {
     return {
       message: 'ROOT access granted',

@@ -10,7 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { ServicesService } from './services.service.js';
 import { CreateServiceDto } from './dto/create-service.dto.js';
@@ -20,6 +22,8 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
 
+@ApiTags('Services')
+@ApiBearerAuth('access-token')
 @Controller('services')
 export class ServicesController {
   constructor(
@@ -27,6 +31,7 @@ export class ServicesController {
   ) { }
 
   @Post()
+  @ApiOperation({ summary: 'Создать услугу' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
@@ -40,11 +45,13 @@ export class ServicesController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Получить список активных услуг' })
   async findAll() {
     return this.servicesService.findAll(true);
   }
 
   @Get('admin')
+  @ApiOperation({ summary: 'Получить список услуг для админки' })
   @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async findAllAdmin() {
@@ -52,6 +59,7 @@ export class ServicesController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Обновить услугу' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
@@ -66,11 +74,13 @@ export class ServicesController {
   }
 
   @Put(':id/active')
+  @ApiOperation({ summary: 'Изменить активность услуги' })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
     UserRole.MANAGER,
   )
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async setActive(
     @Param('id') id: string,
@@ -83,6 +93,7 @@ export class ServicesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Получить услугу по ID' })
   async findOne(
     @Param('id') id: string,
   ) {

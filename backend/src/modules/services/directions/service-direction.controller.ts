@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { ServiceDirectionService } from './service-direction.service.js';
 import { CreateServiceDirectionDto } from './dto/create-service-direction.dto.js';
@@ -15,6 +16,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 
 
+@ApiBearerAuth('access-token')
 @Controller('service-directions')
 export class ServiceDirectionController {
   constructor(

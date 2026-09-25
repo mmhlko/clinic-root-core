@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 
 import { CreateClinicLocationDto } from '../dto/create-clinic-location.dto.js';
@@ -22,6 +23,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { UserRole } from '../../users/user-role.enum.js';
 import { ClinicLocationService } from '../services/clinic-location.service.js';
 
+@ApiBearerAuth('access-token')
 @Controller('clinic/locations')
 export class ClinicLocationController {
   constructor(
@@ -95,6 +97,7 @@ export class ClinicLocationController {
     UserRole.ROOT,
     UserRole.ADMIN,
   )
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   @UseGuards(
     AuthGuard('jwt'),
     RolesGuard,

@@ -4,6 +4,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -12,6 +13,7 @@ import { UserRole } from '../users/user-role.enum.js';
 
 import { DashboardService } from './dashboard.service.js';
 
+@ApiBearerAuth('access-token')
 @Controller('dashboard')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(

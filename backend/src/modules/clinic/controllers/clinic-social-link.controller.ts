@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 
 import { CreateClinicSocialLinkDto } from '../dto/create-clinic-social-link.dto.js';
@@ -23,6 +24,7 @@ import { UserRole } from '../../users/user-role.enum.js';
 import { SaveClinicSocialLinksDto } from '../dto/save-clinic-social-links.dto.js';
 import { ClinicSocialLinkService } from '../services/clinic-social-link.service.js';
 
+@ApiBearerAuth('access-token')
 @Controller('clinic/social-links')
 export class ClinicSocialLinkController {
   constructor(
@@ -77,6 +79,7 @@ export class ClinicSocialLinkController {
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
+    UserRole.MANAGER
   )
   @UseGuards(
     AuthGuard('jwt'),
@@ -116,6 +119,7 @@ export class ClinicSocialLinkController {
     UserRole.ADMIN,
     UserRole.MANAGER
   )
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   @UseGuards(
     AuthGuard('jwt'),
     RolesGuard,

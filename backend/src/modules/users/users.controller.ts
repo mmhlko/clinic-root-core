@@ -12,7 +12,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { UsersService } from './users.service.js';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto.js';
@@ -31,6 +33,8 @@ interface AuthRequest extends Request {
   user: AuthUser;
 }
 
+@ApiTags('Users')
+@ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -38,6 +42,7 @@ export class UsersController {
   ) { }
 
   @Post()
+  @ApiOperation({ summary: 'Создать пользователя' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async create(
@@ -69,6 +74,7 @@ export class UsersController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Получить список пользователей' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async findAll() {
@@ -76,6 +82,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Обновить пользователя' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async update(
@@ -126,8 +133,10 @@ export class UsersController {
   }
 
   @Put(':id/active')
+  @ApiOperation({ summary: 'Изменить активность пользователя' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   async setActive(
     @Req() req: AuthRequest,
     @Param('id') id: string,
@@ -163,6 +172,7 @@ export class UsersController {
   }
 
   @Get('me')
+  @ApiOperation({ summary: 'Получить текущего пользователя' })
   @UseGuards(AuthGuard('jwt'))
   async getMe(
     @Req() req: AuthRequest,
@@ -172,6 +182,7 @@ export class UsersController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Получить пользователя по ID' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async findOne(@Param('id') id: string) {

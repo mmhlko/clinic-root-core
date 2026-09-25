@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { AppointmentRequestsService } from './appointment-requests.service.js';
 import { CreateAppointmentRequestDto } from './dto/create-appointment-request.dto.js';
@@ -23,6 +24,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { UpdateAppointmentRequestStatusDto } from './dto/update-appointment-request-status.dto.js';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
+@ApiBearerAuth('access-token')
 @Controller('appointment-requests')
 export class AppointmentRequestsController {
   constructor(

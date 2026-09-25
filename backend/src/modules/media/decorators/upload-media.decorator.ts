@@ -3,6 +3,7 @@ import {
   applyDecorators,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 
 import {
   FileInterceptor,
@@ -48,6 +49,19 @@ export function UploadMedia(
   const config = MEDIA_CONFIG[type];
 
   return applyDecorators(
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          file: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+        required: ['file'],
+      },
+    }),
     UseInterceptors(
       FileInterceptor('file', {
         storage: memoryStorage(),

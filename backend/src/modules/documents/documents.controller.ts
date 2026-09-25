@@ -16,6 +16,7 @@ import {
 import {
   AuthGuard,
 } from '@nestjs/passport';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { DocumentsService } from './documents.service.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
@@ -25,6 +26,7 @@ import { UploadMedia } from '../media/decorators/upload-media.decorator.js';
 import { UpdateDocumentDto } from './dto/update-document.dto.js';
 
 
+@ApiBearerAuth('access-token')
 @Controller('documents')
 export class DocumentsController {
   constructor(
@@ -149,6 +151,7 @@ export class DocumentsController {
     AuthGuard('jwt'),
     RolesGuard,
   )
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean', example: true } }, required: ['isActive'], example: { isActive: true } } })
   @Roles(
     UserRole.ROOT,
     UserRole.ADMIN,
