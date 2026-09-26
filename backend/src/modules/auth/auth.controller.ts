@@ -20,7 +20,7 @@ const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    path: '/auth', // only for refresh request
+    path: '/api/auth', // only for refresh request
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     sameSite: 'lax', // CSRF protection
   });
@@ -78,7 +78,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/auth',
+      path: '/api/auth',
     });
 
     return { message: 'Logged out' };
