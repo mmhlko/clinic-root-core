@@ -148,6 +148,7 @@ data
 .npm
 **/.npm
 *.iml
+refs
 
 # compiled output
 /dist

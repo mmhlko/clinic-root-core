@@ -22,6 +22,7 @@ export default async function AdminHomePage() {
     <DashboardView
       overview={dashboard.overview}
       requests={dashboard.appointmentRequests}
+        requestTrend={dashboard.requestTrend}
       pendingReviews={dashboard.moderation.pendingReviews}
       recentRequests={dashboard.recentRequests}
       promotions={promotions}
