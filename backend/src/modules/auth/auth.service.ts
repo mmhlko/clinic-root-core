@@ -60,14 +60,24 @@ export class AuthService {
 
   async getSessionFromRefreshToken(userId: string, refreshToken: string) {
     const user = await this.getUserFromValidRefreshToken(userId, refreshToken);
+    const accessToken = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, role: user.role },
+      {
+        secret: this.jwtAccessSecret,
+        expiresIn: this.jwtAccessExpire,
+      },
+    );
 
     return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      avatarUrl: user.avatarUrl,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+      },
+      accessToken,
     };
   }
 

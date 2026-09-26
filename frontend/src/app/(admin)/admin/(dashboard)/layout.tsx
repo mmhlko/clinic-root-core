@@ -19,7 +19,8 @@ export default async function AdminDashboardLayout({
   let user;
 
   try {
-    user = await getAdminSession(refreshToken);
+    const session = await getAdminSession(refreshToken);
+    user = session.user;
   } catch {
     redirect('/admin/login');
   }

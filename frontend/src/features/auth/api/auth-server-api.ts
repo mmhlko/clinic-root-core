@@ -1,16 +1,33 @@
-import axios from "axios";
+import "server-only";
 
+import { cache } from "react";
+
+import { RootApi } from "@/lib/api/root.api";
+import serverApiClient from "@/lib/api/server-client";
 import type { AuthUser } from "../types/auth.types";
 
-const backendUrl = process.env.BACKEND_API_URL ?? "http://localhost:3001";
+export interface AdminServerSession {
+  user: AuthUser;
+  accessToken: string;
+}
 
-export async function getAdminSession(refreshToken: string): Promise<AuthUser> {
-  const { data } = await axios.get<AuthUser>(`${backendUrl}/auth/session`, {
-    headers: {
-      Cookie: `refreshToken=${refreshToken}`,
-    },
-    timeout: 15_000,
-  });
+class AuthServerApi extends RootApi {
+  constructor() {
+    super(serverApiClient);
+  }
 
-  return data;
+  getSession(refreshToken: string) {
+    return this.requestGet<AdminServerSession>("/auth/session", {
+      cookie: `refreshToken=${refreshToken}`,
+    });
+  }
+}
+
+export const authServerApi = new AuthServerApi();
+const requestAdminSession = cache((refreshToken: string) =>
+  authServerApi.getSession(refreshToken),
+);
+
+export function getAdminSession(refreshToken: string) {
+  return requestAdminSession(refreshToken);
 }

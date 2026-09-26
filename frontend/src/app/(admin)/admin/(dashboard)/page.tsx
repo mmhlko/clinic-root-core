@@ -1,18 +1,30 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getAdminSession } from "@/features/auth/api/auth-server-api";
+import { dashboardApi } from "@/features/dashboard/api/dashboard-server-api";
+import { DashboardView } from "@/features/dashboard/components/dashboard-view";
+
 export default async function AdminHomePage() {
+  const refreshToken = (await cookies()).get("refreshToken")?.value;
+
+  if (!refreshToken) {
+    redirect("/admin/login");
+  }
+
+  const session = await getAdminSession(refreshToken);
+  const [dashboard, promotions] = await Promise.all([
+    dashboardApi.get(session.accessToken),
+    dashboardApi.getPromotions(session.accessToken),
+  ]);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
-          Панель управления
-        </p>
-        <h2 className="mt-2 text-3xl font-semibold text-slate-900">
-          Добро пожаловать, {/* {user.firstName ?? "администратор"} */}
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm text-slate-600">
-          Здесь собраны заявки, контент, сотрудники и параметры клиники. Используйте левое меню для навигации.
-        </p>
-      </section>
-    </div>
+    <DashboardView
+      overview={dashboard.overview}
+      requests={dashboard.appointmentRequests}
+      pendingReviews={dashboard.moderation.pendingReviews}
+      recentRequests={dashboard.recentRequests}
+      promotions={promotions}
+    />
   );
 }

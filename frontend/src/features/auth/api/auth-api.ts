@@ -1,15 +1,17 @@
 import apiClient, { setAccessToken } from "@/lib/api/client";
+import { RootApi } from "@/lib/api/root.api";
 import type {
   LoginDto,
   AuthResponse,
 } from '../types/auth.types';
 
-class AuthApi {
+class AuthApi extends RootApi {
+  constructor() {
+    super(apiClient);
+  }
+
   async login(dto: LoginDto): Promise<AuthResponse> {
-    const { data } = await apiClient.post<AuthResponse>(
-      '/auth/login',
-      dto,
-    );
+    const data = await this.requestPost<AuthResponse, LoginDto>('/auth/login', dto);
 
     setAccessToken(data.accessToken);
 
@@ -18,16 +20,14 @@ class AuthApi {
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/auth/logout');
+      await this.requestPost('/auth/logout');
     } finally {
       setAccessToken(null);
     }
   }
 
   async refresh(): Promise<AuthResponse> {
-    const { data } = await apiClient.post<AuthResponse>(
-      '/auth/refresh',
-    );
+    const data = await this.requestPost<AuthResponse>('/auth/refresh');
 
     setAccessToken(data.accessToken);
 
