@@ -50,7 +50,6 @@ const navItems = [
   { label: "Документы", href: "/admin/documents", icon: FileText },
   { label: "FAQ", href: "/admin/faq", icon: HelpCircle },
   { label: "Пользователи", href: "/admin/users", icon: Users },
-  { label: "Настройки", href: "/admin/settings", icon: Settings },
 ];
 
 type AdminShellProps = {
@@ -58,11 +57,74 @@ type AdminShellProps = {
   children: React.ReactNode;
 };
 
+type SidebarUserMenuProps = {
+  user: AuthUser;
+  onLogout: () => void;
+};
+
 const roleLabels: Record<string, string> = {
   root: "Супер администратор",
   admin: "Администратор",
   manager: "Менеджер",
 };
+
+function SidebarUserMenu({ user, onLogout }: SidebarUserMenuProps) {
+  const fullName = user.firstName && user.lastName
+    ? `${user.firstName} ${user.lastName}`
+    : user.email;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            className="h-auto w-full justify-start gap-3 px-2 py-2 text-left"
+          >
+            <Avatar className="h-9 w-9 shrink-0 rounded-full">
+              <AvatarImage src={user.avatarUrl ?? undefined} alt={fullName} />
+              <AvatarFallback>
+                {user.firstName?.[0] ?? "A"}
+                {user.lastName?.[0] ?? ""}
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-slate-900">
+                {fullName}
+              </span>
+              <span className="block truncate text-xs text-slate-500">
+                {roleLabels[user.role] ?? user.role}
+              </span>
+            </span>
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" side="top" className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <span className="block truncate">{user.email}</span>
+            <span className="mt-1 block font-normal text-muted-foreground">
+              {roleLabels[user.role] ?? user.role}
+            </span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          render={<Link href="/admin/settings" />}
+          className="cursor-pointer"
+        >
+          <Settings className="h-4 w-4" />
+          Настройки
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
+          <LogOut className="h-4 w-4" />
+          Выйти
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function AdminShell({ user, children }: AdminShellProps) {
   const pathname = usePathname();
@@ -87,7 +149,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:block">
+        <aside className="sticky top-0 hidden h-dvh max-h-dvh w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
           <div className="flex h-20 items-center gap-3 border-b border-slate-200 px-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
               УД
@@ -97,7 +159,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
               <div className="text-xs text-slate-500">Администрация</div>
             </div>
           </div>
-          <nav className="space-y-1 p-4">
+          <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-4">
             {navItems.map(({ href, label, icon: Icon }) => {
               const isActive =
                 pathname === href || pathname.startsWith(`${href}/`);
@@ -119,6 +181,9 @@ export function AdminShell({ user, children }: AdminShellProps) {
               );
             })}
           </nav>
+          <div className="border-t border-slate-200 p-3">
+            <SidebarUserMenu user={user} onLogout={handleLogout} />
+          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -157,49 +222,6 @@ export function AdminShell({ user, children }: AdminShellProps) {
                 >
                   <Bell className="h-5 w-5" />
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        className="h-auto gap-3 rounded-full px-2 py-1.5 cursor-pointer"
-                      >
-                        <Avatar className="h-8 w-8 rounded-lg grayscale">
-                          <AvatarImage src="" alt={user.firstName?.[0]}/>
-                          <AvatarFallback className="rounded-lg">
-                            {user.firstName?.[0] ?? "A"}
-                            {user.lastName?.[0] ?? ""}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="hidden text-left sm:block">
-                          <span className="block text-sm font-medium text-slate-900">
-                            {user.firstName && user.lastName
-                              ? `${user.firstName} ${user.lastName}`
-                              : user.email}
-                          </span>
-                          <span className="block text-xs text-slate-500">
-                            {roleLabels[user.role] ?? user.role}
-                          </span>
-                        </span>
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>
-                        <span className="block truncate">{user.email}</span>
-                        <span className="mt-1 block font-normal text-muted-foreground">
-                          {roleLabels[user.role] ?? user.role}
-                        </span>
-                      </DropdownMenuLabel>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => void handleLogout()} className="cursor-pointer">
-                      <LogOut className="h-4 w-4" />
-                      Выйти
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
           </header>
@@ -209,11 +231,11 @@ export function AdminShell({ user, children }: AdminShellProps) {
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 p-0 lg:hidden">
+        <SheetContent side="left" className="flex w-72 flex-col p-0 lg:hidden">
           <SheetHeader className="border-b border-slate-200">
             <SheetTitle>УльтраДент · Администрация</SheetTitle>
           </SheetHeader>
-          <nav className="space-y-1 p-4">
+          <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-4">
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
@@ -231,6 +253,9 @@ export function AdminShell({ user, children }: AdminShellProps) {
               </Link>
             ))}
           </nav>
+          <div className="border-t border-slate-200 p-3">
+            <SidebarUserMenu user={user} onLogout={handleLogout} />
+          </div>
         </SheetContent>
       </Sheet>
     </div>

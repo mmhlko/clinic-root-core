@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   DashboardOverview,
   DashboardPromotion,
@@ -21,6 +21,7 @@ import type {
   DashboardRequestTrend,
 } from "../types/dashboard.types";
 import { RequestTrendChart } from "./request-trend-chart";
+import { Badge } from "@/components/ui/badge";
 
 type DashboardViewProps = {
   overview: DashboardOverview;
@@ -37,6 +38,25 @@ const statusLabels = {
   completed: "Завершена",
   cancelled: "Отменена",
 } satisfies Record<DashboardRecentRequest["status"], string>;
+
+const statusBadgeStyles = {
+  new: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300",
+  in_progress: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+  completed: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+  cancelled: "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+} satisfies Record<DashboardRecentRequest["status"], string>;
+
+function RequestStatusBadge({
+  status,
+}: {
+  status: DashboardRecentRequest["status"];
+}) {
+  return (
+    <Badge variant="outline" className={statusBadgeStyles[status]}>
+      {statusLabels[status]}
+    </Badge>
+  );
+}
 
 const contentItems = [
   { label: "Врачи", key: "doctors", href: "/admin/doctors", icon: Stethoscope },
@@ -137,9 +157,6 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle>Последние заявки</CardTitle>
-        <Link href="/admin/requests" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-          К списку <span aria-hidden="true">→</span>
-        </Link>
       </CardHeader>
       {requests.length === 0 ? (
         <CardContent className="py-8 text-center">
@@ -153,8 +170,7 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
               <thead className="border-y bg-muted/40 text-xs text-muted-foreground">
                 <tr>
                   <th className="px-5 py-3 font-medium">Пациент</th>
-                  <th className="px-5 py-3 font-medium">Услуга</th>
-                  <th className="px-5 py-3 font-medium">Врач</th>
+                  <th className="px-5 py-3 font-medium">Телефон</th>
                   <th className="px-5 py-3 font-medium">Статус</th>
                   <th className="px-5 py-3 font-medium">Дата</th>
                 </tr>
@@ -164,13 +180,12 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
                   <tr key={request.id}>
                     <td className="px-5 py-3">
                       <div className="font-medium">{request.name}</div>
-                      <div className="text-xs text-muted-foreground">{request.phone}</div>
+                      <div className="text-xs text-muted-foreground">{request.service ? request.service.name : request.doctor ? `${request.doctor.firstName} ${request.doctor.lastName}` : "Не указан"}</div>
                     </td>
-                    <td className="px-5 py-3">{request.service?.name ?? "Не указана"}</td>
+                    <td className="px-5 py-3 text-xs">{request.phone}</td>
                     <td className="px-5 py-3">
-                      {request.doctor ? `${request.doctor.firstName} ${request.doctor.lastName}` : "Не выбран"}
+                      <RequestStatusBadge status={request.status} />
                     </td>
-                    <td className="px-5 py-3">{statusLabels[request.status]}</td>
                     <td className="whitespace-nowrap px-5 py-3 text-muted-foreground">
                       {dateFormatter.format(new Date(request.createdAt))}
                     </td>
@@ -187,11 +202,9 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
                     <h3 className="font-medium">{request.name}</h3>
                     <p className="text-sm text-muted-foreground">{request.phone}</p>
                   </div>
-                  <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs font-medium">
-                    {statusLabels[request.status]}
-                  </span>
+                  <RequestStatusBadge status={request.status} />
                 </div>
-                <p className="text-sm">{request.service?.name ?? "Услуга не указана"}</p>
+                <p className="text-sm">{request.service?.name ?? ""}</p>
                 <p className="text-xs text-muted-foreground">
                   {dateFormatter.format(new Date(request.createdAt))}
                 </p>
@@ -200,6 +213,11 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
           </div>
         </>
       )}
+      <CardFooter>
+        <Link href="/admin/requests" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+          К полному списку <span aria-hidden="true">→</span>
+        </Link>
+      </CardFooter>
     </Card>
   );
 }
@@ -254,7 +272,7 @@ export function DashboardView({
           </Link>
         </div>
         <RequestStatusSummary requests={requests} />
-        <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <RequestTrendChart data={requestTrend} />
           <RecentRequests requests={recentRequests} />
         </div>
@@ -264,7 +282,7 @@ export function DashboardView({
         <div>
           <h2 id="content-heading" className="text-lg font-semibold">Состояние контента</h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5">
           {contentItems.map(({ icon: Icon, ...item }) => (
             <Link key={item.key} href={item.href} className="group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               <Card className="h-full min-h-20 flex-row items-center justify-between gap-3 px-3 py-3 transition-colors group-hover:border-foreground/20 group-hover:bg-muted/50">
@@ -272,7 +290,7 @@ export function DashboardView({
                   <Icon className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs text-muted-foreground">{item.label}</div>
+                  <div className="truncate text-sm font-medium text-muted-foreground">{item.label}</div>
                   <div className="mt-1 font-semibold tabular-nums">{overview[item.key]}</div>
                 </div>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
