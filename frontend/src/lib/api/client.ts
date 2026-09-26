@@ -88,7 +88,7 @@ apiClient.interceptors.response.use(
       setAccessToken(null);
 
       if (typeof window !== 'undefined') {
-        window.location.assign('/admin/login');
+        window.dispatchEvent(new Event('clinic:auth-expired'));
       }
 
       return Promise.reject(refreshError);

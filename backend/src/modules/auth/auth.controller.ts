@@ -20,9 +20,18 @@ const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    path: '/api/auth', // only for refresh request
+    path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     sameSite: 'lax', // CSRF protection
+  });
+};
+
+const clearLegacyRefreshTokenCookie = (res: Response) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api/auth',
+    sameSite: 'lax',
   });
 };
 
@@ -41,6 +50,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const {accessToken, refreshToken, user} = await this.authService.login(dto);
+    clearLegacyRefreshTokenCookie(res);
     setRefreshTokenCookie(res, refreshToken);
     return { accessToken, user };
   }
@@ -57,12 +67,23 @@ export class AuthController {
       req.user.refreshToken,
     );
 
+    clearLegacyRefreshTokenCookie(res);
     setRefreshTokenCookie(res, result.refreshToken);
 
     return {
       accessToken: result.accessToken,
       user: result.user,
     };
+  }
+
+  @Get('session')
+  @ApiOperation({ summary: 'Проверка текущей сессии без обновления токенов' })
+  @UseGuards(AuthGuard('jwt-refresh'))
+  async getSession(@Req() req: RefreshRequest) {
+    return this.authService.getSessionFromRefreshToken(
+      req.user.sub,
+      req.user.refreshToken,
+    );
   }
 
   @Post('logout')
@@ -78,8 +99,9 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api/auth',
+      path: '/',
     });
+    clearLegacyRefreshTokenCookie(res);
 
     return { message: 'Logged out' };
   }

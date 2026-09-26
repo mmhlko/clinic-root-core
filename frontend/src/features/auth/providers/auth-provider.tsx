@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { authApi } from '../api/auth-api';
 import type { AuthUser } from '../types/auth.types';
@@ -23,13 +24,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialUser?: AuthUser;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({ children, initialUser }: AuthProviderProps) {
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(initialUser ?? null);
+  const [isLoading, setIsLoading] = useState(!initialUser);
 
   useEffect(() => {
+    const handleAuthExpired = () => {
+      setUser(null);
+      router.replace('/admin/login');
+    };
+    window.addEventListener('clinic:auth-expired', handleAuthExpired);
+
+    if (initialUser) {
+      return () => {
+        window.removeEventListener('clinic:auth-expired', handleAuthExpired);
+      };
+    }
+
     const restoreSession = async () => {
       try {
         const response = await authApi.refresh();
@@ -43,7 +58,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     restoreSession();
-  }, []);
+
+    return () => {
+      window.removeEventListener('clinic:auth-expired', handleAuthExpired);
+    };
+  }, [initialUser, router]);
 
   const login = async (email: string, password: string) => {
     const response = await authApi.login({
@@ -55,8 +74,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async () => {
-    await authApi.logout();
-    setUser(null);
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+    }
   };
 
   return (

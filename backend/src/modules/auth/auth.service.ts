@@ -58,25 +58,21 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(
-    userId: string,
-    refreshToken: string,
-  ) {
-    const user = await this.usersService.findById(userId);
+  async getSessionFromRefreshToken(userId: string, refreshToken: string) {
+    const user = await this.getUserFromValidRefreshToken(userId, refreshToken);
 
-    if (!user.isActive) {
-      throw new ForbiddenException('User account is inactive');
-    }
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+    };
+  }
 
-    if (
-      !user.hashedRefreshToken ||
-      !(await bcrypt.compare(
-        refreshToken,
-        user.hashedRefreshToken,
-      ))
-    ) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.getUserFromValidRefreshToken(userId, refreshToken);
 
     const tokens = await this.getTokens(
       user.id,
@@ -107,6 +103,26 @@ export class AuthService {
       userId,
       null,
     );
+  }
+
+  private async getUserFromValidRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ) {
+    const user = await this.usersService.findById(userId);
+
+    if (!user.isActive) {
+      throw new ForbiddenException('User account is inactive');
+    }
+
+    if (
+      !user.hashedRefreshToken ||
+      !(await bcrypt.compare(refreshToken, user.hashedRefreshToken))
+    ) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return user;
   }
 
   private async updateRefreshToken(
