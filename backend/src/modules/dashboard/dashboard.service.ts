@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { col, fn, Op } from 'sequelize';
 
 import { AppointmentRequestModel } from '../appointment-requests/appointment-request.model.js';
 import { AppointmentRequestStatus } from '../appointment-requests/appointment-request-status.enum.js';
@@ -59,6 +60,7 @@ export class DashboardService {
       pendingReviews,
 
       recentRequests,
+      requestTrendRows,
     ] = await Promise.all([
       this.doctorModel.count({
         where: {
@@ -156,7 +158,46 @@ export class DashboardService {
         ],
         order: [['createdAt', 'DESC']],
       }),
+
+      this.appointmentRequestModel.findAll({
+        attributes: [
+          [fn('DATE', col('createdAt')), 'date'],
+          [fn('COUNT', col('id')), 'count'],
+        ],
+        where: {
+          createdAt: {
+            [Op.gte]: this.getTrendStartDate(),
+          },
+        },
+        group: [fn('DATE', col('createdAt'))],
+        order: [[fn('DATE', col('createdAt')), 'ASC']],
+        raw: true,
+      }),
     ]);
+
+    const trendStartDate = this.getTrendStartDate();
+    const requestCountsByDate = new Map<string, number>();
+
+    for (const row of requestTrendRows as unknown as Array<{
+      date: string | Date;
+      count: string | number;
+    }>) {
+      const date = row.date instanceof Date
+        ? row.date.toISOString().slice(0, 10)
+        : String(row.date).slice(0, 10);
+
+      requestCountsByDate.set(date, Number(row.count));
+    }
+
+    const requestTrend = Array.from({ length: 90 }, (_, index) => {
+      const date = new Date(trendStartDate.getTime() + index * 24 * 60 * 60 * 1000);
+      const dateKey = date.toISOString().slice(0, 10);
+
+      return {
+        date: dateKey,
+        count: requestCountsByDate.get(dateKey) ?? 0,
+      };
+    });
 
     return {
       overview: {
@@ -177,11 +218,25 @@ export class DashboardService {
         cancelled: cancelledRequests,
       },
 
+      requestTrend,
+
       moderation: {
         pendingReviews,
       },
 
       recentRequests,
     };
+  }
+
+  private getTrendStartDate() {
+    const today = new Date();
+    const startDate = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+    ));
+    startDate.setUTCDate(startDate.getUTCDate() - 89);
+
+    return startDate;
   }
 }
