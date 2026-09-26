@@ -1,13 +1,10 @@
 "use client";
 
-import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-import { Button } from "@/components/ui/button";
-import { authApi } from "@/features/auth/api/auth-api";
 import { useAuth } from "@/features/auth/providers/auth-provider";
-import { LoginForm } from "@/features/auth/components/login-form";
+import { AuthForm } from "@/features/auth/components/auth-form";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -37,7 +34,7 @@ export default function AdminLoginPage() {
           <h1 className="text-2xl font-semibold text-slate-900">Администрация</h1>
           <p className="mt-2 text-sm text-slate-500">Войдите в систему управления клиникой</p>
         </div>
-        <LoginForm />
+        <AuthForm />
       </div>
     </main>
   );

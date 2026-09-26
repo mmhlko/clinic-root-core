@@ -1,41 +1,32 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { AdminShell } from '@/components/admin/admin-shell';
-import { useAuth } from '@/features/auth/providers/auth-provider';
+import { AuthProvider } from '@/features/auth/providers/auth-provider';
+import { getAdminSession } from '@/features/auth/api/auth-server-api';
 
-export default function AdminDashboardLayout({
+export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
+  const refreshToken = (await cookies()).get('refreshToken')?.value;
 
-  const {
-    user,
-    isAuthenticated,
-    isLoading,
-  } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/admin/login');
-    }
-  }, [isLoading, isAuthenticated, router]);
-
-  if (isLoading) {
-    return (
-      <div>
-        Загрузка...
-      </div>
-    );
+  if (!refreshToken) {
+    redirect('/admin/login');
   }
 
-  if (!user) {
-    return null;
+  let user;
+
+  try {
+    user = await getAdminSession(refreshToken);
+  } catch {
+    redirect('/admin/login');
   }
 
-  return <AdminShell user={user}>{children}</AdminShell>;
+  return (
+    <AuthProvider initialUser={user}>
+      <AdminShell user={user}>{children}</AdminShell>
+    </AuthProvider>
+  );
 }

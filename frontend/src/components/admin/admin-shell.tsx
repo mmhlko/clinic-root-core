@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
+  Bell,
   BriefcaseMedical,
   FileText,
   HelpCircle,
   LayoutGrid,
+  LogOut,
   Menu,
   MessageSquareText,
   Settings,
-  ShieldCheck,
   Sparkles,
   Stethoscope,
   Users,
@@ -19,6 +20,21 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { useAuth } from "@/features/auth/providers/auth-provider";
 import type { AuthUser } from "@/features/auth/types/auth.types";
 
 const navItems = [
@@ -48,6 +64,8 @@ const roleLabels: Record<string, string> = {
 
 export function AdminShell({ user, children }: AdminShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const currentSection = useMemo(() => {
@@ -58,6 +76,11 @@ export function AdminShell({ user, children }: AdminShellProps) {
     const match = navItems.find((item) => pathname.startsWith(item.href));
     return match?.label ?? "Дашборд";
   }, [pathname]);
+
+  const handleLogout = async () => {
+    await logout().catch(() => undefined);
+    router.replace("/admin/login");
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -115,23 +138,44 @@ export function AdminShell({ user, children }: AdminShellProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" aria-label="Уведомления">
-                  <ShieldCheck className="h-5 w-5" />
+                <Button variant="ghost" size="icon" aria-label="Уведомления" disabled>
+                  <Bell className="h-5 w-5" />
                 </Button>
-                <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
-                    {user.firstName?.[0] ?? "A"}
-                    {user.lastName?.[0] ?? ""}
-                  </div>
-                  <div className="hidden text-left sm:block">
-                    <div className="text-sm font-medium text-slate-900">
-                      {user.firstName && user.lastName
-                        ? `${user.firstName} ${user.lastName}`
-                        : user.email}
-                    </div>
-                    <div className="text-xs text-slate-500">{roleLabels[user.role] ?? user.role}</div>
-                  </div>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="ghost" className="h-auto gap-3 rounded-full px-2 py-1.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                          {user.firstName?.[0] ?? "A"}
+                          {user.lastName?.[0] ?? ""}
+                        </span>
+                        <span className="hidden text-left sm:block">
+                          <span className="block text-sm font-medium text-slate-900">
+                            {user.firstName && user.lastName
+                              ? `${user.firstName} ${user.lastName}`
+                              : user.email}
+                          </span>
+                          <span className="block text-xs text-slate-500">
+                            {roleLabels[user.role] ?? user.role}
+                          </span>
+                        </span>
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <span className="block truncate">{user.email}</span>
+                      <span className="mt-1 block font-normal text-muted-foreground">
+                        {roleLabels[user.role] ?? user.role}
+                      </span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => void handleLogout()}>
+                      <LogOut className="h-4 w-4" />
+                      Выйти
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </header>
@@ -140,34 +184,29 @@ export function AdminShell({ user, children }: AdminShellProps) {
         </div>
       </div>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden">
-          <div className="h-full w-72 bg-white p-4 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="text-lg font-semibold">Меню</div>
-              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <nav className="space-y-1">
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className={[
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
-                    pathname === href ? "bg-slate-900 text-white" : "text-slate-600",
-                  ].join(" ")}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-      )}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-72 p-0 lg:hidden">
+          <SheetHeader className="border-b border-slate-200">
+            <SheetTitle>УльтраДент · Администрация</SheetTitle>
+          </SheetHeader>
+          <nav className="space-y-1 p-4">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={[
+                  "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+                  pathname === href ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
