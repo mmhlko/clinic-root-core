@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseBoolPipe,
@@ -21,6 +22,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
+import { ReorderDoctorsDto } from './dto/reorder-doctors.dto.js';
 
 @ApiTags('Doctors')
 @ApiBearerAuth('access-token')
@@ -77,8 +79,6 @@ export class DoctorsController {
     });
   }
 
-
-
   @Post()
   @ApiOperation({ summary: 'Создать врача' })
   @Roles(
@@ -89,6 +89,20 @@ export class DoctorsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async create(@Body() dto: CreateDoctorDto) {
     return this.doctorsService.create(dto);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Изменить порядок отображения' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async reorder(
+    @Body() dto: ReorderDoctorsDto
+  ) {
+    return this.doctorsService.reorderDoctors(dto.doctorIds)
   }
 
   @Patch(':id')
@@ -124,4 +138,22 @@ export class DoctorsController {
       isActive,
     );
   }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Удалить отзыв' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(
+    AuthGuard('jwt'),
+    RolesGuard,
+  )
+  async remove(
+    @Param('id') id: string,
+  ) {
+    return this.doctorsService.remove(id);
+  }
+
 }

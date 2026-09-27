@@ -46,6 +46,10 @@ export class DoctorsService {
 
   async create(dto: CreateDoctorDto) {
     return this.sequelize.transaction(async (transaction) => {
+      const maxSortOrder = await this.doctorModel.max('sortOrder')
+      const sortOrder = typeof maxSortOrder === 'number'
+        ? maxSortOrder + 1
+        : 0
       const doctor = await this.doctorModel.create(
         {
           firstName: dto.firstName,
@@ -55,6 +59,7 @@ export class DoctorsService {
           experienceStartYear: dto.experienceStartYear,
           description: dto.description ?? null,
           photoUrl: dto.photoUrl ?? null,
+          sortOrder
         },
         { transaction },
       );
@@ -232,11 +237,12 @@ export class DoctorsService {
         'experienceStartYear',
         'photoUrl',
         'isActive',
+        'sortOrder',
         'createdAt',
         'updatedAt',
       ],
 
-      order: [['lastName', 'ASC']],
+      order: [['sortOrder', 'ASC']],
     });
   }
 
@@ -479,8 +485,61 @@ export class DoctorsService {
 
     await doctor.save();
 
-    return this.findById({
-      id: doctor.id,
+    return {
+      isActive: doctor.isActive,
+    }
+  }
+
+  async reorderDoctors(
+    doctorIds: string[],
+  ) {
+    return this.sequelize.transaction(async (transaction) => {
+      const doctors = await this.doctorModel.findAll({
+        where: {
+          id: doctorIds,
+        },
+        transaction,
+      });
+
+      if (doctors.length !== doctorIds.length) {
+        throw new NotFoundException(
+          'One or more doctors directions not found',
+        );
+      }
+
+      const doctorsById = new Map(
+        doctors.map((doctor) => [doctor.id, doctor]),
+      );
+
+      for (const [index, doctorId] of doctorIds.entries()) {
+        const doctor = doctors.find((item) => item.id === doctorId);
+
+        if (!doctor) {
+          throw new NotFoundException(`Doctor ${doctorId} not found`);
+        }
+
+        doctor.sortOrder = index;
+        await doctor.save({ transaction });
+      }
+
+      return { success: true };
     });
+  }
+
+  async remove(id: string) {
+    const doctor =
+      await this.doctorModel.findByPk(id);
+
+    if (!doctor) {
+      throw new NotFoundException(
+        'Doctor not found',
+      );
+    }
+
+    await doctor.destroy();
+
+    return {
+      message: 'Doctor deleted',
+    };
   }
 }

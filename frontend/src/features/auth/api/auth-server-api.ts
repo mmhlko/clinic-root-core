@@ -16,7 +16,7 @@ class AuthServerApi extends RootApi {
     super(serverApiClient);
   }
 
-  getSession(refreshToken: string) {
+  fetchSession(refreshToken: string) {
     return this.requestGet<AdminServerSession>("/auth/session", {
       cookie: `refreshToken=${refreshToken}`,
     });
@@ -24,10 +24,3 @@ class AuthServerApi extends RootApi {
 }
 
 export const authServerApi = new AuthServerApi();
-const requestAdminSession = cache((refreshToken: string) =>
-  authServerApi.getSession(refreshToken),
-);
-
-export function getAdminSession(refreshToken: string) {
-  return requestAdminSession(refreshToken);
-}

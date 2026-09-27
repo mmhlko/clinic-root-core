@@ -19,6 +19,7 @@ export interface DoctorCreationAttributes {
   description?: string | null;
   photoUrl?: string | null;
   isActive?: boolean;
+  sortOrder?: number;
 }
 
 @Table({
@@ -83,6 +84,13 @@ export class DoctorModel extends Model<
     defaultValue: true,
   })
   declare isActive: boolean;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  declare sortOrder: number;
 
   @HasMany(() => DoctorEducationModel)
   declare educations: DoctorEducationModel[];

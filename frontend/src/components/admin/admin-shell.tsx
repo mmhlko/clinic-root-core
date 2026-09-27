@@ -38,6 +38,7 @@ import {
 import { useAuth } from "@/features/auth/providers/auth-provider";
 import type { AuthUser } from "@/features/auth/types/auth.types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Дашборд", href: "/admin", icon: LayoutGrid },
@@ -137,7 +138,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
       return "Дашборд";
     }
 
-    const match = navItems.find((item) => pathname.startsWith(item.href));
+    const match = navItems.find((item) => item.href === pathname);
     return match?.label ?? "Дашборд";
   }, [pathname]);
 
@@ -162,18 +163,18 @@ export function AdminShell({ user, children }: AdminShellProps) {
           <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-4">
             {navItems.map(({ href, label, icon: Icon }) => {
               const isActive =
-                pathname === href || pathname.startsWith(`${href}/`);
+                pathname === href;
 
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={[
+                  className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                  ].join(" ")}
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  )}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -204,9 +205,6 @@ export function AdminShell({ user, children }: AdminShellProps) {
                   )}
                 </Button>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Клиника
-                  </p>
                   <h1 className="text-xl font-semibold text-slate-900">
                     {currentSection}
                   </h1>

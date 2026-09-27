@@ -1,33 +1,17 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-
-import { AdminShell } from '@/components/admin/admin-shell';
+  import { AdminShell } from '@/components/admin/admin-shell';
 import { AuthProvider } from '@/features/auth/providers/auth-provider';
-import { getAdminSession } from '@/features/auth/api/auth-server-api';
+import { requireUserSession } from '@/features/auth/api/require-admin-session';
 
 export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const refreshToken = (await cookies()).get('refreshToken')?.value;
-
-  if (!refreshToken) {
-    redirect('/admin/login');
-  }
-
-  let user;
-
-  try {
-    const session = await getAdminSession(refreshToken);
-    user = session.user;
-  } catch {
-    redirect('/admin/login');
-  }
+  const session = await requireUserSession();
 
   return (
-    <AuthProvider initialUser={user}>
-      <AdminShell user={user}>{children}</AdminShell>
+    <AuthProvider initialUser={session.user}>
+      <AdminShell user={session.user}>{children}</AdminShell>
     </AuthProvider>
   );
 }
