@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import {
@@ -151,7 +152,11 @@ const SortableDoctorRow = ({
           />
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Редактировать</DropdownMenuItem>
+            <DropdownMenuItem
+              render={<Link href={`/admin/doctors/${doctor.id}/edit`} />}
+            >
+              Редактировать
+            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 

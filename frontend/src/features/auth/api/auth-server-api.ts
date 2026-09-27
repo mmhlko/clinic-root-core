@@ -1,7 +1,5 @@
 import "server-only";
 
-import { cache } from "react";
-
 import { RootApi } from "@/lib/api/root.api";
 import serverApiClient from "@/lib/api/server-client";
 import type { AuthUser } from "../types/auth.types";

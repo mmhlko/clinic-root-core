@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -80,6 +81,11 @@ export class CreateDoctorDto {
   @IsOptional()
   @IsString()
   photoUrl?: string;
+
+  @ApiPropertyOptional({ example: true, default: false, description: 'Активность врача' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({ type: [CreateDoctorEducationDto], description: 'Данные об образовании' })
   @IsOptional()

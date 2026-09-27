@@ -59,6 +59,7 @@ export class DoctorsService {
           experienceStartYear: dto.experienceStartYear,
           description: dto.description ?? null,
           photoUrl: dto.photoUrl ?? null,
+          isActive: dto.isActive ?? false,
           sortOrder
         },
         { transaction },

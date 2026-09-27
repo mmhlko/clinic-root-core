@@ -81,7 +81,7 @@ export class DoctorModel extends Model<
   @Column({
     type: DataType.BOOLEAN,
     allowNull: false,
-    defaultValue: true,
+    defaultValue: false,
   })
   declare isActive: boolean;
 

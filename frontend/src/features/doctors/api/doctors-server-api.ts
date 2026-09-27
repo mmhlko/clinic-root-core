@@ -2,7 +2,11 @@ import "server-only";
 
 import serverApiClient from "@/lib/api/server-client";
 import { RootApi } from "@/lib/api/root.api";
-import { DoctorListItem } from "../types/doctors.types";
+import type {
+  Doctor,
+  DoctorListItem,
+  DoctorReferenceOption,
+} from "../types/doctors.types";
 
 class DoctorsServerApi extends RootApi {
   constructor() {
@@ -15,6 +19,22 @@ class DoctorsServerApi extends RootApi {
 
   getDoctorListAdmin(accessToken: string) {
     return this.requestGet<DoctorListItem[]>("/doctors/admin", { accessToken });
+  }
+
+  getDoctorAdmin(id: string, accessToken: string) {
+    return this.requestGet<Doctor>(`/doctors/${id}/admin`, { accessToken });
+  }
+
+  getDirections(accessToken: string) {
+    return this.requestGet<DoctorReferenceOption[]>("/service-directions/admin", {
+      accessToken,
+    });
+  }
+
+  getSkills(accessToken: string) {
+    return this.requestGet<DoctorReferenceOption[]>("/skills/admin", {
+      accessToken,
+    });
   }
 }
 

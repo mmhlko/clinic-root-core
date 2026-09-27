@@ -3,6 +3,7 @@ import type { AxiosInstance, AxiosResponse } from "axios";
 export interface ApiRequestOptions {
 	accessToken?: string;
 	cookie?: string;
+	contentType?: string;
 }
 
 export class RootApi {
@@ -75,6 +76,9 @@ export class RootApi {
 
 	private getHeaders(options?: ApiRequestOptions) {
 		return {
+			...(options?.contentType
+				? { "Content-Type": options.contentType }
+				: {}),
 			...(options?.accessToken
 				? { Authorization: `Bearer ${options.accessToken}` }
 				: {}),

@@ -1,6 +1,3 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { dashboardApi } from "@/features/dashboard/api/dashboard-server-api";
 import { DashboardView } from "@/features/dashboard/components/dashboard-view";
 import { requireUserSession } from "@/features/auth/api/require-admin-session";
