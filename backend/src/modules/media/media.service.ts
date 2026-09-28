@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { InjectModel } from '@nestjs/sequelize';
+
 import {
   existsSync,
   mkdirSync,
@@ -18,6 +20,13 @@ import {
 } from 'path';
 
 import { randomUUID } from 'crypto';
+
+import type { Transaction } from 'sequelize';
+
+import {
+  MediaModel,
+  MediaStatus,
+} from './media.model.js';
 
 type MediaType = 'image' | 'document';
 
@@ -35,7 +44,10 @@ export class MediaService {
     'files',
   );
 
-  constructor() {
+  constructor(
+    @InjectModel(MediaModel)
+    private readonly mediaModel: typeof MediaModel,
+  ) {
     this.ensureDirectory(this.imagesDir);
     this.ensureDirectory(this.filesDir);
   }
@@ -95,6 +107,42 @@ export class MediaService {
     };
   }
 
+  private getDirectory(
+    type: MediaType,
+  ) {
+    return type === 'image'
+      ? this.imagesDir
+      : this.filesDir;
+  }
+
+  private getUrlPrefix(
+    type: MediaType,
+  ) {
+    return type === 'image'
+      ? '/uploads/images'
+      : '/uploads/files';
+  }
+
+  private getMediaTypeFromUrl(
+    url: string,
+  ): MediaType {
+    if (
+      url.startsWith('/uploads/images/')
+    ) {
+      return 'image';
+    }
+
+    if (
+      url.startsWith('/uploads/files/')
+    ) {
+      return 'document';
+    }
+
+    throw new BadRequestException(
+      'Invalid media URL',
+    );
+  }
+
   async save(
     file: Express.Multer.File,
     type: MediaType,
@@ -106,14 +154,10 @@ export class MediaService {
     }
 
     const directory =
-      type === 'image'
-        ? this.imagesDir
-        : this.filesDir;
+      this.getDirectory(type);
 
     const urlPrefix =
-      type === 'image'
-        ? '/uploads/images'
-        : '/uploads/files';
+      this.getUrlPrefix(type);
 
     const savedFile =
       this.saveFile(
@@ -126,23 +170,168 @@ export class MediaService {
         .replace('.', '')
         .toLowerCase();
 
-    return {
-      ...savedFile,
-      fileType,
-      url: `${urlPrefix}/${savedFile.filename}`,
-    };
+    const url =
+      `${urlPrefix}/${savedFile.filename}`;
+
+    try {
+      const media =
+        await this.mediaModel.create({
+          filename: savedFile.filename,
+          url,
+          mimeType: savedFile.mimeType,
+          size: savedFile.size,
+          status: MediaStatus.TEMPORARY,
+        });
+
+      return {
+        id: media.id,
+        filename: savedFile.filename,
+        originalName: savedFile.originalName,
+        size: savedFile.size,
+        mimeType: savedFile.mimeType,
+        fileType,
+        url,
+        status: media.status,
+      };
+    } catch (error) {
+      /*
+       * Media не создалась в БД.
+       * Удаляем уже записанный физический файл,
+       * чтобы не оставить orphan-файл.
+       */
+      const filepath =
+        join(
+          directory,
+          savedFile.filename,
+        );
+
+      if (existsSync(filepath)) {
+        unlinkSync(filepath);
+      }
+
+      throw error;
+    }
   }
 
   async uploadImage(
     file: Express.Multer.File,
   ) {
-    return this.save(file, 'image');
+    return this.save(
+      file,
+      'image',
+    );
   }
 
   async uploadFile(
     file: Express.Multer.File,
   ) {
-    return this.save(file, 'document');
+    return this.save(
+      file,
+      'document',
+    );
+  }
+
+  async findById(
+    id: string,
+    transaction?: Transaction,
+  ) {
+    const media =
+      await this.mediaModel.findByPk(
+        id,
+        {
+          transaction,
+        },
+      );
+
+    if (!media) {
+      throw new NotFoundException(
+        'Media not found',
+      );
+    }
+
+    return media;
+  }
+
+  async findTemporaryById(
+    id: string,
+    transaction?: Transaction,
+  ) {
+    const media =
+      await this.mediaModel.findOne({
+        where: {
+          id,
+          status: MediaStatus.TEMPORARY,
+        },
+        transaction,
+      });
+
+    if (!media) {
+      throw new NotFoundException(
+        'Temporary media not found',
+      );
+    }
+
+    return media;
+  }
+
+  async attach(
+    id: string,
+    transaction?: Transaction,
+  ) {
+    const media =
+      await this.findTemporaryById(
+        id,
+        transaction,
+      );
+
+    media.status =
+      MediaStatus.ATTACHED;
+
+    await media.save({
+      transaction,
+    });
+
+    return media;
+  }
+
+  async delete(
+    media: MediaModel,
+  ) {
+    const type =
+      this.getMediaTypeFromUrl(
+        media.url,
+      );
+
+    const directory =
+      this.getDirectory(type);
+
+    const safeFilename =
+      basename(media.filename);
+
+    if (
+      safeFilename !== media.filename
+    ) {
+      throw new BadRequestException(
+        'Invalid filename',
+      );
+    }
+
+    const filepath =
+      join(
+        directory,
+        safeFilename,
+      );
+
+    /*
+     * Физический файл мог быть уже удалён.
+     * В таком случае всё равно удаляем
+     * запись Media из БД.
+     */
+    if (existsSync(filepath)) {
+      unlinkSync(filepath);
+    }
+
+    await media.destroy();
   }
 
   async removeImage(
@@ -159,10 +348,11 @@ export class MediaService {
       );
     }
 
-    const filepath = join(
-      this.imagesDir,
-      safeFilename,
-    );
+    const filepath =
+      join(
+        this.imagesDir,
+        safeFilename,
+      );
 
     if (!existsSync(filepath)) {
       throw new NotFoundException(
@@ -191,10 +381,11 @@ export class MediaService {
       );
     }
 
-    const filepath = join(
-      this.filesDir,
-      safeFilename,
-    );
+    const filepath =
+      join(
+        this.filesDir,
+        safeFilename,
+      );
 
     if (!existsSync(filepath)) {
       throw new NotFoundException(
@@ -206,6 +397,17 @@ export class MediaService {
 
     return {
       message: 'File deleted',
+    };
+  }
+
+  async deleteTemporary(id: string) {
+    const media =
+      await this.findTemporaryById(id);
+
+    await this.delete(media);
+
+    return {
+      message: 'Media deleted',
     };
   }
 }

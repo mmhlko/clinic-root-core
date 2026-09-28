@@ -77,10 +77,13 @@ export class CreateDoctorDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/photo.jpg', description: 'Ссылка на фото' })
+  @ApiPropertyOptional({
+    example: 'd8d59a0d-4c79-4bd5-a2cf-1d0a744f5f5c',
+    description: 'ID медиафайла фотографии',
+  })
   @IsOptional()
-  @IsString()
-  photoUrl?: string;
+  @IsUUID()
+  photoMediaId?: string;
 
   @ApiPropertyOptional({ example: true, default: false, description: 'Активность врача' })
   @IsOptional()

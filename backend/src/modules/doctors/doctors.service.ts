@@ -1,19 +1,30 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/sequelize';
+
 import { Sequelize } from 'sequelize-typescript';
+
 import type { Transaction } from 'sequelize';
 
 import { DoctorModel } from './doctor.model.js';
+
 import { DoctorEducationModel } from './doctor-education.model.js';
+
 import { DoctorDirectionModel } from './doctor-direction.model.js';
+
 import { DoctorSkillModel } from './skills/doctor-skill.model.js';
 
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
+
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 
 import { ServiceDirectionModel } from '../services/directions/service-direction.model.js';
+
 import { SkillModel } from './skills/skill.model.js';
+
+import { MediaModel, MediaStatus } from '../media/media.model.js';
+
+import { MediaService } from '../media/media.service.js';
 
 @Injectable()
 export class DoctorsService {
@@ -22,75 +33,136 @@ export class DoctorsService {
     private readonly doctorModel: typeof DoctorModel,
 
     @InjectModel(DoctorEducationModel)
-    private readonly doctorEducationModel:
-      typeof DoctorEducationModel,
+    private readonly doctorEducationModel: typeof DoctorEducationModel,
 
     @InjectModel(DoctorDirectionModel)
-    private readonly doctorDirectionModel:
-      typeof DoctorDirectionModel,
+    private readonly doctorDirectionModel: typeof DoctorDirectionModel,
 
     @InjectModel(DoctorSkillModel)
-    private readonly doctorSkillModel:
-      typeof DoctorSkillModel,
+    private readonly doctorSkillModel: typeof DoctorSkillModel,
 
     @InjectModel(ServiceDirectionModel)
-    private readonly serviceDirectionModel:
-      typeof ServiceDirectionModel,
+    private readonly serviceDirectionModel: typeof ServiceDirectionModel,
 
     @InjectModel(SkillModel)
-    private readonly skillModel:
-      typeof SkillModel,
+    private readonly skillModel: typeof SkillModel,
+
+    @InjectModel(MediaModel)
+    private readonly mediaModel: typeof MediaModel,
+
+    private readonly mediaService: MediaService,
 
     private readonly sequelize: Sequelize,
-  ) { }
+  ) {}
 
   async create(dto: CreateDoctorDto) {
     return this.sequelize.transaction(async (transaction) => {
-      const maxSortOrder = await this.doctorModel.max('sortOrder')
-      const sortOrder = typeof maxSortOrder === 'number'
-        ? maxSortOrder + 1
-        : 0
+      /*
+       * Проверяем фотографию,
+       * если она передана.
+       */
+      let photoMedia: MediaModel | null = null;
+
+      if (dto.photoMediaId) {
+        photoMedia = await this.mediaModel.findOne({
+          where: {
+            id: dto.photoMediaId,
+            status: MediaStatus.TEMPORARY,
+          },
+          transaction,
+        });
+
+        if (!photoMedia) {
+          throw new NotFoundException('Temporary photo not found');
+        }
+      }
+
+      /*
+       * Определяем sortOrder
+       * внутри транзакции.
+       */
+      const maxSortOrder = await this.doctorModel.max('sortOrder', {
+        transaction,
+      });
+
+      const sortOrder = typeof maxSortOrder === 'number' ? maxSortOrder + 1 : 0;
+
+      /*
+       * Создаём врача.
+       */
       const doctor = await this.doctorModel.create(
         {
           firstName: dto.firstName,
+
           lastName: dto.lastName,
+
           middleName: dto.middleName ?? null,
+
           specialization: dto.specialization,
+
           experienceStartYear: dto.experienceStartYear,
+
           description: dto.description ?? null,
-          photoUrl: dto.photoUrl ?? null,
+
+          photoMediaId: photoMedia?.id ?? null,
+
           isActive: dto.isActive ?? false,
-          sortOrder
+
+          sortOrder,
         },
-        { transaction },
+        {
+          transaction,
+        },
       );
 
-      // Создаём образование
+      /*
+       * Прикрепляем фотографию.
+       */
+      if (photoMedia) {
+        photoMedia.status = MediaStatus.ATTACHED;
+
+        await photoMedia.save({
+          transaction,
+        });
+      }
+
+      /*
+       * Создаём образование.
+       */
       if (dto.educations && dto.educations.length > 0) {
         await this.doctorEducationModel.bulkCreate(
           dto.educations.map((education) => ({
             doctorId: doctor.id,
+
             type: education.type,
+
             title: education.title,
+
             institution: education.institution ?? null,
+
             year: education.year ?? null,
+
             description: education.description ?? null,
+
             sortOrder: education.sortOrder ?? 0,
           })),
-          { transaction },
+          {
+            transaction,
+          },
         );
       }
 
-      // Создаём направления
+      /*
+       * Создаём направления.
+       */
       if (dto.directionIds && dto.directionIds.length > 0) {
-        const directions =
-          await this.serviceDirectionModel.findAll({
-            where: {
-              id: dto.directionIds,
-              isActive: true,
-            },
-            transaction,
-          });
+        const directions = await this.serviceDirectionModel.findAll({
+          where: {
+            id: dto.directionIds,
+            isActive: true,
+          },
+          transaction,
+        });
 
         if (directions.length !== dto.directionIds.length) {
           throw new NotFoundException(
@@ -101,14 +173,20 @@ export class DoctorsService {
         await this.doctorDirectionModel.bulkCreate(
           dto.directionIds.map((directionId, index) => ({
             doctorId: doctor.id,
+
             directionId,
+
             sortOrder: index,
           })),
-          { transaction },
+          {
+            transaction,
+          },
         );
       }
 
-      // Создаём навыки
+      /*
+       * Создаём навыки.
+       */
       if (dto.skillIds && dto.skillIds.length > 0) {
         const skills = await this.skillModel.findAll({
           where: {
@@ -119,18 +197,20 @@ export class DoctorsService {
         });
 
         if (skills.length !== dto.skillIds.length) {
-          throw new NotFoundException(
-            'One or more skills not found',
-          );
+          throw new NotFoundException('One or more skills not found');
         }
 
         await this.doctorSkillModel.bulkCreate(
           dto.skillIds.map((skillId, index) => ({
             doctorId: doctor.id,
+
             skillId,
+
             sortOrder: index,
           })),
-          { transaction },
+          {
+            transaction,
+          },
         );
       }
 
@@ -153,14 +233,21 @@ export class DoctorsService {
     const doctor = await this.doctorModel.findOne({
       where: {
         id,
+
         ...(onlyActive
           ? {
-            isActive: true,
-          }
+              isActive: true,
+            }
           : {}),
       },
 
       include: [
+        {
+          model: MediaModel,
+          as: 'photoMedia',
+          attributes: ['id', 'url']
+        },
+
         {
           model: DoctorEducationModel,
           as: 'educations',
@@ -169,15 +256,19 @@ export class DoctorsService {
         {
           model: DoctorDirectionModel,
           as: 'directions',
+
           include: [
             {
               model: ServiceDirectionModel,
+
               as: 'direction',
+
               where: onlyActive
                 ? {
-                  isActive: true,
-                }
+                    isActive: true,
+                  }
                 : undefined,
+
               required: onlyActive,
             },
           ],
@@ -186,15 +277,19 @@ export class DoctorsService {
         {
           model: DoctorSkillModel,
           as: 'skills',
+
           include: [
             {
               model: SkillModel,
+
               as: 'skill',
+
               where: onlyActive
                 ? {
-                  isActive: true,
-                }
+                    isActive: true,
+                  }
                 : undefined,
+
               required: onlyActive,
             },
           ],
@@ -208,25 +303,21 @@ export class DoctorsService {
       throw new NotFoundException('Doctor not found');
     }
 
-    doctor.educations?.sort(
-      (a, b) => a.sortOrder - b.sortOrder,
-    );
+    doctor.educations?.sort((a, b) => a.sortOrder - b.sortOrder);
 
-    doctor.directions?.sort(
-      (a, b) => a.sortOrder - b.sortOrder,
-    );
+    doctor.directions?.sort((a, b) => a.sortOrder - b.sortOrder);
 
-    doctor.skills?.sort(
-      (a, b) => a.sortOrder - b.sortOrder,
-    );
+    doctor.skills?.sort((a, b) => a.sortOrder - b.sortOrder);
 
     return doctor;
   }
 
   async findAll(onlyActive: boolean = false) {
-    return this.doctorModel.findAll({
+    const doctors = await this.doctorModel.findAll({
       where: onlyActive
-        ? { isActive: true }
+        ? {
+            isActive: true,
+          }
         : undefined,
 
       attributes: [
@@ -236,30 +327,48 @@ export class DoctorsService {
         'middleName',
         'specialization',
         'experienceStartYear',
-        'photoUrl',
         'isActive',
         'sortOrder',
         'createdAt',
         'updatedAt',
       ],
 
+      include: [
+        {
+          model: MediaModel,
+          as: 'photoMedia',
+
+          attributes: ['id', 'url'],
+        },
+      ],
+
       order: [['sortOrder', 'ASC']],
     });
+
+    return doctors;
   }
 
-  async update(
-    id: string,
-    dto: UpdateDoctorDto,
-  ) {
-    return this.sequelize.transaction(async (transaction) => {
-      const doctor = await this.findById(
-        {
-          id,
-          transaction,
-        }
-      );
+  async update(id: string, dto: UpdateDoctorDto) {
+    /*
+     * Старое Media нельзя удалять
+     * внутри транзакции.
+     *
+     * Сначала меняем БД,
+     * потом после COMMIT
+     * удаляем физический файл.
+     */
+    let mediaToDelete: MediaModel | null = null;
 
-      // Основные данные врача
+    const result = await this.sequelize.transaction(async (transaction) => {
+      const doctor = await this.findById({
+        id,
+        transaction,
+      });
+
+      /*
+       * Основные данные врача.
+       */
+
       if (dto.firstName !== undefined) {
         doctor.firstName = dto.firstName;
       }
@@ -273,38 +382,90 @@ export class DoctorsService {
       }
 
       if (dto.specialization !== undefined) {
-        doctor.specialization =
-          dto.specialization;
+        doctor.specialization = dto.specialization;
       }
 
       if (dto.experienceStartYear !== undefined) {
-        doctor.experienceStartYear =
-          dto.experienceStartYear;
+        doctor.experienceStartYear = dto.experienceStartYear;
       }
 
       if (dto.description !== undefined) {
         doctor.description = dto.description;
       }
 
-      if (dto.photoUrl !== undefined) {
-        doctor.photoUrl = dto.photoUrl;
+      /*
+       * Фотография.
+       */
+      if (dto.photoMediaId !== undefined) {
+        /*
+         * Фотография действительно
+         * изменилась.
+         */
+        if (dto.photoMediaId !== doctor.photoMediaId) {
+          /*
+           * Сохраняем старое Media,
+           * чтобы удалить его после COMMIT.
+           */
+          if (doctor.photoMediaId) {
+            mediaToDelete = await this.mediaModel.findByPk(
+              doctor.photoMediaId,
+              {
+                transaction,
+              },
+            );
+          }
+
+          /*
+           * Устанавливаем новую
+           * фотографию.
+           */
+          if (dto.photoMediaId) {
+            const newPhoto = await this.mediaModel.findOne({
+              where: {
+                id: dto.photoMediaId,
+
+                status: MediaStatus.TEMPORARY,
+              },
+
+              transaction,
+            });
+
+            if (!newPhoto) {
+              throw new NotFoundException('Temporary photo not found');
+            }
+
+            doctor.photoMediaId = newPhoto.id;
+
+            newPhoto.status = MediaStatus.ATTACHED;
+
+            await newPhoto.save({
+              transaction,
+            });
+          } else {
+            /*
+             * null означает:
+             * фотографию удалить.
+             */
+            doctor.photoMediaId = null;
+          }
+        }
       }
 
-      // Синхронизация направлений
+      /*
+       * Направления.
+       */
       if (dto.directionIds !== undefined) {
-        const directions =
-          await this.serviceDirectionModel.findAll({
-            where: {
-              id: dto.directionIds,
-              isActive: true,
-            },
-            transaction,
-          });
+        const directions = await this.serviceDirectionModel.findAll({
+          where: {
+            id: dto.directionIds,
 
-        if (
-          directions.length !==
-          dto.directionIds.length
-        ) {
+            isActive: true,
+          },
+
+          transaction,
+        });
+
+        if (directions.length !== dto.directionIds.length) {
           throw new NotFoundException(
             'One or more service directions not found',
           );
@@ -314,99 +475,97 @@ export class DoctorsService {
           where: {
             doctorId: doctor.id,
           },
+
           transaction,
         });
 
         await this.doctorDirectionModel.bulkCreate(
-          dto.directionIds.map(
-            (directionId, index) => ({
-              doctorId: doctor.id,
-              directionId,
-              sortOrder: index,
-            }),
-          ),
-          { transaction },
+          dto.directionIds.map((directionId, index) => ({
+            doctorId: doctor.id,
+
+            directionId,
+
+            sortOrder: index,
+          })),
+
+          {
+            transaction,
+          },
         );
       }
 
-      // Синхронизация навыков
+      /*
+       * Навыки.
+       */
       if (dto.skillIds !== undefined) {
-        const skills =
-          await this.skillModel.findAll({
-            where: {
-              id: dto.skillIds,
-              isActive: true,
-            },
-            transaction,
-          });
+        const skills = await this.skillModel.findAll({
+          where: {
+            id: dto.skillIds,
 
-        if (
-          skills.length !==
-          dto.skillIds.length
-        ) {
-          throw new NotFoundException(
-            'One or more skills not found',
-          );
+            isActive: true,
+          },
+
+          transaction,
+        });
+
+        if (skills.length !== dto.skillIds.length) {
+          throw new NotFoundException('One or more skills not found');
         }
 
         await this.doctorSkillModel.destroy({
           where: {
             doctorId: doctor.id,
           },
+
           transaction,
         });
 
         await this.doctorSkillModel.bulkCreate(
-          dto.skillIds.map(
-            (skillId, index) => ({
-              doctorId: doctor.id,
-              skillId,
-              sortOrder: index,
-            }),
-          ),
-          { transaction },
+          dto.skillIds.map((skillId, index) => ({
+            doctorId: doctor.id,
+
+            skillId,
+
+            sortOrder: index,
+          })),
+
+          {
+            transaction,
+          },
         );
       }
 
-      await doctor.save({ transaction });
+      /*
+       * Сохраняем основные
+       * изменения врача.
+       */
+      await doctor.save({
+        transaction,
+      });
 
-      // Синхронизация образования
+      /*
+       * Образование.
+       */
       if (dto.educations !== undefined) {
-        const existingEducations =
-          doctor.educations ?? [];
+        const existingEducations = doctor.educations ?? [];
 
         const incomingIds = dto.educations
-          .filter(
-            (education) => education.id,
-          )
-          .map(
-            (education) => education.id,
-          );
+          .filter((education) => education.id)
+          .map((education) => education.id);
 
-        // Удаляем старые записи,
-        // которых больше нет в запросе
         for (const education of existingEducations) {
-          if (
-            !incomingIds.includes(
-              education.id,
-            )
-          ) {
+          if (!incomingIds.includes(education.id)) {
             await education.destroy({
               transaction,
             });
           }
         }
 
-        // Обновляем существующие
-        // и создаём новые
         for (const educationDto of dto.educations) {
           if (educationDto.id) {
-            const education =
-              existingEducations.find(
-                (item) =>
-                  item.id ===
-                  educationDto.id,
-              );
+            const education = existingEducations.find(
+              (item) => item.id === educationDto.id,
+            );
 
             if (!education) {
               throw new NotFoundException(
@@ -414,25 +573,17 @@ export class DoctorsService {
               );
             }
 
-            education.type =
-              educationDto.type;
+            education.type = educationDto.type;
 
-            education.title =
-              educationDto.title;
+            education.title = educationDto.title;
 
-            education.institution =
-              educationDto.institution ??
-              null;
+            education.institution = educationDto.institution ?? null;
 
-            education.year =
-              educationDto.year ?? null;
+            education.year = educationDto.year ?? null;
 
-            education.description =
-              educationDto.description ??
-              null;
+            education.description = educationDto.description ?? null;
 
-            education.sortOrder =
-              educationDto.sortOrder ?? 0;
+            education.sortOrder = educationDto.sortOrder ?? 0;
 
             await education.save({
               transaction,
@@ -441,45 +592,51 @@ export class DoctorsService {
             await this.doctorEducationModel.create(
               {
                 doctorId: doctor.id,
+
                 type: educationDto.type,
+
                 title: educationDto.title,
-                institution:
-                  educationDto.institution ??
-                  null,
-                year:
-                  educationDto.year ?? null,
-                description:
-                  educationDto.description ??
-                  null,
-                sortOrder:
-                  educationDto.sortOrder ?? 0,
+
+                institution: educationDto.institution ?? null,
+
+                year: educationDto.year ?? null,
+
+                description: educationDto.description ?? null,
+
+                sortOrder: educationDto.sortOrder ?? 0,
               },
-              { transaction },
+
+              {
+                transaction,
+              },
             );
           }
         }
       }
 
-      return this.findById(
-        {
-          id: doctor.id,
-          transaction,
-        }
-      );
+      return this.findById({
+        id: doctor.id,
+
+        transaction,
+      });
     });
+
+    /*
+     * Только после успешного COMMIT
+     * удаляем старое фото.
+     */
+    if (mediaToDelete) {
+      await this.mediaService.delete(mediaToDelete);
+    }
+
+    return result;
   }
 
-  async setActive(
-    id: string,
-    isActive: boolean,
-  ) {
-    const doctor =
-      await this.doctorModel.findByPk(id);
+  async setActive(id: string, isActive: boolean) {
+    const doctor = await this.doctorModel.findByPk(id);
 
     if (!doctor) {
-      throw new NotFoundException(
-        'Doctor not found',
-      );
+      throw new NotFoundException('Doctor not found');
     }
 
     doctor.isActive = isActive;
@@ -488,56 +645,81 @@ export class DoctorsService {
 
     return {
       isActive: doctor.isActive,
-    }
+    };
   }
 
-  async reorderDoctors(
-    doctorIds: string[],
-  ) {
+  async reorderDoctors(doctorIds: string[]) {
     return this.sequelize.transaction(async (transaction) => {
       const doctors = await this.doctorModel.findAll({
         where: {
           id: doctorIds,
         },
+
         transaction,
       });
 
       if (doctors.length !== doctorIds.length) {
-        throw new NotFoundException(
-          'One or more doctors directions not found',
-        );
+        throw new NotFoundException('One or more doctors not found');
       }
 
-      const doctorsById = new Map(
-        doctors.map((doctor) => [doctor.id, doctor]),
-      );
+      const doctorsById = new Map(doctors.map((doctor) => [doctor.id, doctor]));
 
       for (const [index, doctorId] of doctorIds.entries()) {
-        const doctor = doctors.find((item) => item.id === doctorId);
+        const doctor = doctorsById.get(doctorId);
 
         if (!doctor) {
           throw new NotFoundException(`Doctor ${doctorId} not found`);
         }
 
         doctor.sortOrder = index;
-        await doctor.save({ transaction });
+
+        await doctor.save({
+          transaction,
+        });
       }
 
-      return { success: true };
+      return {
+        success: true,
+      };
     });
   }
 
   async remove(id: string) {
-    const doctor =
-      await this.doctorModel.findByPk(id);
+    let mediaToDelete: MediaModel | null = null;
 
-    if (!doctor) {
-      throw new NotFoundException(
-        'Doctor not found',
-      );
+    await this.sequelize.transaction(async (transaction) => {
+      const doctor = await this.doctorModel.findByPk(id, {
+        transaction,
+      });
+
+      if (!doctor) {
+        throw new NotFoundException('Doctor not found');
+      }
+
+      /*
+       * Запоминаем фото.
+       */
+      if (doctor.photoMediaId) {
+        mediaToDelete = await this.mediaModel.findByPk(doctor.photoMediaId, {
+          transaction,
+        });
+      }
+
+      /*
+       * Удаляем врача.
+       */
+      await doctor.destroy({
+        transaction,
+      });
+    });
+
+    /*
+     * После успешного COMMIT
+     * удаляем Media + физический файл.
+     */
+    if (mediaToDelete) {
+      await this.mediaService.delete(mediaToDelete);
     }
-
-    await doctor.destroy();
 
     return {
       message: 'Doctor deleted',

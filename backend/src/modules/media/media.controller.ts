@@ -22,7 +22,7 @@ import { UserRole } from '../users/user-role.enum.js';
 export class MediaController {
   constructor(
     private readonly mediaService: MediaService,
-  ) {}
+  ) { }
 
   @Post('images')
   @UploadMedia('image')
@@ -97,6 +97,24 @@ export class MediaController {
   ) {
     return this.mediaService.removeFile(
       filename,
+    );
+  }
+
+  @Delete(':id')
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(
+    AuthGuard('jwt'),
+    RolesGuard,
+  )
+  async remove(
+    @Param('id') id: string,
+  ) {
+    return this.mediaService.deleteTemporary(
+      id,
     );
   }
 }

@@ -47,6 +47,11 @@ export interface DoctorReferenceOption {
   isActive?: boolean;
 }
 
+export interface MediaDbData {
+  id: string;
+  url: string;
+}
+
 export interface DoctorListItem {
   id: string;
   firstName: string;
@@ -54,7 +59,7 @@ export interface DoctorListItem {
   middleName: string | null;
   specialization: string;
   experienceStartYear: number;
-  photoUrl: string | null;
+  photoMedia?: MediaDbData;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -83,7 +88,7 @@ export interface CreateDoctorRequest {
   specialization: string;
   experienceStartYear: number;
   description?: string;
-  photoUrl?: string;
+  photoMediaId?: string;
   isActive: boolean;
   educations?: CreateDoctorEducationRequest[];
   directionIds?: string[];
@@ -97,7 +102,7 @@ export interface UpdateDoctorRequest {
   specialization?: string;
   experienceStartYear?: number;
   description?: string | null;
-  photoUrl?: string | null;
+  photoMediaId?: string | null;
   educations?: UpdateDoctorEducationRequest[];
   directionIds?: string[];
   skillIds?: string[];
@@ -109,13 +114,4 @@ export interface UpdateDoctorEducationRequest extends CreateDoctorEducationReque
 
 export interface SkillCreateRequest {
   name: string;
-}
-
-export interface MediaUploadResponse {
-  filename: string;
-  originalName: string;
-  size: number;
-  mimeType: string;
-  fileType: string;
-  url: string;
 }

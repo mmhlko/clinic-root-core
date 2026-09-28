@@ -8,6 +8,7 @@ import {
   Min,
   ValidateNested,
   IsUUID,
+  isUUID,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
@@ -86,10 +87,10 @@ export class UpdateDoctorDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/doctor.jpg' })
+  @ApiPropertyOptional({ example: 'd8d59a0d-4c79-4bd5-a2cf-1d0a744f5f5c' })
   @IsOptional()
-  @IsString()
-  photoUrl?: string;
+  @IsUUID()
+  photoMediaId?: string | null;
 
   @ApiPropertyOptional({ type: [UpdateDoctorEducationDto], example: [{ type: DoctorEducationType.EDUCATION, title: 'Врач-стоматолог', institution: 'МГМУ им. Сеченова', year: 2015, sortOrder: 0 }] })
   @IsOptional()

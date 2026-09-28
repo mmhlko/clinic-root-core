@@ -89,7 +89,7 @@ const SortableDoctorRow = ({
     id: doctor.id,
   });
 
-  const avatarUrl = getImageUrl(doctor.photoUrl);
+  const avatarUrl = getImageUrl(doctor.photoMedia?.url);
 
   return (
     <TableRow

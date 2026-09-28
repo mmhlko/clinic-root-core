@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { SubmitEvent, useState, type FormEvent } from "react";
 import { isAxiosError } from "axios";
-import { Plus, Trash2, UserRound } from "lucide-react";
+import { Camera, Plus, Trash2, Trash2Icon, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +35,11 @@ import type {
 } from "../types/doctors.types";
 import { DoctorEducationType as EducationType } from "../types/doctors.types";
 import { DoctorReferenceMultiSelect } from "./doctor-reference-multi-select";
+import { cn } from "cn";
+import { mediaClientApi } from "@/features/media/api/media-api";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
+import { ImageUpload } from "@/features/image-upload/hooks/image-upload";
 
 interface DoctorEducationFormValue {
   id?: string;
@@ -53,6 +58,7 @@ interface DoctorFormValues {
   experienceStartYear: string;
   description: string;
   photoUrl: string | null;
+  photoMediaId: string | null;
   isActive: boolean;
   educations: DoctorEducationFormValue[];
   directionIds: string[];
@@ -100,8 +106,9 @@ function toFormValues(
     specialization: doctor?.specialization ?? "",
     experienceStartYear: doctor ? String(doctor.experienceStartYear) : "",
     description: doctor?.description ?? "",
-    photoUrl: doctor?.photoUrl ?? null,
-    isActive: doctor?.isActive ?? true,
+    photoMediaId: doctor?.photoMedia?.id ?? null,
+    photoUrl: doctor?.photoMedia?.url ?? null,
+    isActive: doctor?.isActive ?? false,
     educations:
       doctor?.educations.map((education) => ({
         id: education.id,
@@ -138,7 +145,9 @@ function getErrorMessage(error: unknown) {
   return "Не удалось сохранить данные врача. Проверьте поля и попробуйте ещё раз.";
 }
 
-function educationPayload(educations: DoctorEducationFormValue[]) {
+function educationPayload(
+  educations: DoctorEducationFormValue[],
+): UpdateDoctorEducationRequest[] {
   return educations
     .filter((education) => education.title.trim())
     .map((education, sortOrder) => ({
@@ -168,10 +177,26 @@ export function DoctorForm({
   );
   const [skills, setSkills] = useState(initialSkills);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isChangingActivity, setIsChangingActivity] = useState(false);
+  // const [isDeleting, setIsDeleting] = useState(false);
+  // const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const imageUrl = getImageUrl(values.photoUrl);
+  const {
+    image,
+    isUploading,
+    isDeleting,
+    error: imageError,
+    upload,
+    remove,
+    cleanup,
+  } = useImageUpload({
+    initialImage: doctor?.photoMedia
+      ? {
+          id: doctor.photoMedia.id,
+          url: doctor.photoMedia.url,
+        }
+      : null,
+  });
 
   const updateValues = <K extends keyof DoctorFormValues>(
     key: K,
@@ -180,53 +205,41 @@ export function DoctorForm({
     setValues((current) => ({ ...current, [key]: value }));
   };
 
-  const handlePhotoChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = "";
-    if (!file) {
-      return;
-    }
+  // const handleDeleteImage = async () => {
+  //   const currentMediaId = values.photoMediaId;
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
-      setError("Выберите JPG, PNG или WebP размером до 5 МБ.");
-      return;
-    }
+  //   if (!currentMediaId) {
+  //     return;
+  //   }
 
-    setIsUploading(true);
-    setError(null);
-    try {
-      const uploaded = await doctorsClientApi.uploadDoctorPhoto(file);
-      updateValues("photoUrl", uploaded.url);
-    } catch (uploadError) {
-      setError(getErrorMessage(uploadError));
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  //   const originalMediaId = mode === "edit" ? doctor?.photoMedia?.id : null;
 
-  const handleActiveChange = async (checked: boolean) => {
-    if (mode === "create" || !doctor) {
-      updateValues("isActive", checked);
-      return;
-    }
+  //   try {
+  //     // setIsDeleting(true);
+  //     setError(null);
 
-    setIsChangingActivity(true);
-    setError(null);
-    try {
-      const result = await doctorsClientApi.updateDoctorStatus(
-        doctor.id,
-        checked,
-      );
-      updateValues("isActive", result.isActive);
-      router.refresh();
-    } catch (statusError) {
-      setError(getErrorMessage(statusError));
-    } finally {
-      setIsChangingActivity(false);
-    }
+  //     const isOriginalMedia = currentMediaId === originalMediaId;
+
+  //     // Если это новое временное фото,
+  //     // которое ещё не было сохранено,
+  //     // удаляем его сразу.
+  //     if (!isOriginalMedia) {
+  //       await mediaClientApi.deleteMedia(currentMediaId);
+  //     }
+
+  //     // В любом случае очищаем форму.
+  //     updateValues("photoMediaId", null);
+
+  //     updateValues("photoUrl", null);
+  //   } catch (deleteError) {
+  //     setError(getErrorMessage(deleteError));
+  //   } finally {
+  //     // setIsDeleting(false);
+  //   }
+  // };
+
+  const handleActiveChange = (checked: boolean) => {
+    updateValues("isActive", checked);
   };
 
   const handleCreateSkill = async (name: string) => {
@@ -242,60 +255,55 @@ export function DoctorForm({
     return createdSkill;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleCancel = async () => {
+    await cleanup();
+    router.push("/admin/doctors");
+  };
+
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (isSaving || isUploading) {
+      return;
+    }
     setIsSaving(true);
     setError(null);
 
-    const common = {
-      firstName: values.firstName.trim(),
-      lastName: values.lastName.trim(),
-      specialization: values.specialization.trim(),
-      experienceStartYear: Number(values.experienceStartYear),
-      ...(values.description.trim()
-        ? { description: values.description.trim() }
-        : {}),
-      ...(values.photoUrl ? { photoUrl: values.photoUrl } : {}),
-      directionIds: values.directionIds,
-      skillIds: values.skillIds,
-    };
-
     try {
+      const educations = educationPayload(values.educations);
+
       if (mode === "create") {
-        const educations = values.educations
-          .filter((education) => education.title.trim())
-          .map(
-            (education, sortOrder): CreateDoctorEducationRequest => ({
-              type: education.type,
-              title: education.title.trim(),
-              ...(education.institution.trim()
-                ? { institution: education.institution.trim() }
-                : {}),
-              ...(education.year ? { year: Number(education.year) } : {}),
-              ...(education.description.trim()
-                ? { description: education.description.trim() }
-                : {}),
-              sortOrder,
-            }),
-          );
         const request: CreateDoctorRequest = {
-          ...common,
-          ...(values.middleName.trim()
-            ? { middleName: values.middleName.trim() }
-            : {}),
-          educations,
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          middleName: values.middleName.trim() || undefined,
+          specialization: values.specialization.trim(),
+          experienceStartYear: Number(values.experienceStartYear),
+          description: values.description.trim() || undefined,
+          photoMediaId: image?.id,
           isActive: values.isActive,
+          educations,
+          directionIds: values.directionIds,
+          skillIds: values.skillIds,
         };
+
         await doctorsClientApi.createDoctor(request);
-      } else if (doctor) {
+      } else {
+        if (!doctor) {
+          throw new Error("Не удалось определить врача для редактирования.");
+        }
+
         const request: UpdateDoctorRequest = {
-          ...common,
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
           middleName: values.middleName.trim() || null,
+          specialization: values.specialization.trim(),
+          experienceStartYear: Number(values.experienceStartYear),
           description: values.description.trim() || null,
-          photoUrl: values.photoUrl,
-          educations: educationPayload(
-            values.educations,
-          ) as UpdateDoctorEducationRequest[],
+          photoMediaId: image?.id ?? null,
+          educations,
+          directionIds: values.directionIds,
+          skillIds: values.skillIds,
         };
         await doctorsClientApi.updateDoctor(doctor.id, request);
       }
@@ -356,23 +364,6 @@ export function DoctorForm({
             Заполните основные сведения о специалисте
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            nativeButton={false}
-            render={<Link href="/admin/doctors" />}
-          >
-            Отмена
-          </Button>
-          <Button
-            type="submit"
-            form="doctor-form"
-            disabled={isSaving || isUploading || isChangingActivity}
-          >
-            {isSaving ? "Сохранение..." : "Сохранить"}
-          </Button>
-        </div>
       </header>
 
       {error && (
@@ -391,50 +382,16 @@ export function DoctorForm({
         <CardContent className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="space-y-3">
             <Label htmlFor="doctor-photo">Фото специалиста</Label>
-            <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
-              {imageUrl ? (
-                <Image
-                  src={imageUrl}
-                  alt="Фото врача"
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                  <UserRound className="size-10" />
-                  <span>Фото не загружено</span>
-                </div>
-              )}
-              {isUploading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/75 text-sm font-medium">
-                  Загрузка фото...
-                </div>
-              )}
-            </div>
-            <Input
-              id="doctor-photo"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handlePhotoChange}
-              disabled={isUploading || isSaving}
-              className="h-auto py-2 file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-2.5 file:py-1 file:text-xs"
+            <ImageUpload
+              image={image}
+              alt="Фото врача"
+              onUpload={upload}
+              onRemove={remove}
+              isUploading={isUploading}
+              isDeleting={isDeleting}
+              disabled={false}
+              error={imageError}
             />
-            {values.photoUrl && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full text-destructive"
-                onClick={() => updateValues("photoUrl", null)}
-              >
-                <Trash2 className="size-4" />
-                Удалить фото
-              </Button>
-            )}
-            <p className="text-xs text-muted-foreground">
-              JPG, PNG или WebP, до 5 МБ
-            </p>
           </div>
 
           <div className="grid content-start gap-4 sm:grid-cols-2">
@@ -704,30 +661,42 @@ export function DoctorForm({
             <Switch
               id="doctor-active"
               checked={values.isActive}
-              disabled={isChangingActivity || isSaving}
+              disabled={isSaving}
               onCheckedChange={(checked) => void handleActiveChange(checked)}
             />
           </div>
         </CardContent>
       </Card>
 
-      <footer className="flex justify-between gap-3 border-t py-4">
-        <Button
-          type="button"
-          variant="outline"
-          nativeButton={false}
-          render={<Link href="/admin/doctors" />}
-        >
-          Отмена
-        </Button>
-        <Button
-          type="submit"
-          form="doctor-form"
-          disabled={isSaving || isUploading || isChangingActivity}
-        >
-          {isSaving ? "Сохранение..." : "Сохранить"}
-        </Button>
-      </footer>
+      <Card className="sticky bottom-0">
+        <CardContent>
+          <footer className="flex justify-between">
+            <ConfirmDialog
+              title="Выйти без сохранения?"
+              onConfirm={() => void handleCancel()}
+              confirmText="Выйти"
+              confirmButtonVariant="default"
+              trigger={
+                <Button
+                  size="lg"
+                  type="button"
+                  variant="outline"
+                >
+                  Отмена
+                </Button>
+              }
+            />
+            <Button
+              size="lg"
+              type="submit"
+              form="doctor-form"
+              disabled={isSaving || isUploading}
+            >
+              {isSaving ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </footer>
+        </CardContent>
+      </Card>
     </form>
   );
 }

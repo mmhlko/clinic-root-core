@@ -9,6 +9,8 @@ import { DoctorDirectionModel } from './doctor-direction.model.js';
 import { ServiceDirectionModel } from '../services/directions/service-direction.model.js';
 import { SkillModel } from './skills/skill.model.js';
 import { DoctorSkillModel } from './skills/doctor-skill.model.js';
+import { MediaModel } from '../media/media.model.js';
+import { MediaModule } from '../media/media.module.js';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { DoctorSkillModel } from './skills/doctor-skill.model.js';
       ServiceDirectionModel,
       SkillModel,
       DoctorSkillModel,
+      MediaModel,
     ]),
+    MediaModule,
   ],
   providers: [DoctorsService],
   controllers: [DoctorsController],

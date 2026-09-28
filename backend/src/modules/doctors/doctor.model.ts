@@ -4,10 +4,13 @@ import {
   Model,
   DataType,
   HasMany,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
 import { DoctorEducationModel } from './doctor-education.model.js';
 import { DoctorDirectionModel } from './doctor-direction.model.js';
 import { DoctorSkillModel } from './skills/doctor-skill.model.js';
+import { MediaModel } from '../media/media.model.js';
 
 export interface DoctorCreationAttributes {
   id?: string;
@@ -17,7 +20,7 @@ export interface DoctorCreationAttributes {
   specialization: string;
   experienceStartYear: number;
   description?: string | null;
-  photoUrl?: string | null;
+  photoMediaId?: string | null;
   isActive?: boolean;
   sortOrder?: number;
 }
@@ -72,11 +75,21 @@ export class DoctorModel extends Model<
   })
   declare description: string | null;
 
+  @ForeignKey(() => MediaModel)
   @Column({
-    type: DataType.STRING,
+    type: DataType.UUID,
     allowNull: true,
+    references: {
+      model: 'media',
+      key: 'id',
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
   })
-  declare photoUrl: string | null;
+  declare photoMediaId: string | null;
+
+  @BelongsTo(() => MediaModel)
+  declare photoMedia: MediaModel | null;
 
   @Column({
     type: DataType.BOOLEAN,
