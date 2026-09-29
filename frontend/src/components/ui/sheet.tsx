@@ -43,7 +43,7 @@ function SheetContent({
   showCloseButton = true,
   ...props
 }: SheetPrimitive.Popup.Props & {
-  side?: "top" | "right" | "bottom" | "left"
+  side?: "top" | "right" | "bottom" | "left" | "responsive"
   showCloseButton?: boolean
 }) {
   return (
@@ -52,8 +52,70 @@ function SheetContent({
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         data-side={side}
-        className={cn(
-          "fixed z-50 flex flex-col gap-4 bg-popover bg-clip-padding text-sm text-popover-foreground shadow-lg transition duration-200 ease-in-out data-ending-style:opacity-0 data-starting-style:opacity-0 data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:translate-y-[2.5rem] data-[side=bottom]:data-starting-style:translate-y-[2.5rem] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=left]:data-ending-style:translate-x-[-2.5rem] data-[side=left]:data-starting-style:translate-x-[-2.5rem] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=right]:data-ending-style:translate-x-[2.5rem] data-[side=right]:data-starting-style:translate-x-[2.5rem] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=top]:data-ending-style:translate-y-[-2.5rem] data-[side=top]:data-starting-style:translate-y-[-2.5rem] data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm",
+                className={cn(
+          // Base
+          "fixed z-50 flex flex-col gap-4 bg-popover bg-clip-padding text-sm text-popover-foreground shadow-lg transition duration-200 ease-in-out",
+          "data-ending-style:opacity-0 data-starting-style:opacity-0",
+
+          // Bottom
+          "data-[side=bottom]:inset-x-0",
+          "data-[side=bottom]:bottom-0",
+          "data-[side=bottom]:h-auto",
+          "data-[side=bottom]:border-t",
+          "data-[side=bottom]:data-ending-style:translate-y-[2.5rem]",
+          "data-[side=bottom]:data-starting-style:translate-y-[2.5rem]",
+
+          // Left
+          "data-[side=left]:inset-y-0",
+          "data-[side=left]:left-0",
+          "data-[side=left]:h-full",
+          "data-[side=left]:w-3/4",
+          "data-[side=left]:border-r",
+          "data-[side=left]:data-ending-style:translate-x-[-2.5rem]",
+          "data-[side=left]:data-starting-style:translate-x-[-2.5rem]",
+
+          // Right
+          "data-[side=right]:inset-y-0",
+          "data-[side=right]:right-0",
+          "data-[side=right]:h-full",
+          "data-[side=right]:w-3/4",
+          "data-[side=right]:border-l",
+          "data-[side=right]:data-ending-style:translate-x-[2.5rem]",
+          "data-[side=right]:data-starting-style:translate-x-[2.5rem]",
+          "data-[side=right]:sm:max-w-sm",
+
+          // Top
+          "data-[side=top]:inset-x-0",
+          "data-[side=top]:top-0",
+          "data-[side=top]:h-auto",
+          "data-[side=top]:border-b",
+          "data-[side=top]:data-ending-style:translate-y-[-2.5rem]",
+          "data-[side=top]:data-starting-style:translate-y-[-2.5rem]",
+
+          // Responsive: mobile = bottom
+          "data-[side=responsive]:inset-x-0",
+          "data-[side=responsive]:bottom-0",
+          "data-[side=responsive]:h-auto",
+          "data-[side=responsive]:border-t",
+          "data-[side=responsive]:data-ending-style:translate-y-[2.5rem]",
+          "data-[side=responsive]:data-starting-style:translate-y-[2.5rem]",
+
+          // Responsive: desktop = right
+          "data-[side=responsive]:sm:inset-y-0",
+          "data-[side=responsive]:sm:inset-x-auto",
+          "data-[side=responsive]:sm:right-0",
+          "data-[side=responsive]:sm:bottom-auto",
+          "data-[side=responsive]:sm:h-full",
+          "data-[side=responsive]:sm:w-3/4",
+          "data-[side=responsive]:sm:max-w-sm",
+          "data-[side=responsive]:sm:border-t-0",
+          "data-[side=responsive]:sm:border-l",
+
+          "data-[side=responsive]:sm:data-ending-style:translate-y-0",
+          "data-[side=responsive]:sm:data-starting-style:translate-y-0",
+          "data-[side=responsive]:sm:data-ending-style:translate-x-[2.5rem]",
+          "data-[side=responsive]:sm:data-starting-style:translate-x-[2.5rem]",
+
           className
         )}
         {...props}
