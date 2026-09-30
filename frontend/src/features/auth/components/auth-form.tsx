@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useAuth } from "../providers/auth-provider";
-import { LoginForm } from "@/components/login-form";
+import { LoginForm } from "@/widgets/auth/login-form";
 
 export function AuthForm() {
   const { login } = useAuth();

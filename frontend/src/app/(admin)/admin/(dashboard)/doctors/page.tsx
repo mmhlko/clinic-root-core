@@ -1,5 +1,5 @@
 import { requireUserSession } from "@/features/auth/api/require-admin-session";
-import { PageHeader } from "@/components/admin/page-header";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PlusIcon } from "lucide-react";

@@ -12,6 +12,7 @@ import { DoctorModel } from '../doctors/doctor.model.js';
 
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { UpdateReviewDto } from './dto/update-review.dto.js';
+import { MediaModel } from '../media/media.model.js';
 
 @Injectable()
 export class ReviewsService {
@@ -77,8 +78,14 @@ export class ReviewsService {
             'lastName',
             'middleName',
             'specialization',
-            'photoUrl',
             'isActive',
+          ],
+          include: [
+            {
+              model: MediaModel,
+              as: 'photoMedia',
+              attributes: ['id', 'url']
+            },
           ],
           required: false,
         },
@@ -107,8 +114,14 @@ export class ReviewsService {
             'lastName',
             'middleName',
             'specialization',
-            'photoUrl',
             'isActive',
+          ],
+          include: [
+            {
+              model: MediaModel,
+              as: 'photoMedia',
+              attributes: ['id', 'url']
+            },
           ],
           required: false,
         },
@@ -151,8 +164,14 @@ export class ReviewsService {
               'lastName',
               'middleName',
               'specialization',
-              'photoUrl',
               'isActive',
+            ],
+            include: [
+              {
+                model: MediaModel,
+                as: 'photoMedia',
+                attributes: ['id', 'url']
+              },
             ],
             required: false,
           },

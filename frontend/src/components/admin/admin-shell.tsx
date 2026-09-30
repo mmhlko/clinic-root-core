@@ -41,16 +41,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { label: "Дашборд", href: "/admin", icon: LayoutGrid },
-  { label: "Заявки", href: "/admin/requests", icon: FileText },
-  { label: "Врачи", href: "/admin/doctors", icon: Stethoscope },
-  { label: "Услуги", href: "/admin/services", icon: BriefcaseMedical },
-  { label: "Направления", href: "/admin/directions", icon: Sparkles },
-  { label: "Акции", href: "/admin/promotions", icon: MessageSquareText },
-  { label: "Отзывы", href: "/admin/reviews", icon: MessageSquareText },
-  { label: "Документы", href: "/admin/documents", icon: FileText },
-  { label: "FAQ", href: "/admin/faq", icon: HelpCircle },
-  { label: "Пользователи", href: "/admin/users", icon: Users },
+  { label: "Дашборд", href: "/admin", icon: LayoutGrid, roles: ["root", "admin", "manager"] as const },
+  { label: "Заявки", href: "/admin/requests", icon: FileText , roles: ["root", "admin", "manager"] as const },
+  { label: "Врачи", href: "/admin/doctors", icon: Stethoscope , roles: ["root", "admin", "manager"] as const },
+  { label: "Услуги", href: "/admin/services", icon: BriefcaseMedical , roles: ["root", "admin", "manager"] as const },
+  { label: "Направления", href: "/admin/directions", icon: Sparkles , roles: ["root", "admin", "manager"] as const },
+  { label: "Акции", href: "/admin/promotions", icon: MessageSquareText , roles: ["root", "admin", "manager"] as const },
+  { label: "Отзывы", href: "/admin/reviews", icon: MessageSquareText , roles: ["root", "admin", "manager"] as const },
+  { label: "Документы", href: "/admin/documents", icon: FileText , roles: ["root", "admin", "manager"] as const },
+  { label: "FAQ", href: "/admin/faq", icon: HelpCircle , roles: ["root", "admin", "manager"] as const },
+  { label: "Пользователи", href: "/admin/users", icon: Users, roles: ["root", "admin"] as const },
+  { label: "Настройки", href: "/admin/settings", icon: Settings, roles: ["root", "admin"] as const },
 ];
 
 type AdminShellProps = {
@@ -110,14 +111,18 @@ function SidebarUserMenu({ user, onLogout }: SidebarUserMenuProps) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          render={<Link href="/admin/settings" />}
-          className="cursor-pointer"
-        >
-          <Settings className="h-4 w-4" />
-          Настройки
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        {(user.role === "root" || user.role === "admin") && (
+          <>
+            <DropdownMenuItem
+              render={<Link href="/admin/settings" />}
+              className="cursor-pointer"
+            >
+              <Settings className="h-4 w-4" />
+              Настройки
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
           <LogOut className="h-4 w-4" />
           Выйти
@@ -133,14 +138,16 @@ export function AdminShell({ user, children }: AdminShellProps) {
   const { logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const visibleNavItems = useMemo(() => navItems.filter((item) => !item.roles || item.roles.includes(user.role)), [user.role]);
+
   const currentSection = useMemo(() => {
     if (pathname === "/admin") {
       return "Дашборд";
     }
 
-    const match = navItems.find((item) => item.href === pathname);
+    const match = visibleNavItems.find((item) => item.href !== "/admin" && pathname.startsWith(`${item.href}/`)) ?? visibleNavItems.find((item) => item.href === pathname);
     return match?.label ?? "Дашборд";
-  }, [pathname]);
+  }, [pathname, visibleNavItems]);
 
   const handleLogout = async () => {
     await logout().catch(() => undefined);
@@ -161,7 +168,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
             </div>
           </div>
           <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-4">
-            {navItems.map(({ href, label, icon: Icon }) => {
+            {visibleNavItems.map(({ href, label, icon: Icon }) => {
               const isActive =
                 pathname === href;
 
@@ -234,7 +241,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
             <SheetTitle>УльтраДент · Администрация</SheetTitle>
           </SheetHeader>
           <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-4">
-            {navItems.map(({ href, label, icon: Icon }) => (
+            {visibleNavItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
