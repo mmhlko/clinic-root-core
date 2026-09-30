@@ -2,12 +2,13 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Put,
   UseGuards,
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 import { FaqService } from './faq.service.js';
 
@@ -17,13 +18,14 @@ import { SaveFaqDto } from './dto/save-faq.dto.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 @ApiBearerAuth('access-token')
 @Controller('faq')
 export class FaqController {
   constructor(
     private readonly faqService: FaqService,
-  ) {}
+  ) { }
 
   @Get()
   async findAll() {
@@ -50,5 +52,19 @@ export class FaqController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async saveAll(@Body() dto: SaveFaqDto) {
     return this.faqService.saveAll(dto);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Изменить порядок отображения' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async reorder(
+    @Body() dto: ReorderDto
+  ) {
+    return this.faqService.reorderFaqs(dto.ids)
   }
 }

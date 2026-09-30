@@ -11,6 +11,7 @@ import { ServiceModel } from './service.model.js';
 import { CreateServiceDto } from './dto/create-service.dto.js';
 import { ServiceDirectionModel } from './directions/service-direction.model.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
+import { Sequelize } from 'sequelize-typescript';
 
 @Injectable()
 export class ServicesService {
@@ -20,6 +21,8 @@ export class ServicesService {
 
     @InjectModel(ServiceDirectionModel)
     private readonly serviceDirectionModel: typeof ServiceDirectionModel,
+
+    private readonly sequelize: Sequelize,
   ) { }
 
   async create(dto: CreateServiceDto) {
@@ -196,5 +199,41 @@ export class ServicesService {
     }
 
     return service;
+  }
+
+  async reorderServices(serviceIds: string[]) {
+    return this.sequelize.transaction(async (transaction) => {
+      const services = await this.serviceModel.findAll({
+        where: {
+          id: serviceIds,
+        },
+
+        transaction,
+      });
+
+      if (services.length !== serviceIds.length) {
+        throw new NotFoundException('One or more services not found');
+      }
+
+      const servicesById = new Map(services.map((service) => [service.id, service]));
+
+      for (const [index, serviceId] of serviceIds.entries()) {
+        const service = servicesById.get(serviceId);
+
+        if (!service) {
+          throw new NotFoundException(`Service ${serviceId} not found`);
+        }
+
+        service.sortOrder = index;
+
+        await service.save({
+          transaction,
+        });
+      }
+
+      return {
+        success: true,
+      };
+    });
   }
 }

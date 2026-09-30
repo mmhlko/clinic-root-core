@@ -6,3 +6,8 @@ export enum EStatusVariant {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
+
+export enum EActivityVariant {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive'
+}

@@ -23,6 +23,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { ReorderDoctorsDto } from './dto/reorder-doctors.dto.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 @ApiTags('Doctors')
 @ApiBearerAuth('access-token')
@@ -100,9 +101,9 @@ export class DoctorsController {
   )
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async reorder(
-    @Body() dto: ReorderDoctorsDto
+    @Body() dto: ReorderDto
   ) {
-    return this.doctorsService.reorderDoctors(dto.doctorIds)
+    return this.doctorsService.reorderDoctors(dto.ids)
   }
 
   @Patch(':id')

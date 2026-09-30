@@ -21,6 +21,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 @ApiTags('Services')
 @ApiBearerAuth('access-token')
@@ -56,6 +57,20 @@ export class ServicesController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async findAllAdmin() {
     return this.servicesService.findAll(false);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Изменить порядок отображения' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async reorder(
+    @Body() dto: ReorderDto
+  ) {
+    return this.servicesService.reorderServices(dto.ids)
   }
 
   @Patch(':id')

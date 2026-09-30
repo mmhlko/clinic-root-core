@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 
 import { PromotionsService } from './promotions.service.js';
 
@@ -22,6 +22,7 @@ import { UpdatePromotionDto } from './dto/update-promotion.dto.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 @ApiBearerAuth('access-token')
 @Controller('promotions')
@@ -46,6 +47,20 @@ export class PromotionsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async findAllAdmin() {
     return this.promotionsService.findAll(false);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Изменить порядок отображения' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async reorder(
+    @Body() dto: ReorderDto
+  ) {
+    return this.promotionsService.reorderPromotions(dto.ids)
   }
 
   // Получить одну акцию

@@ -1,26 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { MoreHorizontalIcon, GripVerticalIcon } from "lucide-react";
+import { ReactNode, useState } from "react";
+
+import { MoreHorizontalIcon } from "lucide-react";
 
 import type { DoctorListItem } from "@/features/doctors/types/doctors.types";
 import { doctorsClientApi } from "@/features/doctors/api/doctors-client-api";
@@ -32,21 +15,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { getDoctorFullName } from "@/shared/helpers/getDoctorFullName";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListStats } from "@/components/shared/list-stats";
 import { ActiveSwitch } from "@/components/shared/active-switch";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { Badge } from "@/components/ui/badge";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
+import { useReorder } from "@/shared/hooks/use-reorder";
+import { SortableTableList } from "@/components/shared/sortable-list/sortable-table-list";
+import { SortableCardList } from "@/components/shared/sortable-list/sortable-card-list";
+import { MobileDoctorCard } from "./mobile-doctor-card";
 
 interface DoctorsListProps {
   doctors: DoctorListItem[];
@@ -57,24 +36,7 @@ interface SortableDoctorRowProps {
   onSwitch: (id: string, isActive: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   deleting: boolean;
-}
-
-function DragHandle({ id }: { id: string }) {
-  const { attributes, listeners } = useSortable({ id });
-
-  return (
-    <Button
-      {...attributes}
-      {...listeners}
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="size-8 cursor-grab text-muted-foreground hover:bg-transparent active:cursor-grabbing"
-    >
-      <GripVerticalIcon className="size-4" />
-      <span className="sr-only">Переместить врача</span>
-    </Button>
-  );
+  dragHandle: ReactNode;
 }
 
 function DoctorMenu({
@@ -103,6 +65,7 @@ function DoctorMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
+          nativeButton={false}
           render={<Link href={`/admin/doctors/${doctor.id}/edit`} />}
         >
           Редактировать
@@ -145,69 +108,6 @@ function DoctorIdentity({ doctor }: { doctor: DoctorListItem }) {
   );
 }
 
-function SortableDoctorRow({
-  doctor,
-  onSwitch,
-  onDelete,
-  deleting,
-}: SortableDoctorRowProps) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: doctor.id,
-  });
-
-  return (
-    <TableRow
-      ref={setNodeRef}
-      data-dragging={isDragging}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-    >
-      <TableCell className="w-10 px-2">
-        <DragHandle id={doctor.id} />
-      </TableCell>
-      <TableCell>
-        <DoctorIdentity doctor={doctor} />
-      </TableCell>
-      <TableCell>
-        <ActiveSwitch
-          checked={doctor.isActive}
-          onChange={(checked) => onSwitch(doctor.id, checked)}
-          label={doctor.isActive ? "Активен" : "Скрыт"}
-        />
-      </TableCell>
-      <TableCell className="w-10 text-right">
-        <DoctorMenu doctor={doctor} onDelete={onDelete} deleting={deleting} />
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function MobileDoctorCard({
-  doctor,
-  onSwitch,
-  onDelete,
-  deleting,
-}: SortableDoctorRowProps) {
-  return (
-    <article className="rounded-lg border bg-card p-4 shadow-xs">
-      <div className="flex items-start justify-between gap-3">
-        <DoctorIdentity doctor={doctor} />
-        <DoctorMenu doctor={doctor} onDelete={onDelete} deleting={deleting} />
-      </div>
-      <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3">
-        <Badge variant={doctor.isActive ? "default" : "outline"}>
-          {doctor.isActive ? "Активен" : "Скрыт"}
-        </Badge>
-        <ActiveSwitch
-          checked={doctor.isActive}
-          onChange={(checked) => onSwitch(doctor.id, checked)}
-          label=""
-        />
-      </div>
-    </article>
-  );
-}
-
 export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   const [doctors, setDoctors] = useState(initialDoctors);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -215,11 +115,16 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   const total = doctors.length;
   const active = doctors.filter((doctor) => doctor.isActive).length;
   const inactive = total - active;
-  const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
-    useSensor(KeyboardSensor),
-  );
+
+  const { sensors, handleDragEnd } = useReorder({
+    items: doctors,
+    getId: (doctor) => doctor.id,
+    setItems: setDoctors,
+    onReorder: (ids) => doctorsClientApi.reorderDoctors(ids),
+    onError: () => {
+      setError("Не удалось сохранить порядок врачей.");
+    },
+  });
 
   const handleSwitch = async (id: string, isActive: boolean) => {
     const previous = doctors.find((doctor) => doctor.id === id)?.isActive;
@@ -264,24 +169,6 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = doctors.findIndex((doctor) => doctor.id === active.id);
-    const newIndex = doctors.findIndex((doctor) => doctor.id === over.id);
-    const previous = doctors;
-    const next = arrayMove(doctors, oldIndex, newIndex);
-    setDoctors(next);
-    try {
-      await doctorsClientApi.reorderDoctors(next.map((doctor) => doctor.id));
-    } catch {
-      setDoctors(previous);
-      setError("Не удалось сохранить порядок врачей.");
-    }
-  };
-
-  const doctorIds = doctors.map((doctor) => doctor.id);
-
   return (
     <div className="space-y-3">
       <ListStats total={total} active={active} inactive={inactive} />
@@ -300,66 +187,82 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
             Врачей пока нет.
           </div>
         ) : (
-          doctors.map((doctor) => (
-            <MobileDoctorCard
-              key={doctor.id}
-              doctor={doctor}
-              onSwitch={handleSwitch}
-              onDelete={handleDelete}
-              deleting={busyId === doctor.id}
-            />
-          ))
+          <SortableCardList
+            items={doctors}
+            getId={(doctor) => doctor.id}
+            sensors={sensors}
+            onDragEnd={handleDragEnd}
+            dndId="doctors-mobile-dnd"
+            emptyMessage="Врачей пока нет."
+            renderCard={(doctor, dragHandle) => (
+              <MobileDoctorCard
+                key={doctor.id}
+                doctor={doctor}
+                onSwitch={handleSwitch}
+                onDelete={handleDelete}
+                deleting={busyId === doctor.id}
+                dragHandle={dragHandle}
+                menu={
+                  <DoctorMenu
+                    doctor={doctor}
+                    onDelete={handleDelete}
+                    deleting={busyId === doctor.id}
+                  />
+                }
+              />
+            )}
+          />
         )}
       </div>
 
       <div className="hidden md:block overflow-hidden rounded-lg border bg-card">
-        <DndContext
-          id="doctors-dnd"
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
+        <SortableTableList
+          items={doctors}
+          getId={(doctor) => doctor.id}
           sensors={sensors}
           onDragEnd={handleDragEnd}
-        >
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-10 px-2">
-                  <span className="sr-only">Перемещение</span>
-                </TableHead>
-                <TableHead>Врач</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead className="w-10 text-right" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <SortableContext
-                items={doctorIds}
-                strategy={verticalListSortingStrategy}
-              >
-                {doctors.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      Врачей пока нет.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  doctors.map((doctor) => (
-                    <SortableDoctorRow
-                      key={doctor.id}
-                      doctor={doctor}
-                      onSwitch={handleSwitch}
-                      onDelete={handleDelete}
-                      deleting={busyId === doctor.id}
-                    />
-                  ))
-                )}
-              </SortableContext>
-            </TableBody>
-          </Table>
-        </DndContext>
+          dndId="doctors-dnd"
+          columnCount={4}
+          emptyMessage="Врачей пока нет."
+          renderHeader={() => (
+            <TableRow>
+              <TableHead className="w-10 px-2">
+                <span className="sr-only">Перемещение</span>
+              </TableHead>
+
+              <TableHead>Врач</TableHead>
+
+              <TableHead>Статус</TableHead>
+
+              <TableHead className="w-10 text-right" />
+            </TableRow>
+          )}
+          renderCells={(doctor, dragHandle) => (
+            <>
+              <TableCell className="w-10 px-2">{dragHandle}</TableCell>
+
+              <TableCell>
+                <DoctorIdentity doctor={doctor} />
+              </TableCell>
+
+              <TableCell>
+                <ActiveSwitch
+                  checked={doctor.isActive}
+                  onChange={(checked) => handleSwitch(doctor.id, checked)}
+                  label={doctor.isActive ? "Активен" : "Скрыт"}
+                />
+              </TableCell>
+
+              <TableCell className="w-10 text-right">
+                <DoctorMenu
+                  doctor={doctor}
+                  onDelete={handleDelete}
+                  deleting={busyId === doctor.id}
+                />
+              </TableCell>
+            </>
+          )}
+        />
       </div>
     </div>
   );
