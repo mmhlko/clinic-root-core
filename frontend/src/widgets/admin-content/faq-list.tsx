@@ -47,7 +47,7 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
       id: selected?.id ?? `new-${Date.now()}`,
       question: String(form.get("question")),
       answer: String(form.get("answer")),
-      sortOrder: Number(form.get("sortOrder") || 0),
+      sortOrder: selected?.sortOrder ?? items.length,
       isActive: draftActive,
     };
     const nextItems = selected
@@ -148,7 +148,6 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
           <form onSubmit={(event) => void save(event)} className="space-y-4">
             <ContentField label="Вопрос" name="question" required defaultValue={selected?.question} />
             <ContentField label="Ответ" name="answer" textarea required defaultValue={selected?.answer} />
-            <ContentField label="Сортировка" name="sortOrder" type="number" min={0} defaultValue={selected?.sortOrder ?? items.length} />
             <div className="flex items-center justify-between rounded-md border p-3"><span className="text-sm font-medium">Показывать на сайте</span><Switch checked={draftActive} onCheckedChange={setDraftActive} aria-label="Активность вопроса" /></div>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>

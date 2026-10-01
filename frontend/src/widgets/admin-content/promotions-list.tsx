@@ -59,7 +59,7 @@ export function PromotionsList({
       validFrom: String(form.get("validFrom") || "") || null,
       validTo: String(form.get("validTo") || "") || null,
       serviceId: String(form.get("serviceId") || "") || null,
-      sortOrder: Number(form.get("sortOrder") || 0),
+      sortOrder: selected?.sortOrder ?? items.length,
     };
 
     setSaving(true);
@@ -164,7 +164,6 @@ export function PromotionsList({
             <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Старая цена" name="oldPrice" type="number" min={0} defaultValue={selected?.oldPrice} /><ContentField label="Новая цена" name="newPrice" type="number" min={0} defaultValue={selected?.newPrice} /></div>
             <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Начало" name="validFrom" type="datetime-local" defaultValue={toLocalDateTime(selected?.validFrom)} /><ContentField label="Окончание" name="validTo" type="datetime-local" defaultValue={toLocalDateTime(selected?.validTo)} /></div>
             <div className="space-y-2"><Label htmlFor="serviceId">Услуга</Label><select id="serviceId" name="serviceId" defaultValue={selected?.serviceId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="">Без услуги</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></div>
-            <ContentField label="Сортировка" name="sortOrder" type="number" min={0} defaultValue={selected?.sortOrder ?? items.length} />
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>

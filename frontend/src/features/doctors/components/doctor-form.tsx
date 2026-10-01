@@ -676,6 +676,7 @@ export function DoctorForm({
               onConfirm={() => void handleCancel()}
               confirmText="Выйти"
               confirmButtonVariant="default"
+              nativeButton
               trigger={
                 <Button
                   size="lg"

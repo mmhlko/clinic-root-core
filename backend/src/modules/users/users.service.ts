@@ -190,6 +190,45 @@ export class UsersService {
 		};
 	}
 
+	async updateProfile(id: string, dto: UpdateUserDto) {
+		const user = await this.findById(id);
+
+		if (dto.email && dto.email !== user.email) {
+			const existingUser = await this.userModel.findOne({
+				where: { email: dto.email },
+			});
+
+			if (existingUser) {
+				throw new ConflictException(
+					'User with this email already exists',
+				);
+			}
+		}
+
+		if (dto.firstName !== undefined) user.firstName = dto.firstName;
+		if (dto.lastName !== undefined) user.lastName = dto.lastName;
+		if (dto.email !== undefined) user.email = dto.email;
+		if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
+		if (dto.password !== undefined) {
+			user.password = await bcrypt.hash(dto.password, 12);
+		}
+
+		await user.save();
+
+		return {
+			id: user.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			role: user.role,
+			avatarUrl: user.avatarUrl,
+			isActive: user.isActive,
+			createdAt: user.createdAt,
+			updatedAt: user.updatedAt,
+			locationId: user.locationId,
+		};
+	}
+
 	async setActive(id: string, isActive: boolean) {
 		const user = await this.findById(id);
 

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import {
   Bell,
   BriefcaseMedical,
+  CircleUserRound as ProfileIcon,
   FileText,
   HelpCircle,
   LayoutGrid,
@@ -111,18 +112,14 @@ function SidebarUserMenu({ user, onLogout }: SidebarUserMenuProps) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        {(user.role === "root" || user.role === "admin") && (
-          <>
-            <DropdownMenuItem
-              render={<Link href="/admin/settings" />}
-              className="cursor-pointer"
-            >
-              <Settings className="h-4 w-4" />
-              Настройки
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
+        <DropdownMenuItem
+          render={<Link href="/admin/profile" />}
+          className="cursor-pointer"
+        >
+          <ProfileIcon className="h-4 w-4" />
+          Профиль
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
           <LogOut className="h-4 w-4" />
           Выйти
@@ -143,6 +140,9 @@ export function AdminShell({ user, children }: AdminShellProps) {
   const currentSection = useMemo(() => {
     if (pathname === "/admin") {
       return "Дашборд";
+    }
+    if (pathname === "/admin/profile") {
+      return "Профиль";
     }
 
     const match = visibleNavItems.find((item) => item.href !== "/admin" && pathname.startsWith(`${item.href}/`)) ?? visibleNavItems.find((item) => item.href === pathname);

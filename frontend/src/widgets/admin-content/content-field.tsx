@@ -14,6 +14,7 @@ interface ContentFieldProps {
   disabled?: boolean;
   min?: number;
   max?: number;
+  minLength?: number;
 }
 
 export function ContentField({
@@ -26,6 +27,7 @@ export function ContentField({
   disabled = false,
   min,
   max,
+  minLength,
 }: ContentFieldProps) {
   return (
     <div className="space-y-2">
@@ -48,6 +50,7 @@ export function ContentField({
           disabled={disabled}
           min={min}
           max={max}
+          minLength={minLength}
         />
       )}
     </div>

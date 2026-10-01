@@ -151,6 +151,7 @@ export function ImageUpload({
             </Button>
           }
           title="Удалить фото?"
+          nativeButton
           confirmText="Удалить"
           confirmButtonVariant="destructive"
           onConfirm={onRemove}

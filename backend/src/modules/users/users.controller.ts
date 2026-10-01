@@ -81,6 +81,22 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Patch('me')
+  @ApiOperation({ summary: 'Обновить профиль текущего пользователя' })
+  @UseGuards(AuthGuard('jwt'))
+  async updateMe(
+    @Req() req: AuthRequest,
+    @Body() dto: UpdateUserDto,
+  ) {
+    if (dto.role !== undefined || dto.locationId !== undefined) {
+      throw new ForbiddenException(
+        'Profile updates cannot change role or clinic location',
+      );
+    }
+
+    return this.usersService.updateProfile(req.user.sub, dto);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Обновить пользователя' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)

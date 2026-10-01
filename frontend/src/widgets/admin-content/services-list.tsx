@@ -49,7 +49,7 @@ export function ServicesList({
       description: String(form.get("description") || ""),
       price: form.get("price") ? Number(form.get("price")) : null,
       isPriceFrom: form.get("isPriceFrom") === "true",
-      sortOrder: Number(form.get("sortOrder") || 0),
+      sortOrder: selected?.sortOrder ?? items.length,
     };
 
     setSaving(true);
@@ -204,7 +204,6 @@ export function ServicesList({
                 <select id="isPriceFrom" name="isPriceFrom" defaultValue={String(selected?.isPriceFrom ?? false)} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="false">Нет</option><option value="true">Да</option></select>
               </div>
             </div>
-            <ContentField label="Сортировка" name="sortOrder" type="number" min={0} defaultValue={selected?.sortOrder ?? items.length} />
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>

@@ -22,6 +22,7 @@ interface ConfirmDialogProps {
   cancelText?: string;
   media?: ReactNode;
   disabled?: boolean;
+  nativeButton?: boolean;
 }
 
 export function ConfirmDialog({
@@ -33,6 +34,7 @@ export function ConfirmDialog({
   cancelText = "Отмена",
   media,
   disabled = false,
+  nativeButton = false,
   confirmButtonVariant = "default"
 }: ConfirmDialogProps) {
 
@@ -41,7 +43,7 @@ export function ConfirmDialog({
       <AlertDialogTrigger
         render={trigger}
         disabled={disabled}
-        nativeButton={false}
+        nativeButton={nativeButton}
       />
 
       <AlertDialogContent size="sm">

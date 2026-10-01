@@ -116,6 +116,15 @@ class ContentClientApi extends RootApi {
   updateUser(id: string, body: Record<string, unknown>) {
     return this.requestPatch<AdminUser>(`/users/${id}`, body);
   }
+  updateMyProfile(body: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatarUrl: string | null;
+    password?: string;
+  }) {
+    return this.requestPatch<AdminUser>("/users/me", body);
+  }
   setUserActive(id: string, isActive: boolean) {
     return this.requestPut<AdminUser>(`/users/${id}/active`, { isActive });
   }

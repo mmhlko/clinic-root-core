@@ -79,6 +79,7 @@ function DoctorMenu({
           description="Врач будет удалён из административной панели. Это действие нельзя отменить."
           confirmText="Удалить"
           confirmButtonVariant="destructive"
+          nativeButton={false}
           disabled={deleting}
           onConfirm={() => onDelete(doctor.id)}
         />

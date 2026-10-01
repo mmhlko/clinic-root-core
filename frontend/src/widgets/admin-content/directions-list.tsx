@@ -37,7 +37,7 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
     const body = {
       name: String(form.get("name")),
       description: String(form.get("description") || ""),
-      sortOrder: Number(form.get("sortOrder") || 0),
+      sortOrder: selected?.sortOrder ?? items.length,
     };
 
     setSaving(true);
@@ -158,7 +158,6 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
           <form onSubmit={(event) => void save(event)} className="space-y-4">
             <ContentField label="Название" name="name" required defaultValue={selected?.name} />
             <ContentField label="Описание" name="description" textarea defaultValue={selected?.description} />
-            <ContentField label="Сортировка" name="sortOrder" type="number" min={0} defaultValue={selected?.sortOrder ?? items.length} />
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={saving}>

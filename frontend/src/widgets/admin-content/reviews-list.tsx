@@ -50,7 +50,7 @@ export function ReviewsList({
       rating: Number(form.get("rating")),
       reviewDate: String(form.get("reviewDate") || "") || null,
       doctorId: String(form.get("doctorId") || "") || null,
-      sortOrder: Number(form.get("sortOrder") || 0),
+      sortOrder: selected?.sortOrder ?? items.length,
     };
 
     setSaving(true);
@@ -173,7 +173,6 @@ export function ReviewsList({
             <ContentField label="Текст" name="text" textarea required defaultValue={selected?.text} />
             <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Оценка 1–5" name="rating" type="number" min={1} max={5} required defaultValue={selected?.rating ?? 5} /><ContentField label="Дата" name="reviewDate" type="date" defaultValue={selected?.reviewDate ? new Date(selected.reviewDate).toISOString().slice(0, 10) : ""} /></div>
             <div className="space-y-2"><Label htmlFor="doctorId">Врач</Label><select id="doctorId" name="doctorId" defaultValue={selected?.doctorId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="">Без врача</option>{doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.lastName} {doctor.firstName}</option>)}</select></div>
-            <ContentField label="Сортировка" name="sortOrder" type="number" min={0} defaultValue={selected?.sortOrder ?? items.length} />
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>

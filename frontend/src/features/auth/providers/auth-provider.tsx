@@ -16,6 +16,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  updateUser: (user: AuthUser) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -81,12 +82,17 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     }
   };
 
+  const updateUser = (updatedUser: AuthUser) => {
+    setUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading,
         isAuthenticated: user !== null,
+        updateUser,
         login,
         logout,
       }}

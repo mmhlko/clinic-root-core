@@ -41,7 +41,7 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
     const payload = new FormData();
     payload.append("title", String(form.get("title")));
     payload.append("description", String(form.get("description") || ""));
-    payload.append("sortOrder", String(form.get("sortOrder") || 0));
+    payload.append("sortOrder", String(selected?.sortOrder ?? items.length));
     const file = form.get("file");
     if (file instanceof File && file.size > 0) payload.append("file", file);
 
@@ -144,7 +144,6 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
           <form onSubmit={(event) => void save(event)} className="space-y-4">
             <ContentField label="Название" name="title" required defaultValue={selected?.title} />
             <ContentField label="Описание" name="description" textarea defaultValue={selected?.description} />
-            <ContentField label="Сортировка" name="sortOrder" type="number" min={0} defaultValue={selected?.sortOrder ?? items.length} />
             <div className="space-y-2"><Label htmlFor="file">Файл {selected ? "(необязательно при редактировании)" : ""}</Label><Input id="file" name="file" type="file" accept=".pdf,.doc,.docx" required={!selected} /></div>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>

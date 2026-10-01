@@ -18,6 +18,7 @@ interface UseImageUploadReturn {
   upload: (file: File) => Promise<void>;
   remove: () => Promise<void>;
   cleanup: () => Promise<void>;
+  commit: () => void;
 }
 
 const DEFAULT_ALLOWED_TYPES = [
@@ -166,6 +167,11 @@ export function useImageUpload({
     }
   }, []);
 
+  const commit = useCallback(() => {
+    originalImageIdRef.current = image?.id ?? null;
+    temporaryImageIdRef.current = null;
+  }, [image]);
+
   return {
     image,
     isUploading,
@@ -174,5 +180,6 @@ export function useImageUpload({
     upload,
     remove,
     cleanup,
+    commit,
   };
 }

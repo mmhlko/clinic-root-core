@@ -71,6 +71,7 @@ export function ContentActionsMenu<T>({
                   description={action.confirm.description}
                   confirmText={action.label}
                   confirmButtonVariant={isDestructive ? "destructive" : "default"}
+                  nativeButton={false}
                   disabled={action.disabled}
                   onConfirm={() => action.onSelect(item)}
                 />
