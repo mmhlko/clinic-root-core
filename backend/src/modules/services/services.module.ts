@@ -5,12 +5,14 @@ import { ServiceModel } from './service.model.js';
 import { ServicesService } from './services.service.js';
 import { ServiceDirectionModel } from './directions/service-direction.model.js';
 import { ServicesController } from './services.controller.js';
+import { AppointmentRequestModel } from '../appointment-requests/appointment-request.model.js';
 
 @Module({
   imports: [
     SequelizeModule.forFeature([
       ServiceModel,
       ServiceDirectionModel,
+      AppointmentRequestModel,
     ]),
   ],
   providers: [ServicesService],

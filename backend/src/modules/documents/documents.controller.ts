@@ -24,6 +24,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CreateDocumentDto } from './dto/create-document.dto.js';
 import { UploadMedia } from '../media/decorators/upload-media.decorator.js';
 import { UpdateDocumentDto } from './dto/update-document.dto.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 
 @ApiBearerAuth('access-token')
@@ -56,6 +57,13 @@ export class DocumentsController {
   )
   async findAllAdmin() {
     return this.documentsService.findAllAdmin();
+  }
+
+  @Patch('reorder')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  async reorder(@Body() dto: ReorderDto) {
+    return this.documentsService.reorderDocuments(dto.ids);
   }
 
   /**

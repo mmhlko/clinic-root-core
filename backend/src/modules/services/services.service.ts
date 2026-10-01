@@ -12,6 +12,7 @@ import { CreateServiceDto } from './dto/create-service.dto.js';
 import { ServiceDirectionModel } from './directions/service-direction.model.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
 import { Sequelize } from 'sequelize-typescript';
+import { AppointmentRequestModel } from '../appointment-requests/appointment-request.model.js';
 
 @Injectable()
 export class ServicesService {
@@ -21,6 +22,9 @@ export class ServicesService {
 
     @InjectModel(ServiceDirectionModel)
     private readonly serviceDirectionModel: typeof ServiceDirectionModel,
+
+    @InjectModel(AppointmentRequestModel)
+    private readonly appointmentRequestModel: typeof AppointmentRequestModel,
 
     private readonly sequelize: Sequelize,
   ) { }
@@ -162,6 +166,27 @@ export class ServicesService {
     await service.save();
 
     return service;
+  }
+
+  async remove(id: string) {
+    const service = await this.serviceModel.findByPk(id);
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const requestsCount = await this.appointmentRequestModel.count({
+      where: { serviceId: id },
+    });
+
+    if (requestsCount) {
+      throw new ConflictException(
+        'Cannot delete a service referenced by appointment requests',
+      );
+    }
+
+    await service.destroy();
+    return { success: true };
   }
 
   async findById({

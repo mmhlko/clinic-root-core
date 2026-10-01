@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseBoolPipe,
@@ -86,6 +87,13 @@ export class ServicesController {
     @Body() dto: UpdateServiceDto,
   ) {
     return this.servicesService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async remove(@Param('id') id: string) {
+    return this.servicesService.remove(id);
   }
 
   @Put(':id/active')
