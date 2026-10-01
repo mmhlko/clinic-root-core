@@ -2,7 +2,7 @@ import { requireUserSession } from "@/features/auth/api/require-admin-session";
 import { PageHeader } from "@/components/shared/page-header";
 import { contentServerApi } from "@/features/content/api/content-server-api";
 import { doctorsServerApi } from "@/features/doctors/api/doctors-server-api";
-import { ContentManager } from "@/widgets/admin-content/content-manager";
+import { ReviewsList } from "@/widgets/admin-content/reviews-list";
 
 export default async function ReviewsPage() {
   const session = await requireUserSession();
@@ -16,11 +16,7 @@ export default async function ReviewsPage() {
         title="Отзывы"
         description="Модерация и управление отзывами"
       />
-      <ContentManager
-        kind="reviews"
-        initialData={reviews}
-        references={{ doctors }}
-      />
+      <ReviewsList initialItems={reviews} doctors={doctors} />
     </div>
   );
 }

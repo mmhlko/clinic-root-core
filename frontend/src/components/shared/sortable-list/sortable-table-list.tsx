@@ -21,11 +21,9 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "cn";
 import { ReactNode } from "react";
 
 interface SortableTableListProps<T> {
@@ -38,12 +36,14 @@ interface SortableTableListProps<T> {
   emptyMessage?: string;
   columnCount: number;
   dndId: string;
+  dragLabel?: string;
 }
 
 interface SortableTableRowProps<T> {
   item: T;
   getId: (item: T) => string;
   renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
+  dragLabel: string;
 }
 
 interface DragHandleProps {
@@ -51,7 +51,11 @@ interface DragHandleProps {
   listeners: ReturnType<typeof useSortable>["listeners"];
 }
 
-function DragHandle({ attributes, listeners }: DragHandleProps) {
+function DragHandle({
+  attributes,
+  listeners,
+  label,
+}: DragHandleProps & { label: string }) {
 
   return (
     <Button
@@ -63,7 +67,7 @@ function DragHandle({ attributes, listeners }: DragHandleProps) {
       className="size-8 cursor-grab text-muted-foreground hover:bg-transparent active:cursor-grabbing"
     >
       <GripVerticalIcon className="size-4" />
-      <span className="sr-only">Переместить врача</span>
+      <span className="sr-only">{label}</span>
     </Button>
   );
 }
@@ -72,6 +76,7 @@ function SortableTableRow<T>({
   item,
   getId,
   renderCells,
+  dragLabel,
 }: SortableTableRowProps<T>) {
   const id = getId(item);
   const {
@@ -97,7 +102,7 @@ function SortableTableRow<T>({
     >
       {renderCells(
         item,
-        <DragHandle attributes={attributes} listeners={listeners} />,
+        <DragHandle attributes={attributes} listeners={listeners} label={dragLabel} />,
       )}
     </TableRow>
   );
@@ -113,6 +118,7 @@ export function SortableTableList<T>({
   emptyMessage = "Элементов пока нет.",
   columnCount,
   dndId,
+  dragLabel = "Переместить врача",
 }: SortableTableListProps<T>) {
   const itemsIds = items.map(getId);
 
@@ -147,6 +153,7 @@ export function SortableTableList<T>({
                   item={item}
                   getId={getId}
                   renderCells={renderCells}
+                  dragLabel={dragLabel}
                 />
               ))
             )}

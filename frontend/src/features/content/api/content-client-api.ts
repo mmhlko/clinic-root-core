@@ -27,17 +27,35 @@ class ContentClientApi extends RootApi {
   }) {
     return this.requestPost<ServiceDirection>("/service-directions", body);
   }
+  updateDirection(id: string, body: Partial<ServiceDirection>) {
+    return this.requestPatch<ServiceDirection>(`/service-directions/${id}`, body);
+  }
+  deleteDirection(id: string) {
+    return this.requestDelete(`/service-directions/${id}`);
+  }
+  reorderDirections(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/service-directions/reorder", { ids });
+  }
   createService(body: Partial<Service>) {
     return this.requestPost<Service>("/services", body);
   }
+  reorderServices(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/services/reorder", { ids });
+  }
   updateService(id: string, body: Partial<Service>) {
     return this.requestPatch<Service>(`/services/${id}`, body);
+  }
+  deleteService(id: string) {
+    return this.requestDelete(`/services/${id}`);
   }
   setServiceActive(id: string, isActive: boolean) {
     return this.requestPut<Service>(`/services/${id}/active`, { isActive });
   }
   createPromotion(body: Partial<Promotion>) {
     return this.requestPost<Promotion>("/promotions", body);
+  }
+  reorderPromotions(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/promotions/reorder", { ids });
   }
   updatePromotion(id: string, body: Partial<Promotion>) {
     return this.requestPatch<Promotion>(`/promotions/${id}`, body);
@@ -50,6 +68,12 @@ class ContentClientApi extends RootApi {
   }
   updateReview(id: string, body: Partial<Review>) {
     return this.requestPatch<Review>(`/reviews/${id}`, body);
+  }
+  createReview(body: Partial<Review>) {
+    return this.requestPost<Review>("/reviews", body);
+  }
+  reorderReviews(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/reviews/reorder", { ids });
   }
   publishReview(id: string) {
     return this.requestPut<Review>(`/reviews/${id}/publish`);
@@ -69,6 +93,9 @@ class ContentClientApi extends RootApi {
   updateDocument(id: string, form: FormData) {
     return this.requestPatch<DocumentItem>(`/documents/${id}`, form);
   }
+  reorderDocuments(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/documents/reorder", { ids });
+  }
   setDocumentActive(id: string, isActive: boolean) {
     return this.requestPut<DocumentItem>(`/documents/${id}/active`, {
       isActive,
@@ -79,6 +106,9 @@ class ContentClientApi extends RootApi {
   }
   saveFaq(faqs: FaqItem[]) {
     return this.requestPut<FaqItem[]>("/faq", { faqs });
+  }
+  reorderFaq(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/faq/reorder", { ids });
   }
   createUser(body: Record<string, unknown>) {
     return this.requestPost<AdminUser>("/users", body);

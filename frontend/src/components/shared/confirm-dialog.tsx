@@ -41,6 +41,7 @@ export function ConfirmDialog({
       <AlertDialogTrigger
         render={trigger}
         disabled={disabled}
+        nativeButton={false}
       />
 
       <AlertDialogContent size="sm">

@@ -1,7 +1,7 @@
 import { requireUserSession } from "@/features/auth/api/require-admin-session";
 import { PageHeader } from "@/components/shared/page-header";
 import { contentServerApi } from "@/features/content/api/content-server-api";
-import { ContentManager } from "@/widgets/admin-content/content-manager";
+import { DirectionsList } from "@/widgets/admin-content/directions-list";
 
 export default async function DirectionsPage() {
   const session = await requireUserSession();
@@ -12,7 +12,7 @@ export default async function DirectionsPage() {
         title="Направления"
         description="Направления медицинских услуг"
       />
-      <ContentManager kind="directions" initialData={directions} />
+      <DirectionsList initialItems={directions} />
     </div>
   );
 }

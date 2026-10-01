@@ -1,7 +1,7 @@
 import { requireUserSession } from "@/features/auth/api/require-admin-session";
 import { PageHeader } from "@/components/shared/page-header";
 import { contentServerApi } from "@/features/content/api/content-server-api";
-import { ContentManager } from "@/widgets/admin-content/content-manager";
+import { PromotionsList } from "@/widgets/admin-content/promotions-list";
 
 export default async function PromotionsPage() {
   const session = await requireUserSession();
@@ -12,11 +12,7 @@ export default async function PromotionsPage() {
   return (
     <div className="mx-auto w-full">
       <PageHeader title="Акции" description="Управление акциями клиники" />
-      <ContentManager
-        kind="promotions"
-        initialData={promotions}
-        references={{ services }}
-      />
+      <PromotionsList initialItems={promotions} services={services} />
     </div>
   );
 }
