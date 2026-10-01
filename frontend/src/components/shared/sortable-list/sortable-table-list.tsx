@@ -131,7 +131,7 @@ export function SortableTableList<T>({
       onDragEnd={onDragEnd}
     >
       <Table>
-        <TableHeader className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">{renderHeader()}</TableHeader>
+        <TableHeader className="">{renderHeader()}</TableHeader>
         <TableBody>
           <SortableContext
             items={itemsIds}

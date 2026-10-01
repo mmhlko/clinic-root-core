@@ -1,11 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SubmitEvent, useState, type FormEvent } from "react";
+import { SubmitEvent, useState } from "react";
 import { isAxiosError } from "axios";
-import { Camera, Plus, Trash2, Trash2Icon, UserRound } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { getImageUrl } from "@/shared/helpers/getImageUrl";
 import { doctorsClientApi } from "../api/doctors-client-api";
 import type {
-  CreateDoctorEducationRequest,
   CreateDoctorRequest,
   Doctor,
   DoctorEducationType,
@@ -35,8 +31,6 @@ import type {
 } from "../types/doctors.types";
 import { DoctorEducationType as EducationType } from "../types/doctors.types";
 import { DoctorReferenceMultiSelect } from "./doctor-reference-multi-select";
-import { cn } from "cn";
-import { mediaClientApi } from "@/features/media/api/media-api";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
 import { ImageUpload } from "@/features/image-upload/hooks/image-upload";
@@ -180,7 +174,6 @@ export function DoctorForm({
   // const [isDeleting, setIsDeleting] = useState(false);
   // const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const imageUrl = getImageUrl(values.photoUrl);
   const {
     image,
     isUploading,
@@ -350,13 +343,6 @@ export function DoctorForm({
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="mb-1 text-sm text-muted-foreground">
-            <Link href="/admin/doctors" className="hover:text-foreground">
-              Врачи
-            </Link>
-            <span className="px-2">/</span>
-            {mode === "create" ? "Новый врач" : "Редактирование"}
-          </div>
           <h2 className="text-2xl font-semibold tracking-tight">
             {mode === "create" ? "Создание врача" : "Редактирование врача"}
           </h2>

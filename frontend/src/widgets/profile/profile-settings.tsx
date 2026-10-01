@@ -11,13 +11,12 @@ import { useAuth } from "@/features/auth/providers/auth-provider";
 import { contentClientApi } from "@/features/content/api/content-client-api";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
+import { toast } from "@/components/ui/toast";
 
 export function ProfileSettings() {
   const router = useRouter();
   const { user, updateUser } = useAuth();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const {
     image,
     isUploading,
@@ -41,8 +40,6 @@ export function ProfileSettings() {
     const form = new FormData(formElement);
     const password = String(form.get("password") || "");
     setSaving(true);
-    setError("");
-    setSuccess("");
 
     try {
       const updated = await contentClientApi.updateMyProfile({
@@ -61,11 +58,17 @@ export function ProfileSettings() {
         avatarUrl: updated.avatarUrl,
       });
       commit();
-      setSuccess("Профиль сохранён.");
+      toast.add({
+        type: "success",
+        description: "Профиль успешно сохранён.",
+      });
       const passwordInput = formElement.elements.namedItem("password");
       if (passwordInput instanceof HTMLInputElement) passwordInput.value = "";
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить профиль."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить профиль."),
+      });
     } finally {
       setSaving(false);
     }
@@ -80,16 +83,21 @@ export function ProfileSettings() {
     return <p className="text-sm text-muted-foreground">Загрузка профиля…</p>;
   }
 
+  const formKey = [
+    user.id,
+    user.firstName,
+    user.lastName,
+    user.email,
+    user.avatarUrl,
+  ].join(":");
+
   return (
-    <form onSubmit={(event) => void save(event)} className="mx-auto w-full max-w-3xl space-y-6">
+    <form key={formKey} onSubmit={(event) => void save(event)} className="mx-auto w-full max-w-3xl space-y-6">
       <header>
         <h2 className="text-2xl font-semibold">Профиль</h2>
         <p className="mt-1 text-sm text-muted-foreground">Личные данные и фото пользователя</p>
       </header>
-
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      {success && <p role="status" className="text-sm text-emerald-700">{success}</p>}
-
+      
       <section className="grid gap-6 rounded-lg border bg-card p-4 sm:grid-cols-[180px_1fr] sm:p-6">
         <div className="space-y-2">
           <h3 className="text-sm font-medium">Фото профиля</h3>
