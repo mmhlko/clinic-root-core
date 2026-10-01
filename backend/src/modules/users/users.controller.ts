@@ -77,8 +77,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Получить список пользователей' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async findAll() {
-    return this.usersService.findAll();
+  async findAll(@Req() req: AuthRequest) {
+    const roles = req.user.role === UserRole.ROOT
+      ? undefined
+      : [UserRole.ADMIN, UserRole.MANAGER];
+
+    return this.usersService.findAll(roles);
   }
 
   @Patch('me')

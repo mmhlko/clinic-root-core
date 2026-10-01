@@ -275,8 +275,9 @@ export class UsersService {
 		return user.save();
 	}
 
-	async findAll() {
+	async findAll(roles?: UserRole[]) {
 		const users = await this.userModel.findAll({
+			where: roles ? { role: roles } : undefined,
 			attributes: {
 				exclude: ['password', 'hashedRefreshToken'],
 			},
