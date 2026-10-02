@@ -51,6 +51,10 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
         : await contentClientApi.createDocument(payload);
       setItems((current) => selected ? current.map((item) => item.id === result.id ? result : item) : [...current, result]);
       setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected ? "Документ обновлён." : "Документ добавлен.",
+      });
     } catch (cause: unknown) {
       toast.add({
         type: "error",

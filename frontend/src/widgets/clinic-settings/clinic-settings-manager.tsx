@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { contentClientApi } from "@/features/content/api/content-client-api";
+import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
+import { toast } from "@/components/ui/toast";
 import type {
   Clinic,
   ClinicFeature,
@@ -32,15 +34,19 @@ export function ClinicSettingsManager(props: Props) {
   const [socialLinks, setSocialLinks] = useState(props.socialLinks);
   const [statistics, setStatistics] = useState(props.statistics);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const save = async (fn: () => Promise<any>) => {
     setSaving(true);
-    setMessage("");
     try {
       await fn();
-      setMessage("Сохранено");
+      toast.add({
+        type: "success",
+        description: "Изменения сохранены.",
+      });
     } catch (e: any) {
-      setMessage(e?.response?.data?.message ?? "Не удалось сохранить");
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(e, "Не удалось сохранить."),
+      });
     } finally {
       setSaving(false);
     }
@@ -48,7 +54,6 @@ export function ClinicSettingsManager(props: Props) {
   const update = (k: keyof Clinic, v: any) => setClinic({ ...clinic, [k]: v });
   return (
     <div className="space-y-8">
-      {message && <p className="text-sm text-muted-foreground">{message}</p>}
       <section className="space-y-4 rounded-xl border bg-card p-4">
         <h2 className="text-lg font-semibold">Данные клиники</h2>
         <div className="grid gap-4 md:grid-cols-2">

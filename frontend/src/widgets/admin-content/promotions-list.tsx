@@ -68,6 +68,10 @@ export function PromotionsList({
         : await contentClientApi.createPromotion(body);
       setItems((current) => selected ? current.map((item) => item.id === result.id ? result : item) : [...current, result]);
       setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected ? "Акция обновлена." : "Акция добавлена.",
+      });
     } catch (cause: unknown) {
       toast.add({
         type: "error",

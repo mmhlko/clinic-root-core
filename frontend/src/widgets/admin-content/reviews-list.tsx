@@ -59,6 +59,10 @@ export function ReviewsList({
         : await contentClientApi.createReview(body);
       setItems((current) => selected ? current.map((item) => item.id === result.id ? result : item) : [...current, result]);
       setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected ? "Отзыв обновлён." : "Отзыв добавлен.",
+      });
     } catch (cause: unknown) {
       toast.add({
         type: "error",

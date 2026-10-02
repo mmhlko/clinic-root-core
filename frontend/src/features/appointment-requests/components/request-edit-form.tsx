@@ -70,6 +70,10 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
 
     try {
       const updated = await appointmentRequestsApi.update(request.id, dto);
+      toast.add({
+        type: "success",
+        description: "Заявка обновлена.",
+      });
       onSaved(updated);
     } catch (requestError) {
       toast.add({

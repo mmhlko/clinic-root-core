@@ -62,6 +62,10 @@ export function ServicesList({
           : [...current, result],
       );
       setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected ? "Услуга обновлена." : "Услуга добавлена.",
+      });
     } catch (cause: unknown) {
       toast.add({
         type: "error",

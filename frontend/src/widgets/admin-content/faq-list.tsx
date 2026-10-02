@@ -60,6 +60,10 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
       );
       setItems(result);
       setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected ? "Вопрос FAQ обновлён." : "Вопрос FAQ добавлен.",
+      });
     } catch (cause: unknown) {
       toast.add({
         type: "error",

@@ -157,11 +157,18 @@ export function ContentManager({
         : contentClientApi.createService(body),
     );
     if (result) {
+      const wasEditing = Boolean(editing);
       setData((prev: any[]) =>
         editing
           ? prev.map((x) => (x.id === result.id ? result : x))
           : [result, ...prev],
       );
+      toast.add({
+        type: "success",
+        description: wasEditing
+          ? "Услуга обновлена."
+          : "Услуга добавлена.",
+      });
       cancel();
     }
   }
@@ -188,6 +195,10 @@ export function ContentManager({
           ? prev.map((x) => (x.id === result.id ? result : x))
           : [result, ...prev],
       );
+      toast.add({
+        type: "success",
+        description: editing ? "Акция обновлена." : "Акция добавлена.",
+      });
       cancel();
     }
   }
@@ -207,6 +218,10 @@ export function ContentManager({
       setData((prev: any[]) =>
         prev.map((x) => (x.id === result.id ? result : x)),
       );
+      toast.add({
+        type: "success",
+        description: "Отзыв обновлён.",
+      });
       cancel();
     }
   }
@@ -227,11 +242,18 @@ export function ContentManager({
         : contentClientApi.createUser(body),
     );
     if (result) {
+      const wasEditing = Boolean(editing);
       setData((prev: any[]) =>
         editing
           ? prev.map((x) => (x.id === result.id ? result : x))
           : [result, ...prev],
       );
+      toast.add({
+        type: "success",
+        description: wasEditing
+          ? "Пользователь обновлён."
+          : "Пользователь добавлен.",
+      });
       cancel();
     }
   }
@@ -245,6 +267,10 @@ export function ContentManager({
     const result = await run(() => contentClientApi.createDirection(body));
     if (result) {
       setData((prev) => [result, ...prev]);
+      toast.add({
+        type: "success",
+        description: "Направление добавлено.",
+      });
       cancel();
     }
   }
@@ -266,6 +292,10 @@ export function ContentManager({
           ? prev.map((x) => (x.id === result.id ? result : x))
           : [result, ...prev],
       );
+      toast.add({
+        type: "success",
+        description: editing ? "Документ обновлён." : "Документ добавлен.",
+      });
       cancel();
     }
   }
@@ -1073,6 +1103,10 @@ function FaqEditor({
       );
       const result = await contentClientApi.saveFaq(payload as any);
       onSaved(result);
+      toast.add({
+        type: "success",
+        description: "FAQ сохранён.",
+      });
     } catch (e: any) {
       toast.add({
         type: "error",

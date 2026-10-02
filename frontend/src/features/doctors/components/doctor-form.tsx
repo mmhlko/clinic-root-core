@@ -299,6 +299,11 @@ export function DoctorForm({
         await doctorsClientApi.updateDoctor(doctor.id, request);
       }
 
+      toast.add({
+        type: "success",
+        description:
+          mode === "create" ? "Врач добавлен." : "Данные врача сохранены.",
+      });
       router.push("/admin/doctors");
       router.refresh();
     } catch (saveError) {

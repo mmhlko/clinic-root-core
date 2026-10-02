@@ -50,6 +50,12 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
           : [...current, result],
       );
       setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected
+          ? "Направление обновлено."
+          : "Направление добавлено.",
+      });
     } catch (cause: unknown) {
       toast.add({
         type: "error",
