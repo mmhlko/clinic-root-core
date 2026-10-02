@@ -6,6 +6,7 @@ import { isAxiosError } from "axios";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -173,12 +174,10 @@ export function DoctorForm({
   const [isSaving, setIsSaving] = useState(false);
   // const [isDeleting, setIsDeleting] = useState(false);
   // const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const {
     image,
     isUploading,
     isDeleting,
-    error: imageError,
     upload,
     remove,
     cleanup,
@@ -260,7 +259,6 @@ export function DoctorForm({
       return;
     }
     setIsSaving(true);
-    setError(null);
 
     try {
       const educations = educationPayload(values.educations);
@@ -304,7 +302,10 @@ export function DoctorForm({
       router.push("/admin/doctors");
       router.refresh();
     } catch (saveError) {
-      setError(getErrorMessage(saveError));
+      toast.add({
+        type: "error",
+        description: getErrorMessage(saveError),
+      });
     } finally {
       setIsSaving(false);
     }
@@ -352,15 +353,6 @@ export function DoctorForm({
         </div>
       </header>
 
-      {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-        >
-          {error}
-        </div>
-      )}
-
       <Card>
         <CardHeader className="border-b">
           <CardTitle className="text-base">1. Основная информация</CardTitle>
@@ -376,7 +368,6 @@ export function DoctorForm({
               isUploading={isUploading}
               isDeleting={isDeleting}
               disabled={false}
-              error={imageError}
             />
           </div>
 

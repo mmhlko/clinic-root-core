@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
@@ -32,12 +33,10 @@ export function ReviewsList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState("");
 
   function openSheet(nextMode: SheetMode, item: Review | null = null) {
     setSelected(item);
     setMode(nextMode);
-    setError("");
     setOpen(true);
   }
 
@@ -54,7 +53,6 @@ export function ReviewsList({
     };
 
     setSaving(true);
-    setError("");
     try {
       const result = selected
         ? await contentClientApi.updateReview(selected.id, body)
@@ -62,14 +60,16 @@ export function ReviewsList({
       setItems((current) => selected ? current.map((item) => item.id === result.id ? result : item) : [...current, result]);
       setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить отзыв."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить отзыв."),
+      });
     } finally {
       setSaving(false);
     }
   }
 
   async function moderate(item: Review, action: "publish" | "reject") {
-    setError("");
     try {
       const result = action === "publish"
         ? await contentClientApi.publishReview(item.id)
@@ -77,33 +77,40 @@ export function ReviewsList({
       setItems((current) => current.map((value) => value.id === result.id ? result : value));
       setSelected((current) => current?.id === result.id ? result : current);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось изменить статус отзыва."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось изменить статус отзыва."),
+      });
     }
   }
 
   async function toggle(item: Review, isActive: boolean) {
     setBusyId(item.id);
-    setError("");
     setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive } : value));
     try {
       const updated = await contentClientApi.setReviewActive(item.id, isActive);
       setItems((current) => current.map((value) => value.id === item.id ? updated : value));
     } catch (cause: unknown) {
       setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive: item.isActive } : value));
-      setError(getContentApiErrorMessage(cause, "Не удалось изменить статус отзыва."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось изменить статус отзыва."),
+      });
     } finally {
       setBusyId(null);
     }
   }
 
   async function remove(item: Review) {
-    setError("");
     try {
       await contentClientApi.deleteReview(item.id);
       setItems((current) => current.filter((value) => value.id !== item.id));
       if (selected?.id === item.id) setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось удалить отзыв."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось удалить отзыв."),
+      });
     }
   }
 
@@ -127,7 +134,6 @@ export function ReviewsList({
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <ContentList
         title="Отзывы"
         items={items}
@@ -135,7 +141,12 @@ export function ReviewsList({
         getId={(item) => item.id}
         getSearchText={(item) => `${item.authorName} ${item.text} ${item.doctor?.lastName ?? ""} ${item.doctor?.firstName ?? ""}`}
         reorder={(ids) => contentClientApi.reorderReviews(ids)}
-        onReorderError={() => setError("Не удалось сохранить порядок отзывов.")}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок отзывов.",
+          })
+        }
         onAdd={() => openSheet("create")}
         columnCount={7}
         emptyMessage="Отзывов пока нет."
@@ -173,7 +184,6 @@ export function ReviewsList({
             <ContentField label="Текст" name="text" textarea required defaultValue={selected?.text} />
             <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Оценка 1–5" name="rating" type="number" min={1} max={5} required defaultValue={selected?.rating ?? 5} /><ContentField label="Дата" name="reviewDate" type="date" defaultValue={selected?.reviewDate ? new Date(selected.reviewDate).toISOString().slice(0, 10) : ""} /></div>
             <div className="space-y-2"><Label htmlFor="doctorId">Врач</Label><select id="doctorId" name="doctorId" defaultValue={selected?.doctorId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="">Без врача</option>{doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.lastName} {doctor.firstName}</option>)}</select></div>
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>
         )}

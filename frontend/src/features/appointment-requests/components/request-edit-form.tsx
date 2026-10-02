@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 import { appointmentRequestsApi } from "../api/appointment-requests-api";
 import type { AppointmentRequest, UpdateAppointmentRequestDto } from "../types/appointment-request.types";
 
@@ -31,7 +32,6 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
   const [comment, setComment] = useState(request.comment ?? "");
   const [clearService, setClearService] = useState(false);
   const [clearDoctor, setClearDoctor] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,6 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
     setComment(request.comment ?? "");
     setClearService(false);
     setClearDoctor(false);
-    setError(null);
   }, [request]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -51,7 +50,10 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
     const trimmedPhone = phone.trim();
 
     if (!trimmedName || !trimmedPhone) {
-      setError("Имя и телефон обязательны.");
+      toast.add({
+        type: "error",
+        description: "Имя и телефон обязательны.",
+      });
       return;
     }
 
@@ -65,13 +67,15 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
     if (clearDoctor) dto.doctorId = null;
 
     setSaving(true);
-    setError(null);
 
     try {
       const updated = await appointmentRequestsApi.update(request.id, dto);
       onSaved(updated);
     } catch (requestError) {
-      setError(getErrorMessage(requestError));
+      toast.add({
+        type: "error",
+        description: getErrorMessage(requestError),
+      });
     } finally {
       setSaving(false);
     }
@@ -126,8 +130,6 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
         <Label htmlFor="request-comment">Комментарий</Label>
         <Textarea id="request-comment" value={comment} onChange={(event) => setComment(event.target.value)} disabled={saving} rows={5} placeholder="Комментарий пациента" />
       </div>
-
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
       <div className="flex justify-end gap-2 border-t pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>Отмена</Button>

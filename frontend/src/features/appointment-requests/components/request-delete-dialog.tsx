@@ -5,6 +5,7 @@ import { isAxiosError } from "axios";
 import { Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,12 +34,10 @@ export function RequestDeleteDialog({ request, onDeleted, open: controlledOpen, 
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
     if (deleting) return;
     setDeleting(true);
-    setError(null);
 
     try {
       await appointmentRequestsApi.delete(request.id);
@@ -48,7 +47,12 @@ export function RequestDeleteDialog({ request, onDeleted, open: controlledOpen, 
       const message = isAxiosError<{ message?: string | string[] }>(requestError)
         ? requestError.response?.data?.message
         : undefined;
-      setError(Array.isArray(message) ? message.join(" ") : message ?? "Не удалось удалить заявку.");
+      toast.add({
+        type: "error",
+        description: Array.isArray(message)
+          ? message.join(" ")
+          : message ?? "Не удалось удалить заявку.",
+      });
     } finally {
       setDeleting(false);
     }
@@ -72,7 +76,6 @@ export function RequestDeleteDialog({ request, onDeleted, open: controlledOpen, 
             Заявка от <strong>{request.name}</strong> будет удалена без возможности восстановления.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>Отмена</AlertDialogCancel>
           <AlertDialogAction variant="destructive" disabled={deleting} onClick={() => void handleDelete()}>

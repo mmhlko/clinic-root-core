@@ -6,6 +6,7 @@ import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
@@ -22,12 +23,10 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
   const [mode, setMode] = useState<SheetMode>("view");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
   function openSheet(nextMode: SheetMode, item: ServiceDirection | null = null) {
     setSelected(item);
     setMode(nextMode);
-    setError("");
     setOpen(true);
   }
 
@@ -41,7 +40,6 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
     };
 
     setSaving(true);
-    setError("");
     try {
       const result = selected
         ? await contentClientApi.updateDirection(selected.id, body)
@@ -53,26 +51,30 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
       );
       setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить направление."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить направление."),
+      });
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(item: ServiceDirection) {
-    setError("");
     try {
       await contentClientApi.deleteDirection(item.id);
       setItems((current) => current.filter((value) => value.id !== item.id));
       if (selected?.id === item.id) setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось удалить направление."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось удалить направление."),
+      });
     }
   }
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <ContentList
         title="Направления"
         items={items}
@@ -80,7 +82,12 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
         getId={(item) => item.id}
         getSearchText={(item) => `${item.name} ${item.description ?? ""}`}
         reorder={(ids) => contentClientApi.reorderDirections(ids)}
-        onReorderError={() => setError("Не удалось сохранить порядок направлений.")}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок направлений.",
+          })
+        }
         onAdd={() => openSheet("create")}
         columnCount={4}
         emptyMessage="Направлений пока нет."
@@ -158,7 +165,6 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
           <form onSubmit={(event) => void save(event)} className="space-y-4">
             <ContentField label="Название" name="name" required defaultValue={selected?.name} />
             <ContentField label="Описание" name="description" textarea defaultValue={selected?.description} />
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={saving}>
                 <SaveIcon data-icon="inline-start" />

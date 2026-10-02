@@ -1,7 +1,7 @@
 "use client";
 
 import { MoreHorizontalIcon } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -35,59 +35,68 @@ export function ContentActionsMenu<T>({
   itemLabel,
   actions,
 }: ContentActionsMenuProps<T>) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Действия: ${itemLabel}`}
-          />
-        }
-      >
-        <MoreHorizontalIcon />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {actions.map((action, index) => {
-          const isDestructive = action.destructive ?? false;
-          const previousAction = actions[index - 1];
-          const needsSeparator =
-            isDestructive && index > 0 && !previousAction?.destructive;
+  const [pendingAction, setPendingAction] =
+    useState<ContentMenuAction<T> | null>(null);
 
-          return (
-            <Fragment key={action.label}>
-              {needsSeparator && <DropdownMenuSeparator />}
-              {action.confirm ? (
-                <ConfirmDialog
-                  trigger={
-                    <DropdownMenuItem
-                      variant={isDestructive ? "destructive" : "default"}
-                    >
-                      {action.label}
-                    </DropdownMenuItem>
-                  }
-                  title={action.confirm.title}
-                  description={action.confirm.description}
-                  confirmText={action.label}
-                  confirmButtonVariant={isDestructive ? "destructive" : "default"}
-                  nativeButton={false}
-                  disabled={action.disabled}
-                  onConfirm={() => action.onSelect(item)}
-                />
-              ) : (
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Действия: ${itemLabel}`}
+            />
+          }
+        >
+          <MoreHorizontalIcon />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {actions.map((action, index) => {
+            const isDestructive = action.destructive ?? false;
+            const previousAction = actions[index - 1];
+            const needsSeparator =
+              isDestructive && index > 0 && !previousAction?.destructive;
+
+            return (
+              <Fragment key={action.label}>
+                {needsSeparator && <DropdownMenuSeparator />}
                 <DropdownMenuItem
                   variant={isDestructive ? "destructive" : "default"}
                   disabled={action.disabled}
-                  onClick={() => void action.onSelect(item)}
+                  onClick={() => {
+                    if (action.confirm) {
+                      setPendingAction(action);
+                    } else {
+                      void action.onSelect(item);
+                    }
+                  }}
                 >
                   {action.label}
                 </DropdownMenuItem>
-              )}
-            </Fragment>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+              </Fragment>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {pendingAction?.confirm && (
+        <ConfirmDialog
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPendingAction(null);
+          }}
+          title={pendingAction.confirm.title}
+          description={pendingAction.confirm.description}
+          confirmText={pendingAction.label}
+          confirmButtonVariant={
+            pendingAction.destructive ? "destructive" : "default"
+          }
+          disabled={pendingAction.disabled}
+          onConfirm={() => pendingAction.onSelect(item)}
+        />
+      )}
+    </>
   );
 }

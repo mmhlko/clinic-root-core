@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
@@ -30,13 +31,11 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draftActive, setDraftActive] = useState(true);
-  const [error, setError] = useState("");
 
   function openSheet(nextMode: SheetMode, item: FaqItem | null = null) {
     setSelected(item);
     setMode(nextMode);
     setDraftActive(item?.isActive ?? true);
-    setError("");
     setOpen(true);
   }
 
@@ -51,46 +50,65 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
       isActive: draftActive,
     };
     const nextItems = selected
-      ? items.map((item) => item.id === selected.id ? entry : item)
+      ? items.map((item) => (item.id === selected.id ? entry : item))
       : [...items, entry];
 
     setSaving(true);
-    setError("");
     try {
-      const result = await contentClientApi.saveFaq(toPayload(nextItems) as FaqItem[]);
+      const result = await contentClientApi.saveFaq(
+        toPayload(nextItems) as FaqItem[],
+      );
       setItems(result);
       setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить FAQ."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить FAQ."),
+      });
     } finally {
       setSaving(false);
     }
   }
 
   async function toggle(item: FaqItem, isActive: boolean) {
-    const nextItems = items.map((value) => value.id === item.id ? { ...value, isActive } : value);
+    const nextItems = items.map((value) =>
+      value.id === item.id ? { ...value, isActive } : value,
+    );
     setSaving(true);
-    setError("");
     try {
-      const result = await contentClientApi.saveFaq(toPayload(nextItems) as FaqItem[]);
+      const result = await contentClientApi.saveFaq(
+        toPayload(nextItems) as FaqItem[],
+      );
       setItems(result);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось изменить статус вопроса."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(
+          cause,
+          "Не удалось изменить статус вопроса.",
+        ),
+      });
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(item: FaqItem) {
-    const nextItems = items.filter((value) => value.id !== item.id).map((value, index) => ({ ...value, sortOrder: index }));
+    const nextItems = items
+      .filter((value) => value.id !== item.id)
+      .map((value, index) => ({ ...value, sortOrder: index }));
     setSaving(true);
-    setError("");
     try {
-      const result = await contentClientApi.saveFaq(toPayload(nextItems) as FaqItem[]);
+      const result = await contentClientApi.saveFaq(
+        toPayload(nextItems) as FaqItem[],
+      );
       setItems(result);
       if (selected?.id === item.id) setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось удалить вопрос."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось удалить вопрос."),
+      });
     } finally {
       setSaving(false);
     }
@@ -102,9 +120,24 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
         item={item}
         itemLabel={item.question}
         actions={[
-          { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
-          { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
-          { label: "Удалить", destructive: true, disabled: saving, onSelect: remove, confirm: { title: "Удалить вопрос?", description: "Вопрос будет удалён из FAQ." } },
+          {
+            label: "Просмотреть",
+            onSelect: (value) => openSheet("view", value),
+          },
+          {
+            label: "Редактировать",
+            onSelect: (value) => openSheet("edit", value),
+          },
+          {
+            label: "Удалить",
+            destructive: true,
+            disabled: saving,
+            onSelect: remove,
+            confirm: {
+              title: "Удалить вопрос?",
+              description: "Вопрос будет удалён из FAQ.",
+            },
+          },
         ]}
       />
     );
@@ -112,7 +145,6 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <ContentList
         title="FAQ"
         items={items}
@@ -120,37 +152,155 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
         getId={(item) => item.id}
         getSearchText={(item) => `${item.question} ${item.answer}`}
         reorder={(ids) => contentClientApi.reorderFaq(ids)}
-        onReorderError={() => setError("Не удалось сохранить порядок вопросов.")}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок вопросов.",
+          })
+        }
         onAdd={() => openSheet("create")}
         columnCount={4}
         emptyMessage="Вопросов пока нет."
-        renderHeader={() => <TableRow><TableHead className="w-10 px-2"><span className="sr-only">Перемещение</span></TableHead><TableHead>Вопрос</TableHead><TableHead>Статус</TableHead><TableHead className="w-12 text-right" /></TableRow>}
+        renderHeader={() => (
+          <TableRow>
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">Перемещение</span>
+            </TableHead>
+            <TableHead>Вопрос</TableHead>
+            <TableHead>Статус</TableHead>
+            <TableHead className="w-12 text-right" />
+          </TableRow>
+        )}
         renderCells={(item, dragHandle) => (
           <>
             <TableCell className="w-10 px-2">{dragHandle}</TableCell>
-            <TableCell><button className="text-left font-medium hover:underline" onClick={() => openSheet("view", item)}>{item.question}</button><span className="block max-w-xl truncate text-xs text-muted-foreground">{item.answer}</span></TableCell>
-            <TableCell><Switch checked={item.isActive} disabled={saving} onCheckedChange={(value) => void toggle(item, value)} aria-label={`Активность вопроса: ${item.question}`} /></TableCell>
+            <TableCell>
+              <button
+                className="text-left font-medium hover:underline"
+                onClick={() => openSheet("view", item)}
+              >
+                {item.question}
+              </button>
+              <span className="block max-w-xl truncate text-xs text-muted-foreground">
+                {item.answer}
+              </span>
+            </TableCell>
+            <TableCell>
+              <Switch
+                checked={item.isActive}
+                disabled={saving}
+                onCheckedChange={(value) => void toggle(item, value)}
+                aria-label={`Активность вопроса: ${item.question}`}
+              />
+            </TableCell>
             <TableCell className="text-right">{actionMenu(item)}</TableCell>
           </>
         )}
         renderCard={(item, dragHandle) => (
           <article key={item.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">{dragHandle}<button className="min-w-0 flex-1 text-left" onClick={() => openSheet("view", item)}><span className="block font-medium">{item.question}</span><span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">{item.answer}</span></button>{actionMenu(item)}</div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3"><Badge variant="outline">{item.isActive ? "Активен" : "Скрыт"}</Badge><Switch checked={item.isActive} disabled={saving} onCheckedChange={(value) => void toggle(item, value)} aria-label={`Активность вопроса: ${item.question}`} /></div>
+            <div className="flex items-start gap-3">
+              {dragHandle}
+              <button
+                className="min-w-0 flex-1 text-left"
+                onClick={() => openSheet("view", item)}
+              >
+                <span className="block font-medium">{item.question}</span>
+                <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                  {item.answer}
+                </span>
+              </button>
+              {actionMenu(item)}
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t pt-3">
+              <Badge variant="outline">
+                {item.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+              <Switch
+                checked={item.isActive}
+                disabled={saving}
+                onCheckedChange={(value) => void toggle(item, value)}
+                aria-label={`Активность вопроса: ${item.question}`}
+              />
+            </div>
           </article>
         )}
       />
 
-      <ContentSheet open={open} onOpenChange={setOpen} title={mode === "view" ? "Вопрос и ответ" : mode === "create" ? "Новый вопрос" : "Редактировать вопрос"} description={mode === "view" ? "Содержание FAQ" : "Добавьте формулировку вопроса и ответ."}>
+      <ContentSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={
+          mode === "view"
+            ? "Вопрос и ответ"
+            : mode === "create"
+              ? "Новый вопрос"
+              : "Редактировать вопрос"
+        }
+        description={
+          mode === "view"
+            ? "Содержание FAQ"
+            : "Добавьте формулировку вопроса и ответ."
+        }
+      >
         {mode === "view" && selected ? (
-          <div className="space-y-4"><div className="flex items-center justify-between"><Badge variant="outline">{selected.isActive ? "Активен" : "Скрыт"}</Badge><Button variant="outline" onClick={() => openSheet("edit", selected)}><PencilIcon data-icon="inline-start" />Редактировать</Button></div><section className="space-y-2"><h3 className="text-sm font-medium">{selected.question}</h3><p className="whitespace-pre-wrap text-sm text-muted-foreground">{selected.answer}</p></section></div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline">
+                {selected.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+              <Button
+                variant="outline"
+                onClick={() => openSheet("edit", selected)}
+              >
+                <PencilIcon data-icon="inline-start" />
+                Редактировать
+              </Button>
+            </div>
+            <section className="space-y-2">
+              <h3 className="text-sm font-medium">{selected.question}</h3>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {selected.answer}
+              </p>
+            </section>
+          </div>
         ) : (
           <form onSubmit={(event) => void save(event)} className="space-y-4">
-            <ContentField label="Вопрос" name="question" required defaultValue={selected?.question} />
-            <ContentField label="Ответ" name="answer" textarea required defaultValue={selected?.answer} />
-            <div className="flex items-center justify-between rounded-md border p-3"><span className="text-sm font-medium">Показывать на сайте</span><Switch checked={draftActive} onCheckedChange={setDraftActive} aria-label="Активность вопроса" /></div>
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-            <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
+            <ContentField
+              label="Вопрос"
+              name="question"
+              required
+              defaultValue={selected?.question}
+            />
+            <ContentField
+              label="Ответ"
+              name="answer"
+              textarea
+              required
+              defaultValue={selected?.answer}
+            />
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <span className="text-sm font-medium">Показывать на сайте</span>
+              <Switch
+                checked={draftActive}
+                onCheckedChange={setDraftActive}
+                aria-label="Активность вопроса"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                <SaveIcon data-icon="inline-start" />
+                {saving ? "Сохранение…" : "Сохранить"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={saving}
+              >
+                <XIcon data-icon="inline-start" />
+                Отмена
+              </Button>
+            </div>
           </form>
         )}
       </ContentSheet>

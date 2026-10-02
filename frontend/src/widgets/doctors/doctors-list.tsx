@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListStats } from "@/components/shared/list-stats";
 import { ActiveSwitch } from "@/components/shared/active-switch";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
 import { useReorder } from "@/shared/hooks/use-reorder";
 import { SortableTableList } from "@/components/shared/sortable-list/sortable-table-list";
@@ -48,43 +49,53 @@ function DoctorMenu({
   onDelete: (id: string) => Promise<void>;
   deleting: boolean;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8"
-            disabled={deleting}
-          />
-        }
-      >
-        <MoreHorizontalIcon />
-        <span className="sr-only">Открыть меню</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          nativeButton={false}
-          render={<Link href={`/admin/doctors/${doctor.id}/edit`} />}
-        >
-          Редактировать
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <ConfirmDialog
-          trigger={
-            <DropdownMenuItem variant="destructive">Удалить</DropdownMenuItem>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              disabled={deleting}
+            />
           }
-          title="Удалить врача?"
-          description="Врач будет удалён из административной панели. Это действие нельзя отменить."
-          confirmText="Удалить"
-          confirmButtonVariant="destructive"
-          nativeButton={false}
-          disabled={deleting}
-          onConfirm={() => onDelete(doctor.id)}
-        />
-      </DropdownMenuContent>
-    </DropdownMenu>
+        >
+          <MoreHorizontalIcon />
+          <span className="sr-only">Открыть меню</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            nativeButton={false}
+            render={<Link href={`/admin/doctors/${doctor.id}/edit`} />}
+          >
+            Редактировать
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            disabled={deleting}
+            onClick={() => setConfirmDelete(true)}
+          >
+            Удалить
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Удалить врача?"
+        description="Врач будет удалён из административной панели. Это действие нельзя отменить."
+        confirmText="Удалить"
+        confirmButtonVariant="destructive"
+        disabled={deleting}
+        onConfirm={() => onDelete(doctor.id)}
+      />
+    </>
   );
 }
 
@@ -112,7 +123,6 @@ function DoctorIdentity({ doctor }: { doctor: DoctorListItem }) {
 export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   const [doctors, setDoctors] = useState(initialDoctors);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const total = doctors.length;
   const active = doctors.filter((doctor) => doctor.isActive).length;
   const inactive = total - active;
@@ -123,13 +133,15 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
     setItems: setDoctors,
     onReorder: (ids) => doctorsClientApi.reorderDoctors(ids),
     onError: () => {
-      setError("Не удалось сохранить порядок врачей.");
+      toast.add({
+        type: "error",
+        description: "Не удалось сохранить порядок врачей.",
+      });
     },
   });
 
   const handleSwitch = async (id: string, isActive: boolean) => {
     const previous = doctors.find((doctor) => doctor.id === id)?.isActive;
-    setError(null);
     setBusyId(id);
     setDoctors((current) =>
       current.map((doctor) =>
@@ -151,20 +163,25 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
             : doctor,
         ),
       );
-      setError("Не удалось изменить статус врача.");
+      toast.add({
+        type: "error",
+        description: "Не удалось изменить статус врача.",
+      });
     } finally {
       setBusyId(null);
     }
   };
 
   const handleDelete = async (id: string) => {
-    setError(null);
     setBusyId(id);
     try {
       await doctorsClientApi.deleteDoctor(id);
       setDoctors((current) => current.filter((doctor) => doctor.id !== id));
     } catch {
-      setError("Не удалось удалить врача.");
+      toast.add({
+        type: "error",
+        description: "Не удалось удалить врача.",
+      });
     } finally {
       setBusyId(null);
     }
@@ -173,15 +190,6 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   return (
     <div className="space-y-3">
       <ListStats total={total} active={active} inactive={inactive} />
-      {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-        >
-          {error}
-        </div>
-      )}
-
       <div className="md:hidden space-y-3">
         {doctors.length === 0 ? (
           <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">

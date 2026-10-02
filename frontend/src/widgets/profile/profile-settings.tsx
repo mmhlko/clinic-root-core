@@ -21,7 +21,6 @@ export function ProfileSettings() {
     image,
     isUploading,
     isDeleting,
-    error: imageError,
     upload,
     remove,
     cleanup,
@@ -110,7 +109,6 @@ export function ProfileSettings() {
             isDeleting={isDeleting}
             aspectRatio="1/1"
             className="max-w-44"
-            error={imageError}
           />
         </div>
         <div className="grid content-start gap-4 sm:grid-cols-2">

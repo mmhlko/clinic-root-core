@@ -28,6 +28,7 @@ import type {
   UserRole,
 } from "@/features/content/types/content.types";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/toast";
 
 type Kind =
   | "directions"
@@ -56,9 +57,6 @@ type Props = {
   currentRole?: UserRole;
 };
 
-function ErrorText({ error }: { error: string }) {
-  return error ? <p className="text-sm text-destructive">{error}</p> : null;
-}
 function FormShell({
   children,
   onCancel,
@@ -108,7 +106,6 @@ export function ContentManager({
   const [editing, setEditing] = useState<any | null>(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(
@@ -122,24 +119,24 @@ export function ContentManager({
   );
 
   const startCreate = () => {
-    setError("");
     setEditing(null);
     setCreating(true);
   };
   const cancel = () => {
     setCreating(false);
     setEditing(null);
-    setError("");
   };
 
   async function run(fn: () => Promise<any>) {
     setSaving(true);
-    setError("");
     try {
       const result = await fn();
       return result;
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? "Не удалось выполнить операцию.");
+      toast.add({
+        type: "error",
+        description: e?.response?.data?.message ?? "Не удалось выполнить операцию.",
+      });
     } finally {
       setSaving(false);
     }
@@ -293,7 +290,10 @@ export function ContentManager({
         setData((prev) => prev.map((x) => (x.id === item.id ? result : x)));
     } catch (e: any) {
       setData(old);
-      setError(e?.response?.data?.message ?? "Не удалось изменить статус.");
+      toast.add({
+        type: "error",
+        description: e?.response?.data?.message ?? "Не удалось изменить статус.",
+      });
     }
   }
 
@@ -350,7 +350,6 @@ export function ContentManager({
           </Button>
         )}
       </div>
-      <ErrorText error={error} />
       {creating && kind === "directions" && (
         <DirectionForm
           saving={saving}
@@ -443,7 +442,6 @@ export function ContentManager({
         <FaqEditor
           initial={data as FaqItem[]}
           onSaved={setData}
-          setError={setError}
         />
       ) : (
         <div className="grid gap-3">
@@ -1044,11 +1042,9 @@ function ConfirmAction({
 function FaqEditor({
   initial,
   onSaved,
-  setError,
 }: {
   initial: FaqItem[];
   onSaved: (x: FaqItem[]) => void;
-  setError: (x: string) => void;
 }) {
   const [items, setItems] = useState<FaqItem[]>(initial);
   const [saving, setSaving] = useState(false);
@@ -1071,7 +1067,6 @@ function FaqEditor({
     );
   const save = async () => {
     setSaving(true);
-    setError("");
     try {
       const payload = items.map(({ id, ...x }) =>
         id.startsWith("new-") ? x : { id, ...x },
@@ -1079,7 +1074,10 @@ function FaqEditor({
       const result = await contentClientApi.saveFaq(payload as any);
       onSaved(result);
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? "Не удалось сохранить FAQ.");
+      toast.add({
+        type: "error",
+        description: e?.response?.data?.message ?? "Не удалось сохранить FAQ.",
+      });
     } finally {
       setSaving(false);
     }

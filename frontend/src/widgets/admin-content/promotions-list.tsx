@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
@@ -38,12 +39,10 @@ export function PromotionsList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState("");
 
   function openSheet(nextMode: SheetMode, item: Promotion | null = null) {
     setSelected(item);
     setMode(nextMode);
-    setError("");
     setOpen(true);
   }
 
@@ -63,7 +62,6 @@ export function PromotionsList({
     };
 
     setSaving(true);
-    setError("");
     try {
       const result = selected
         ? await contentClientApi.updatePromotion(selected.id, body)
@@ -71,7 +69,10 @@ export function PromotionsList({
       setItems((current) => selected ? current.map((item) => item.id === result.id ? result : item) : [...current, result]);
       setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить акцию."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить акцию."),
+      });
     } finally {
       setSaving(false);
     }
@@ -79,27 +80,31 @@ export function PromotionsList({
 
   async function toggle(item: Promotion, isActive: boolean) {
     setBusyId(item.id);
-    setError("");
     setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive } : value));
     try {
       const updated = await contentClientApi.setPromotionActive(item.id, isActive);
       setItems((current) => current.map((value) => value.id === item.id ? updated : value));
     } catch (cause: unknown) {
       setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive: item.isActive } : value));
-      setError(getContentApiErrorMessage(cause, "Не удалось изменить статус акции."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось изменить статус акции."),
+      });
     } finally {
       setBusyId(null);
     }
   }
 
   async function remove(item: Promotion) {
-    setError("");
     try {
       await contentClientApi.deletePromotion(item.id);
       setItems((current) => current.filter((value) => value.id !== item.id));
       if (selected?.id === item.id) setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось удалить акцию."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось удалить акцию."),
+      });
     }
   }
 
@@ -119,7 +124,6 @@ export function PromotionsList({
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <ContentList
         title="Акции"
         items={items}
@@ -127,7 +131,12 @@ export function PromotionsList({
         getId={(item) => item.id}
         getSearchText={(item) => `${item.title} ${item.description ?? ""} ${item.service?.name ?? ""}`}
         reorder={(ids) => contentClientApi.reorderPromotions(ids)}
-        onReorderError={() => setError("Не удалось сохранить порядок акций.")}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок акций.",
+          })
+        }
         onAdd={() => openSheet("create")}
         columnCount={5}
         emptyMessage="Акций пока нет."
@@ -164,7 +173,6 @@ export function PromotionsList({
             <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Старая цена" name="oldPrice" type="number" min={0} defaultValue={selected?.oldPrice} /><ContentField label="Новая цена" name="newPrice" type="number" min={0} defaultValue={selected?.newPrice} /></div>
             <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Начало" name="validFrom" type="datetime-local" defaultValue={toLocalDateTime(selected?.validFrom)} /><ContentField label="Окончание" name="validTo" type="datetime-local" defaultValue={toLocalDateTime(selected?.validTo)} /></div>
             <div className="space-y-2"><Label htmlFor="serviceId">Услуга</Label><select id="serviceId" name="serviceId" defaultValue={selected?.serviceId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="">Без услуги</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></div>
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>
         )}

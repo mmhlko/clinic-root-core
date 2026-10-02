@@ -1,6 +1,7 @@
 "use client";
 
 import { mediaClientApi } from "@/features/media/api/media-api";
+import { toast } from "@/components/ui/toast";
 import { useCallback, useRef, useState } from "react";
 import { UploadedImage } from "../types/images.types";
 
@@ -14,7 +15,6 @@ interface UseImageUploadReturn {
   image: UploadedImage | null;
   isUploading: boolean;
   isDeleting: boolean;
-  error: string | null;
   upload: (file: File) => Promise<void>;
   remove: () => Promise<void>;
   cleanup: () => Promise<void>;
@@ -37,7 +37,6 @@ export function useImageUpload({
   const [image, setImage] = useState<UploadedImage | null>(initialImage);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Исходное изображение уже прикреплено к сущности.
   // Его нельзя удалять до успешного сохранения формы.
@@ -68,12 +67,11 @@ export function useImageUpload({
       const validationError = validateFile(file);
 
       if (validationError) {
-        setError(validationError);
+        toast.add({ type: "error", description: validationError });
         return;
       }
 
       setIsUploading(true);
-      setError(null);
 
       try {
         const uploaded = await mediaClientApi.uploadImage(file);
@@ -104,11 +102,13 @@ export function useImageUpload({
           }
         }
       } catch (uploadError) {
-        setError(
-          uploadError instanceof Error
-            ? uploadError.message
-            : "Не удалось загрузить изображение.",
-        );
+        toast.add({
+          type: "error",
+          description:
+            uploadError instanceof Error
+              ? uploadError.message
+              : "Не удалось загрузить изображение.",
+        });
       } finally {
         setIsUploading(false);
       }
@@ -124,7 +124,6 @@ export function useImageUpload({
     }
 
     setIsDeleting(true);
-    setError(null);
 
     try {
       const isTemporary =
@@ -137,11 +136,13 @@ export function useImageUpload({
 
       setImage(null);
     } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Не удалось удалить изображение.",
-      );
+      toast.add({
+        type: "error",
+        description:
+          deleteError instanceof Error
+            ? deleteError.message
+            : "Не удалось удалить изображение.",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -176,7 +177,6 @@ export function useImageUpload({
     image,
     isUploading,
     isDeleting,
-    error,
     upload,
     remove,
     cleanup,

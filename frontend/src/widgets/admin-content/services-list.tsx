@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
@@ -31,12 +32,10 @@ export function ServicesList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState("");
 
   function openSheet(nextMode: SheetMode, item: Service | null = null) {
     setSelected(item);
     setMode(nextMode);
-    setError("");
     setOpen(true);
   }
 
@@ -53,7 +52,6 @@ export function ServicesList({
     };
 
     setSaving(true);
-    setError("");
     try {
       const result = selected
         ? await contentClientApi.updateService(selected.id, body)
@@ -65,7 +63,10 @@ export function ServicesList({
       );
       setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить услугу."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить услугу."),
+      });
     } finally {
       setSaving(false);
     }
@@ -73,27 +74,31 @@ export function ServicesList({
 
   async function toggle(item: Service, isActive: boolean) {
     setBusyId(item.id);
-    setError("");
     setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive } : value));
     try {
       const updated = await contentClientApi.setServiceActive(item.id, isActive);
       setItems((current) => current.map((value) => value.id === item.id ? updated : value));
     } catch (cause: unknown) {
       setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive: item.isActive } : value));
-      setError(getContentApiErrorMessage(cause, "Не удалось изменить статус услуги."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось изменить статус услуги."),
+      });
     } finally {
       setBusyId(null);
     }
   }
 
   async function remove(item: Service) {
-    setError("");
     try {
       await contentClientApi.deleteService(item.id);
       setItems((current) => current.filter((value) => value.id !== item.id));
       if (selected?.id === item.id) setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось удалить услугу."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось удалить услугу."),
+      });
     }
   }
 
@@ -113,7 +118,6 @@ export function ServicesList({
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <ContentList
         title="Услуги"
         items={items}
@@ -121,7 +125,12 @@ export function ServicesList({
         getId={(item) => item.id}
         getSearchText={(item) => `${item.name} ${item.description ?? ""} ${item.direction?.name ?? ""}`}
         reorder={(ids) => contentClientApi.reorderServices(ids)}
-        onReorderError={() => setError("Не удалось сохранить порядок услуг.")}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок услуг.",
+          })
+        }
         onAdd={() => openSheet("create")}
         columnCount={6}
         emptyMessage="Услуг пока нет."
@@ -204,7 +213,6 @@ export function ServicesList({
                 <select id="isPriceFrom" name="isPriceFrom" defaultValue={String(selected?.isPriceFrom ?? false)} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="false">Нет</option><option value="true">Да</option></select>
               </div>
             </div>
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>
         )}

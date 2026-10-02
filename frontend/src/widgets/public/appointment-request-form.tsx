@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +18,6 @@ export function AppointmentRequestForm({
 }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
   if (done)
     return (
       <div className="rounded-2xl border bg-card p-6">
@@ -33,7 +33,6 @@ export function AppointmentRequestForm({
       onSubmit={async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError("");
         const f = new FormData(e.currentTarget);
         try {
           await appointmentRequestsApi.create({
@@ -45,9 +44,11 @@ export function AppointmentRequestForm({
           });
           setDone(true);
         } catch (err: any) {
-          setError(
-            err?.response?.data?.message ?? "Не удалось отправить заявку.",
-          );
+          toast.add({
+            type: "error",
+            description:
+              err?.response?.data?.message ?? "Не удалось отправить заявку.",
+          });
         } finally {
           setLoading(false);
         }
@@ -86,7 +87,6 @@ export function AppointmentRequestForm({
         </select>
       </div>
       <Textarea name="comment" placeholder="Комментарий" />
-      {error && <p className="text-sm text-destructive">{error}</p>}
       <Button disabled={loading} type="submit" className="w-full">
         {loading ? "Отправка…" : "Оставить заявку"}
       </Button>

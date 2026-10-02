@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
 import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
@@ -26,12 +27,10 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState("");
 
   function openSheet(nextMode: SheetMode, item: DocumentItem | null = null) {
     setSelected(item);
     setMode(nextMode);
-    setError("");
     setOpen(true);
   }
 
@@ -46,7 +45,6 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
     if (file instanceof File && file.size > 0) payload.append("file", file);
 
     setSaving(true);
-    setError("");
     try {
       const result = selected
         ? await contentClientApi.updateDocument(selected.id, payload)
@@ -54,7 +52,10 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
       setItems((current) => selected ? current.map((item) => item.id === result.id ? result : item) : [...current, result]);
       setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось сохранить документ."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось сохранить документ."),
+      });
     } finally {
       setSaving(false);
     }
@@ -62,27 +63,31 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
 
   async function toggle(item: DocumentItem, isActive: boolean) {
     setBusyId(item.id);
-    setError("");
     setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive } : value));
     try {
       const updated = await contentClientApi.setDocumentActive(item.id, isActive);
       setItems((current) => current.map((value) => value.id === item.id ? updated : value));
     } catch (cause: unknown) {
       setItems((current) => current.map((value) => value.id === item.id ? { ...value, isActive: item.isActive } : value));
-      setError(getContentApiErrorMessage(cause, "Не удалось изменить статус документа."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось изменить статус документа."),
+      });
     } finally {
       setBusyId(null);
     }
   }
 
   async function remove(item: DocumentItem) {
-    setError("");
     try {
       await contentClientApi.deleteDocument(item.id);
       setItems((current) => current.filter((value) => value.id !== item.id));
       if (selected?.id === item.id) setOpen(false);
     } catch (cause: unknown) {
-      setError(getContentApiErrorMessage(cause, "Не удалось удалить документ."));
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(cause, "Не удалось удалить документ."),
+      });
     }
   }
 
@@ -102,7 +107,6 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <ContentList
         title="Документы"
         items={items}
@@ -110,7 +114,12 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
         getId={(item) => item.id}
         getSearchText={(item) => `${item.title} ${item.description ?? ""} ${item.fileName}`}
         reorder={(ids) => contentClientApi.reorderDocuments(ids)}
-        onReorderError={() => setError("Не удалось сохранить порядок документов.")}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок документов.",
+          })
+        }
         onAdd={() => openSheet("create")}
         columnCount={5}
         emptyMessage="Документов пока нет."
@@ -145,7 +154,6 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
             <ContentField label="Название" name="title" required defaultValue={selected?.title} />
             <ContentField label="Описание" name="description" textarea defaultValue={selected?.description} />
             <div className="space-y-2"><Label htmlFor="file">Файл {selected ? "(необязательно при редактировании)" : ""}</Label><Input id="file" name="file" type="file" accept=".pdf,.doc,.docx" required={!selected} /></div>
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
           </form>
         )}

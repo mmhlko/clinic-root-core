@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
+import { ChevronsUpDown, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import {
   Command,
   CommandEmpty,
@@ -40,7 +41,6 @@ export function DoctorReferenceMultiSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
   const normalizedQuery = query.trim();
   const exactMatch = options.some(
     (option) => option.name.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
@@ -61,15 +61,16 @@ export function DoctorReferenceMultiSelect({
     }
 
     setCreating(true);
-    setCreateError(null);
-
     try {
       const createdOption = await onCreate(normalizedQuery);
       onChange([...selectedIds, createdOption.id]);
       setQuery("");
       setOpen(false);
     } catch {
-      setCreateError("Не удалось добавить навык. Возможно, он уже существует.");
+      toast.add({
+        type: "error",
+        description: "Не удалось добавить навык. Возможно, он уже существует.",
+      });
     } finally {
       setCreating(false);
     }
@@ -87,7 +88,6 @@ export function DoctorReferenceMultiSelect({
           setOpen(nextOpen);
           if (!nextOpen) {
             setQuery("");
-            setCreateError(null);
           }
         }}
       >
@@ -177,7 +177,6 @@ export function DoctorReferenceMultiSelect({
         </div>
       )}
 
-      {createError && <p role="alert" className="text-sm text-destructive">{createError}</p>}
     </div>
   );
 }
