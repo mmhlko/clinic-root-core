@@ -127,7 +127,7 @@ export function DocumentsList({ initialItems }: { initialItems: DocumentItem[] }
         onAdd={() => openSheet("create")}
         columnCount={5}
         emptyMessage="Документов пока нет."
-        renderHeader={() => <TableRow><TableHead className="w-10 px-2"><span className="sr-only">Перемещение</span></TableHead><TableHead>Документ</TableHead><TableHead>Файл</TableHead><TableHead>Статус</TableHead><TableHead className="w-12 text-right" /></TableRow>}
+        renderHeader={() => <TableRow><TableHead className="w-10 px-2"><span className="sr-only">Перемещение</span></TableHead><TableHead>Документ</TableHead><TableHead>Файл</TableHead><TableHead>Видимость</TableHead><TableHead className="w-12 text-right" /></TableRow>}
         renderCells={(item, dragHandle) => (
           <>
             <TableCell className="w-10 px-2">{dragHandle}</TableCell>

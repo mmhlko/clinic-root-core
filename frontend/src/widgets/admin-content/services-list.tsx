@@ -144,7 +144,7 @@ export function ServicesList({
             <TableHead>Услуга</TableHead>
             <TableHead>Направление</TableHead>
             <TableHead>Цена</TableHead>
-            <TableHead>Статус</TableHead>
+            <TableHead>Видимость</TableHead>
             <TableHead className="w-12 text-right" />
           </TableRow>
         )}

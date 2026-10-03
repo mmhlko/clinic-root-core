@@ -128,13 +128,13 @@ class ContentClientApi extends RootApi {
   setUserActive(id: string, isActive: boolean) {
     return this.requestPut<AdminUser>(`/users/${id}/active`, { isActive });
   }
-  updateClinic(body: Partial<Clinic>) {
+  updateClinic(body: Partial<Omit<Clinic, "id">>) {
     return this.requestPatch<Clinic>("/clinic", body);
   }
-  createLocation(body: Record<string, unknown>) {
+  createLocation(body: Omit<ClinicLocation, "id">) {
     return this.requestPost<ClinicLocation>("/clinic/locations", body);
   }
-  updateLocation(id: string, body: Record<string, unknown>) {
+  updateLocation(id: string, body: Partial<Omit<ClinicLocation, "id">>) {
     return this.requestPatch<ClinicLocation>(`/clinic/locations/${id}`, body);
   }
   setLocationActive(id: string, isActive: boolean) {
@@ -142,15 +142,28 @@ class ContentClientApi extends RootApi {
       isActive,
     });
   }
-  saveFeatures(features: ClinicFeature[]) {
+  reorderLocations(ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/clinic/locations/reorder", {
+      ids,
+    });
+  }
+  deleteLocation(id: string) {
+    return this.requestDelete<{ message: string }>(`/clinic/locations/${id}`);
+  }
+  saveFeatures(features: (Omit<ClinicFeature, "id"> & { id?: string })[]) {
     return this.requestPut<ClinicFeature[]>("/clinic/features", { features });
   }
-  saveSocialLinks(socialLinks: ClinicSocialLink[]) {
+  saveSocialLinks(socialLinks: (Omit<ClinicSocialLink, "id"> & { id?: string })[]) {
     return this.requestPut<ClinicSocialLink[]>("/clinic/social-links", {
       socialLinks,
     });
   }
-  saveStatistics(statistics: ClinicStatistic[]) {
+  deleteSocialLink(id: string) {
+    return this.requestDelete<{
+      message: string;
+    }>(`/clinic/social-links/${id}`);
+  }
+  saveStatistics(statistics: (Omit<ClinicStatistic, "id"> & { id?: string })[]) {
     return this.requestPut<ClinicStatistic[]>("/clinic/statistics", {
       statistics,
     });

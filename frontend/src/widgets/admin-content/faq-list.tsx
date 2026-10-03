@@ -171,7 +171,7 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
               <span className="sr-only">Перемещение</span>
             </TableHead>
             <TableHead>Вопрос</TableHead>
-            <TableHead>Статус</TableHead>
+            <TableHead>Видимость</TableHead>
             <TableHead className="w-12 text-right" />
           </TableRow>
         )}

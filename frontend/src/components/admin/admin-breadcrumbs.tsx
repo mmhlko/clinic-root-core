@@ -40,7 +40,35 @@ const pageCrumbs: Record<string, Crumb[]> = {
   "/admin/documents": [dashboardCrumb, { label: "Документы" }],
   "/admin/faq": [dashboardCrumb, { label: "FAQ" }],
   "/admin/users": [dashboardCrumb, { label: "Пользователи" }],
-  "/admin/settings": [dashboardCrumb, { label: "Настройки клиники" }],
+  "/admin/settings": [
+    dashboardCrumb,
+    { label: "Настройки клиники" },
+  ],
+  "/admin/settings/general": [
+    dashboardCrumb,
+    { label: "Настройки клиники", href: "/admin/settings/general" },
+    { label: "Общие" },
+  ],
+  "/admin/settings/branches": [
+    dashboardCrumb,
+    { label: "Настройки клиники", href: "/admin/settings/general" },
+    { label: "Филиалы" },
+  ],
+  "/admin/settings/socials": [
+    dashboardCrumb,
+    { label: "Настройки клиники", href: "/admin/settings/general" },
+    { label: "Соцсети" },
+  ],
+  "/admin/settings/benefits": [
+    dashboardCrumb,
+    { label: "Настройки клиники", href: "/admin/settings/general" },
+    { label: "Преимущества" },
+  ],
+  "/admin/settings/stats": [
+    dashboardCrumb,
+    { label: "Настройки клиники", href: "/admin/settings/general" },
+    { label: "Статистика" },
+  ],
   "/admin/profile": [dashboardCrumb, { label: "Профиль" }],
 };
 

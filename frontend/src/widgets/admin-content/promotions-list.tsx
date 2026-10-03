@@ -16,6 +16,9 @@ import { ContentList } from "@/widgets/admin-content/content-list";
 import { ContentSheet } from "@/widgets/admin-content/content-sheet";
 import { contentClientApi } from "@/features/content/api/content-client-api";
 import type { Promotion, Service } from "@/features/content/types/content.types";
+import { statusColorsStyles } from "@/shared/constants/colors";
+import { EStatusVariant } from "@/shared/types/admin";
+import { cn } from "cn";
 
 type SheetMode = "view" | "create" | "edit";
 
@@ -24,6 +27,48 @@ function toLocalDateTime(value?: string | null) {
   const date = new Date(value);
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function getPromotionStatus(
+  promotion: Promotion,
+  now = Date.now(),
+): { status: EStatusVariant; message: string } {
+  const validFrom = promotion.validFrom
+    ? new Date(promotion.validFrom).getTime()
+    : null;
+  const validTo = promotion.validTo
+    ? new Date(promotion.validTo).getTime()
+    : null;
+
+  if (
+    (validFrom !== null && !Number.isFinite(validFrom)) ||
+    (validTo !== null && !Number.isFinite(validTo)) ||
+    (validFrom !== null && validTo !== null && validFrom > validTo)
+  ) {
+    return {
+      status: EStatusVariant.CANCELLED,
+      message: "Некорректный период",
+    };
+  }
+
+  if (validTo !== null && validTo <= now) {
+    return {
+      status: EStatusVariant.COMPLETED,
+      message: "Завершена",
+    };
+  }
+
+  if (validFrom !== null && validFrom > now) {
+    return {
+      status: EStatusVariant.NEW,
+      message: "Запланирована",
+    };
+  }
+
+  return {
+    status: EStatusVariant.IN_PROGRESS,
+    message: "Активна",
+  };
 }
 
 export function PromotionsList({
@@ -133,7 +178,9 @@ export function PromotionsList({
         items={items}
         setItems={setItems}
         getId={(item) => item.id}
-        getSearchText={(item) => `${item.title} ${item.description ?? ""} ${item.service?.name ?? ""}`}
+        getSearchText={(item) =>
+          `${item.title} ${item.description ?? ""} ${item.service?.name ?? ""}`
+        }
         reorder={(ids) => contentClientApi.reorderPromotions(ids)}
         onReorderError={() =>
           toast.add({
@@ -144,40 +191,266 @@ export function PromotionsList({
         onAdd={() => openSheet("create")}
         columnCount={5}
         emptyMessage="Акций пока нет."
-        renderHeader={() => <TableRow><TableHead className="w-10 px-2"><span className="sr-only">Перемещение</span></TableHead><TableHead>Акция</TableHead><TableHead>Услуга и цена</TableHead><TableHead>Статус</TableHead><TableHead className="w-12 text-right" /></TableRow>}
+        renderHeader={() => (
+          <TableRow>
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">Перемещение</span>
+            </TableHead>
+            <TableHead>Акция</TableHead>
+            <TableHead>Услуга и цена</TableHead>
+            <TableHead>Начало</TableHead>
+            <TableHead>Окончание</TableHead>
+            <TableHead>Статус акции</TableHead>
+            <TableHead>Видимость</TableHead>
+            <TableHead className="w-12 text-right" />
+          </TableRow>
+        )}
         renderCells={(item, dragHandle) => (
           <>
             <TableCell className="w-10 px-2">{dragHandle}</TableCell>
-            <TableCell><button className="text-left font-medium hover:underline" onClick={() => openSheet("view", item)}>{item.title}</button></TableCell>
-            <TableCell>{item.service?.name ?? "Без услуги"}<span className="block text-xs text-muted-foreground">{item.newPrice == null ? "Цена не указана" : `${item.newPrice} ₽`}</span></TableCell>
-            <TableCell><Switch checked={item.isActive} disabled={busyId === item.id} onCheckedChange={(value) => void toggle(item, value)} aria-label={`Активность: ${item.title}`} /></TableCell>
+            <TableCell>
+              <button
+                className="text-left font-medium hover:underline"
+                onClick={() => openSheet("view", item)}
+              >
+                {item.title}
+              </button>
+            </TableCell>
+            <TableCell>
+              {item.service?.name ?? "Без услуги"}
+              <span className="block text-xs text-muted-foreground">
+                {item.newPrice == null
+                  ? "Цена не указана"
+                  : `${item.newPrice} ₽`}
+              </span>
+            </TableCell>
+            <TableCell>
+              {item.validFrom ? new Date(item.validFrom).toLocaleDateString() : "Не указано"}
+            </TableCell>
+            <TableCell>
+              {item.validTo ? new Date(item.validTo).toLocaleDateString() : "Не указано"}
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline" className={cn(
+                statusColorsStyles[getPromotionStatus(item).status]
+              )}>
+                {getPromotionStatus(item) ? getPromotionStatus(item).message : "Неизвестно"}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Switch
+                checked={item.isActive}
+                disabled={busyId === item.id}
+                onCheckedChange={(value) => void toggle(item, value)}
+                aria-label={`Активность: ${item.title}`}
+              />
+            </TableCell>
             <TableCell className="text-right">{actionMenu(item)}</TableCell>
           </>
         )}
-        renderCard={(item, dragHandle) => (
-          <article key={item.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">{dragHandle}<button className="min-w-0 flex-1 text-left" onClick={() => openSheet("view", item)}><span className="block font-medium">{item.title}</span><span className="mt-1 block text-sm text-muted-foreground">{item.service?.name ?? "Без услуги"}</span><span className="mt-1 block text-sm">{item.newPrice == null ? "Цена не указана" : `${item.newPrice} ₽`}</span></button>{actionMenu(item)}</div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3"><Badge variant="outline">{item.isActive ? "Активна" : "Скрыта"}</Badge><Switch checked={item.isActive} disabled={busyId === item.id} onCheckedChange={(value) => void toggle(item, value)} aria-label={`Активность: ${item.title}`} /></div>
-          </article>
-        )}
+        renderCard={(item, dragHandle) => {
+          const status = getPromotionStatus(item);
+
+          return (
+            <article key={item.id} className="rounded-lg border bg-card p-4">
+              <div className="flex items-start gap-3">
+                {dragHandle}
+                <button
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => openSheet("view", item)}
+                >
+                  <span className="block font-medium">{item.title}</span>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    {item.service?.name ?? "Без услуги"}
+                  </span>
+                  <span className="mt-1 block text-sm">
+                    {item.newPrice == null
+                      ? "Цена не указана"
+                      : `${item.newPrice} ₽`}
+                  </span>
+                </button>
+                {actionMenu(item)}
+              </div>
+              <div className="mt-3 space-y-3 border-t pt-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    Статус акции
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(statusColorsStyles[status.status])}
+                  >
+                    {status.message}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">
+                      Видимость на сайте
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Показывать акцию посетителям
+                    </p>
+                  </div>
+                  <Switch
+                    checked={item.isActive}
+                    disabled={busyId === item.id}
+                    onCheckedChange={(value) => void toggle(item, value)}
+                    aria-label={`Показывать акцию «${item.title}» на сайте`}
+                  />
+                </div>
+              </div>
+            </article>
+          );
+        }}
       />
 
-      <ContentSheet open={open} onOpenChange={setOpen} title={mode === "view" ? selected?.title ?? "Акция" : mode === "create" ? "Новая акция" : "Редактировать акцию"} description={mode === "view" ? "Информация об акции" : "Укажите условия и срок действия акции."}>
+      <ContentSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={
+          mode === "view"
+            ? (selected?.title ?? "Акция")
+            : mode === "create"
+              ? "Новая акция"
+              : "Редактировать акцию"
+        }
+        description={
+          mode === "view"
+            ? "Информация об акции"
+            : "Укажите условия и срок действия акции."
+        }
+      >
         {mode === "view" && selected ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between"><Badge variant="outline">{selected.isActive ? "Активна" : "Скрыта"}</Badge><Button variant="outline" onClick={() => setMode("edit")}><PencilIcon data-icon="inline-start" />Редактировать</Button></div>
-            <p className="whitespace-pre-wrap text-sm">{selected.description || "Без описания"}</p>
-            <dl className="divide-y rounded-lg border text-sm"><div className="grid grid-cols-[110px_1fr] gap-3 p-3"><dt className="text-muted-foreground">Услуга</dt><dd>{selected.service?.name ?? "Без услуги"}</dd></div><div className="grid grid-cols-[110px_1fr] gap-3 p-3"><dt className="text-muted-foreground">Старая цена</dt><dd>{selected.oldPrice == null ? "Не указана" : `${selected.oldPrice} ₽`}</dd></div><div className="grid grid-cols-[110px_1fr] gap-3 p-3"><dt className="text-muted-foreground">Новая цена</dt><dd>{selected.newPrice == null ? "Не указана" : `${selected.newPrice} ₽`}</dd></div><div className="grid grid-cols-[110px_1fr] gap-3 p-3"><dt className="text-muted-foreground">Период</dt><dd>{selected.validFrom ? new Date(selected.validFrom).toLocaleDateString("ru-RU") : "Без ограничения"} — {selected.validTo ? new Date(selected.validTo).toLocaleDateString("ru-RU") : "без окончания"}</dd></div></dl>
+            <div className="flex items-center justify-between">
+              <Badge variant="outline">
+                {selected.isActive ? "Активна" : "Скрыта"}
+              </Badge>
+              <Button variant="outline" onClick={() => setMode("edit")}>
+                <PencilIcon data-icon="inline-start" />
+                Редактировать
+              </Button>
+            </div>
+            <p className="whitespace-pre-wrap text-sm">
+              {selected.description || "Без описания"}
+            </p>
+            <dl className="divide-y rounded-lg border text-sm">
+              <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Услуга</dt>
+                <dd>{selected.service?.name ?? "Без услуги"}</dd>
+              </div>
+              <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Старая цена</dt>
+                <dd>
+                  {selected.oldPrice == null
+                    ? "Не указана"
+                    : `${selected.oldPrice} ₽`}
+                </dd>
+              </div>
+              <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Новая цена</dt>
+                <dd>
+                  {selected.newPrice == null
+                    ? "Не указана"
+                    : `${selected.newPrice} ₽`}
+                </dd>
+              </div>
+              <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Период</dt>
+                <dd>
+                  {selected.validFrom
+                    ? new Date(selected.validFrom).toLocaleDateString("ru-RU")
+                    : "Без ограничения"}{" "}
+                  —{" "}
+                  {selected.validTo
+                    ? new Date(selected.validTo).toLocaleDateString("ru-RU")
+                    : "без окончания"}
+                </dd>
+              </div>
+            </dl>
           </div>
         ) : (
           <form onSubmit={(event) => void save(event)} className="space-y-4">
-            <ContentField label="Название" name="title" required defaultValue={selected?.title} />
-            <ContentField label="Описание" name="description" textarea defaultValue={selected?.description} />
-            <ContentField label="URL изображения" name="imageUrl" type="url" defaultValue={selected?.imageUrl} />
-            <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Старая цена" name="oldPrice" type="number" min={0} defaultValue={selected?.oldPrice} /><ContentField label="Новая цена" name="newPrice" type="number" min={0} defaultValue={selected?.newPrice} /></div>
-            <div className="grid gap-4 sm:grid-cols-2"><ContentField label="Начало" name="validFrom" type="datetime-local" defaultValue={toLocalDateTime(selected?.validFrom)} /><ContentField label="Окончание" name="validTo" type="datetime-local" defaultValue={toLocalDateTime(selected?.validTo)} /></div>
-            <div className="space-y-2"><Label htmlFor="serviceId">Услуга</Label><select id="serviceId" name="serviceId" defaultValue={selected?.serviceId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="">Без услуги</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></div>
-            <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
+            <ContentField
+              label="Название"
+              name="title"
+              required
+              defaultValue={selected?.title}
+            />
+            <ContentField
+              label="Описание"
+              name="description"
+              textarea
+              defaultValue={selected?.description}
+            />
+            <ContentField
+              label="URL изображения"
+              name="imageUrl"
+              type="url"
+              defaultValue={selected?.imageUrl}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ContentField
+                label="Старая цена"
+                name="oldPrice"
+                type="number"
+                min={0}
+                defaultValue={selected?.oldPrice}
+              />
+              <ContentField
+                label="Новая цена"
+                name="newPrice"
+                type="number"
+                min={0}
+                defaultValue={selected?.newPrice}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ContentField
+                label="Начало"
+                name="validFrom"
+                type="datetime-local"
+                defaultValue={toLocalDateTime(selected?.validFrom)}
+              />
+              <ContentField
+                label="Окончание"
+                name="validTo"
+                type="datetime-local"
+                defaultValue={toLocalDateTime(selected?.validTo)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="serviceId">Услуга</Label>
+              <select
+                id="serviceId"
+                name="serviceId"
+                defaultValue={selected?.serviceId ?? ""}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">Без услуги</option>
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                <SaveIcon data-icon="inline-start" />
+                {saving ? "Сохранение…" : "Сохранить"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={saving}
+              >
+                <XIcon data-icon="inline-start" />
+                Отмена
+              </Button>
+            </div>
           </form>
         )}
       </ContentSheet>

@@ -25,8 +25,10 @@ import { NavUser } from "./nav-user";
 import { AuthUser } from "@/features/auth/types/auth.types";
 import { useAuth } from "@/features/auth/providers/auth-provider";
 import { useRouter } from "next/navigation";
+import { SidebarItem } from "./types/app-sidebar.types";
 
-const navItems = [
+
+const navItems: SidebarItem[] = [
   {
     title: "Дашборд",
     href: "/admin",
@@ -51,8 +53,8 @@ const navItems = [
     roles: ["root", "admin", "manager"] as const,
     isActive: true,
     items: [
-      { title: "Направления услуг", href: "/admin/directions" },
-      { title: "Виды услуг", href: "/admin/services" },
+      { title: "Направления услуг", href: "/admin/directions", roles: ["root", "admin", "manager"] as const },
+      { title: "Виды услуг", href: "/admin/services", roles: ["root", "admin", "manager"] as const },
     ],
   },
   {
@@ -87,15 +89,35 @@ const navItems = [
   },
   {
     title: "Настройки",
-    href: "/admin/settings",
+    // href: "/admin/settings",
     icon: Settings,
-    roles: ["root", "admin"] as const,
+    roles: ["root", "admin", "manager"] as const,
+    items: [
+      { title: "Общие", href: "/admin/settings/general", roles: ["root", "admin", "manager"] as const },
+      { title: "Филиалы", href: "/admin/settings/branches", roles: ["root", "admin", "manager"] as const },
+      { title: "Соцсети", href: "/admin/settings/socials", roles: ["root", "admin", "manager"] as const },
+      { title: "Преимущества", href: "/admin/settings/benefits", roles: ["root", "admin", "manager"] as const },
+      { title: "Статистика", href: "/admin/settings/stats", roles: ["root", "admin", "manager"] as const },
+    ],
   },
 ];
 
 type AppSidebarProps = {
   user: AuthUser;
 };
+
+function filterVisibleItems(
+  items: SidebarItem[],
+  role: AuthUser["role"],
+): SidebarItem[] {
+  return items
+    .filter((item) => item.roles.includes(role))
+    .map((item) => ({
+      ...item,
+      items: item.items ? filterVisibleItems(item.items, role) : undefined,
+    }))
+    .filter((item) => item.href || item.items?.length);
+}
 
 export function AppSidebar({
   user,
@@ -104,9 +126,7 @@ export function AppSidebar({
   const router = useRouter();
   const { logout, user: authUser } = useAuth();
   const currentUser = authUser ?? user;
-  const visibleNavItems = navItems.filter(({ roles }) =>
-    roles.some((role) => role === currentUser.role),
-  );
+  const visibleNavItems = filterVisibleItems(navItems, currentUser.role);
   const handleLogout = async () => {
     await logout().catch(() => undefined);
     router.replace("/admin/login");

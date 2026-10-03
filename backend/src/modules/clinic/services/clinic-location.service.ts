@@ -5,11 +5,13 @@ import {
 } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
 
 
 import { CreateClinicLocationDto } from '../dto/create-clinic-location.dto.js';
 import { UpdateClinicLocationDto } from '../dto/update-clinic-location.dto.js';
 import { ClinicLocationModel } from '../models/clinic-location.model.js';
+import { UserModel } from '../../users/user.model.js';
 
 @Injectable()
 export class ClinicLocationService {
@@ -17,6 +19,9 @@ export class ClinicLocationService {
     @InjectModel(ClinicLocationModel)
     private readonly clinicLocationModel:
       typeof ClinicLocationModel,
+    @InjectModel(UserModel)
+    private readonly userModel: typeof UserModel,
+    private readonly sequelize: Sequelize,
   ) {}
 
   async create(dto: CreateClinicLocationDto) {
@@ -149,5 +154,54 @@ export class ClinicLocationService {
     await location.save();
 
     return location;
+  }
+
+  async remove(id: string) {
+    const location = await this.findById(id);
+    const assignedUsers = await this.userModel.count({
+      where: { locationId: id },
+    });
+
+    if (assignedUsers > 0) {
+      throw new ConflictException(
+        'Cannot delete clinic location with assigned users',
+      );
+    }
+
+    await location.destroy();
+    return { message: 'Clinic location deleted' };
+  }
+
+  async reorder(ids: string[]) {
+    return this.sequelize.transaction(async (transaction) => {
+      const uniqueIds = new Set(ids);
+      if (uniqueIds.size !== ids.length) {
+        throw new ConflictException('Duplicate clinic location ids');
+      }
+
+      const locations = await this.clinicLocationModel.findAll({
+        where: { id: ids },
+        transaction,
+      });
+
+      if (locations.length !== ids.length) {
+        throw new NotFoundException('One or more clinic locations not found');
+      }
+
+      const locationsById = new Map(
+        locations.map((location) => [location.id, location]),
+      );
+
+      for (const [sortOrder, id] of ids.entries()) {
+        const location = locationsById.get(id);
+        if (!location) {
+          throw new NotFoundException('Clinic location not found');
+        }
+        location.sortOrder = sortOrder;
+        await location.save({ transaction });
+      }
+
+      return { success: true };
+    });
   }
 }

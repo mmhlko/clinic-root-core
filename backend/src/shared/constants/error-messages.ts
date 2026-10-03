@@ -5,6 +5,7 @@ export const ERROR_MESSAGES = {
   clinicAlreadyExists: "Клиника уже создана.",
   clinicFeatureNotFound: "Характеристика клиники не найдена.",
   clinicLocationAlreadyExists: "Филиал с такими данными уже существует.",
+  clinicLocationHasAssignedUsers: "Нельзя удалить филиал, к которому привязаны пользователи.",
   clinicLocationNotFound: "Филиал не найден.",
   clinicNotFound: "Клиника не найдена.",
   clinicStatisticNotFound: "Статистика клиники не найдена.",
@@ -84,6 +85,8 @@ const backendMessageTranslations: Record<string, string> = {
     ERROR_MESSAGES.serviceCannotBeDeletedWithRequests,
   "Clinic already exists": ERROR_MESSAGES.clinicAlreadyExists,
   "Clinic location already exists": ERROR_MESSAGES.clinicLocationAlreadyExists,
+  "Cannot delete clinic location with assigned users":
+    ERROR_MESSAGES.clinicLocationHasAssignedUsers,
   "Clinic location not found": ERROR_MESSAGES.clinicLocationNotFound,
   "Clinic not found": ERROR_MESSAGES.clinicNotFound,
   "Current email is occupied, please choose another email":

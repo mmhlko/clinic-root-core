@@ -9,6 +9,12 @@ describe('localizeErrorMessage', () => {
     );
   });
 
+  it('translates conflicts when deleting a location assigned to users', () => {
+    expect(
+      localizeErrorMessage('Cannot delete clinic location with assigned users'),
+    ).toBe(ERROR_MESSAGES.clinicLocationHasAssignedUsers);
+  });
+
   it('translates backend errors containing resource identifiers', () => {
     expect(localizeErrorMessage('Doctor doctor-id not found')).toBe(
       ERROR_MESSAGES.doctorNotFound,

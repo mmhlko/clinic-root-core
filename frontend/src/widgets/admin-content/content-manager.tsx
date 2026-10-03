@@ -57,6 +57,17 @@ type Props = {
   currentRole?: UserRole;
 };
 
+function getReviewStatusLabel(status: Review["status"]) {
+  switch (status) {
+    case "pending":
+      return "На модерации";
+    case "published":
+      return "Опубликован";
+    case "rejected":
+      return "Отклонён";
+  }
+}
+
 function FormShell({
   children,
   onCancel,
@@ -495,11 +506,19 @@ export function ContentManager({
                               : item.name || item.title}
                       </h3>
                       {kind === "reviews" && (
-                        <Badge variant="outline">{item.status}</Badge>
+                        <Badge variant="outline">
+                          Публикация: {getReviewStatusLabel(item.status)}
+                        </Badge>
                       )}
                       {"isActive" in item && (
                         <Badge variant="outline">
-                          {item.isActive ? "Активна" : "Скрыта"}
+                          {kind === "reviews"
+                            ? item.isActive
+                              ? "Видна на сайте"
+                              : "Скрыта с сайта"
+                            : item.isActive
+                              ? "Активна"
+                              : "Скрыта"}
                         </Badge>
                       )}
                     </div>
