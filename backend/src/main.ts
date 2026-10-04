@@ -3,6 +3,7 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Request, Response } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ERROR_MESSAGES } from './shared/constants/error-messages.js';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter.js';
@@ -46,6 +47,9 @@ async function bootstrap() {
 
   const uploadsPath = join(process.cwd(), 'uploads');
   app.useStaticAssets(uploadsPath, { prefix: '/uploads/' });
+  app.use('/health', (_req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }
