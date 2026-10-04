@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
+import { PencilIcon, SaveIcon, Tag, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import { ContentList } from "@/widgets/admin-content/content-list";
 import { ContentSheet } from "@/widgets/admin-content/content-sheet";
 import { contentClientApi } from "@/features/content/api/content-client-api";
 import type { Service, ServiceDirection } from "@/features/content/types/content.types";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { PromotionHoverCard } from "@/components/shared/promotion-hover-card";
 
 type SheetMode = "view" | "create" | "edit";
 
@@ -120,6 +123,7 @@ export function ServicesList({
     );
   }
 
+
   return (
     <div className="space-y-3">
       <ContentList
@@ -127,7 +131,9 @@ export function ServicesList({
         items={items}
         setItems={setItems}
         getId={(item) => item.id}
-        getSearchText={(item) => `${item.name} ${item.description ?? ""} ${item.direction?.name ?? ""}`}
+        getSearchText={(item) =>
+          `${item.name} ${item.description ?? ""} ${item.direction?.name ?? ""}`
+        }
         reorder={(ids) => contentClientApi.reorderServices(ids)}
         onReorderError={() =>
           toast.add({
@@ -140,10 +146,13 @@ export function ServicesList({
         emptyMessage="Услуг пока нет."
         renderHeader={() => (
           <TableRow>
-            <TableHead className="w-10 px-2"><span className="sr-only">Перемещение</span></TableHead>
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">Перемещение</span>
+            </TableHead>
             <TableHead>Услуга</TableHead>
             <TableHead>Направление</TableHead>
             <TableHead>Цена</TableHead>
+            <TableHead>Акция</TableHead>
             <TableHead>Видимость</TableHead>
             <TableHead className="w-12 text-right" />
           </TableRow>
@@ -152,12 +161,31 @@ export function ServicesList({
           <>
             <TableCell className="w-10 px-2">{dragHandle}</TableCell>
             <TableCell>
-              <button className="text-left font-medium hover:underline" onClick={() => openSheet("view", item)}>{item.name}</button>
+              <button
+                className="text-left font-medium hover:underline"
+                onClick={() => openSheet("view", item)}
+              >
+                {item.name}
+              </button>
             </TableCell>
             <TableCell>{item.direction?.name ?? "Без направления"}</TableCell>
-            <TableCell>{item.price == null ? "Не указана" : `${item.isPriceFrom ? "от " : ""}${item.price} ₽`}</TableCell>
             <TableCell>
-              <Switch checked={item.isActive} disabled={busyId === item.id} onCheckedChange={(value) => void toggle(item, value)} aria-label={`Активность: ${item.name}`} />
+              {item.price == null
+                ? "Не указана"
+                : `${item.isPriceFrom ? "от " : ""}${item.price} ₽`}
+            </TableCell>
+            <TableCell>
+              {item.promotion && (
+                <PromotionHoverCard promotion={item.promotion} />
+              )}
+            </TableCell>
+            <TableCell>
+              <Switch
+                checked={item.isActive}
+                disabled={busyId === item.id}
+                onCheckedChange={(value) => void toggle(item, value)}
+                aria-label={`Активность: ${item.name}`}
+              />
             </TableCell>
             <TableCell className="text-right">{actionMenu(item)}</TableCell>
           </>
@@ -166,16 +194,32 @@ export function ServicesList({
           <article key={item.id} className="rounded-lg border bg-card p-4">
             <div className="flex items-start gap-3">
               {dragHandle}
-              <button className="min-w-0 flex-1 text-left" onClick={() => openSheet("view", item)}>
+              <button
+                className="min-w-0 flex-1 text-left"
+                onClick={() => openSheet("view", item)}
+              >
                 <span className="block font-medium">{item.name}</span>
-                <span className="mt-1 block text-sm text-muted-foreground">{item.direction?.name ?? "Без направления"}</span>
-                <span className="mt-1 block text-sm">{item.price == null ? "Цена не указана" : `${item.isPriceFrom ? "от " : ""}${item.price} ₽`}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  {item.direction?.name ?? "Без направления"}
+                </span>
+                <span className="mt-1 block text-sm">
+                  {item.price == null
+                    ? "Цена не указана"
+                    : `${item.isPriceFrom ? "от " : ""}${item.price} ₽`}
+                </span>
               </button>
               {actionMenu(item)}
             </div>
             <div className="mt-3 flex items-center justify-between border-t pt-3">
-              <Badge variant="outline">{item.isActive ? "Активна" : "Скрыта"}</Badge>
-              <Switch checked={item.isActive} disabled={busyId === item.id} onCheckedChange={(value) => void toggle(item, value)} aria-label={`Активность: ${item.name}`} />
+              <Badge variant="outline">
+                {item.isActive ? "Активна" : "Скрыта"}
+              </Badge>
+              <Switch
+                checked={item.isActive}
+                disabled={busyId === item.id}
+                onCheckedChange={(value) => void toggle(item, value)}
+                aria-label={`Активность: ${item.name}`}
+              />
             </div>
           </article>
         )}
@@ -184,40 +228,122 @@ export function ServicesList({
       <ContentSheet
         open={open}
         onOpenChange={setOpen}
-        title={mode === "view" ? selected?.name ?? "Услуга" : mode === "create" ? "Новая услуга" : "Редактировать услугу"}
-        description={mode === "view" ? "Информация об услуге" : "Укажите направление, название и стоимость услуги."}
+        title={
+          mode === "view"
+            ? (selected?.name ?? "Услуга")
+            : mode === "create"
+              ? "Новая услуга"
+              : "Редактировать услугу"
+        }
+        description={
+          mode === "view"
+            ? "Информация об услуге"
+            : "Укажите направление, название и стоимость услуги."
+        }
       >
         {mode === "view" && selected ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Badge variant="outline">{selected.isActive ? "Активна" : "Скрыта"}</Badge>
-              <Button variant="outline" onClick={() => setMode("edit")}><PencilIcon data-icon="inline-start" />Редактировать</Button>
+              <Badge variant="outline">
+                {selected.isActive ? "Активна" : "Скрыта"}
+              </Badge>
+              <Button variant="outline" onClick={() => setMode("edit")}>
+                <PencilIcon data-icon="inline-start" />
+                Редактировать
+              </Button>
             </div>
             <dl className="divide-y rounded-lg border text-sm">
-              <div className="grid grid-cols-[110px_1fr] gap-3 p-3"><dt className="text-muted-foreground">Направление</dt><dd>{selected.direction?.name ?? "Без направления"}</dd></div>
-              <div className="grid grid-cols-[110px_1fr] gap-3 p-3"><dt className="text-muted-foreground">Стоимость</dt><dd>{selected.price == null ? "Не указана" : `${selected.isPriceFrom ? "от " : ""}${selected.price} ₽`}</dd></div>
-              <div className="grid gap-1 p-3"><dt className="text-muted-foreground">Описание</dt><dd className="whitespace-pre-wrap">{selected.description || "Без описания"}</dd></div>
+              <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Направление</dt>
+                <dd>{selected.direction?.name ?? "Без направления"}</dd>
+              </div>
+              <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Стоимость</dt>
+                <dd>
+                  {selected.price == null
+                    ? "Не указана"
+                    : `${selected.isPriceFrom ? "от " : ""}${selected.price} ₽`}
+                </dd>
+              </div>
+              <div className="grid gap-1 p-3">
+                <dt className="text-muted-foreground">Описание</dt>
+                <dd className="whitespace-pre-wrap">
+                  {selected.description || "Без описания"}
+                </dd>
+              </div>
             </dl>
           </div>
         ) : (
           <form onSubmit={(event) => void save(event)} className="space-y-4">
-            <ContentField label="Название" name="name" required defaultValue={selected?.name} />
+            <ContentField
+              label="Название"
+              name="name"
+              required
+              defaultValue={selected?.name}
+            />
             <div className="space-y-2">
               <Label htmlFor="directionId">Направление</Label>
-              <select id="directionId" name="directionId" required defaultValue={selected?.directionId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm">
-                <option value="" disabled>Выберите направление</option>
-                {directions.filter((direction) => direction.isActive).map((direction) => <option key={direction.id} value={direction.id}>{direction.name}</option>)}
+              <select
+                id="directionId"
+                name="directionId"
+                required
+                defaultValue={selected?.directionId ?? ""}
+                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="" disabled>
+                  Выберите направление
+                </option>
+                {directions
+                  .filter((direction) => direction.isActive)
+                  .map((direction) => (
+                    <option key={direction.id} value={direction.id}>
+                      {direction.name}
+                    </option>
+                  ))}
               </select>
             </div>
-            <ContentField label="Описание" name="description" textarea defaultValue={selected?.description} />
+            <ContentField
+              label="Описание"
+              name="description"
+              textarea
+              defaultValue={selected?.description}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
-              <ContentField label="Цена" name="price" type="number" min={0} defaultValue={selected?.price} />
+              <ContentField
+                label="Цена"
+                name="price"
+                type="number"
+                min={0}
+                defaultValue={selected?.price}
+              />
               <div className="space-y-2">
                 <Label htmlFor="isPriceFrom">Цена от</Label>
-                <select id="isPriceFrom" name="isPriceFrom" defaultValue={String(selected?.isPriceFrom ?? false)} className="h-9 w-full rounded-md border bg-background px-3 text-sm"><option value="false">Нет</option><option value="true">Да</option></select>
+                <select
+                  id="isPriceFrom"
+                  name="isPriceFrom"
+                  defaultValue={String(selected?.isPriceFrom ?? false)}
+                  className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+                >
+                  <option value="false">Нет</option>
+                  <option value="true">Да</option>
+                </select>
               </div>
             </div>
-            <div className="flex gap-2"><Button type="submit" disabled={saving}><SaveIcon data-icon="inline-start" />{saving ? "Сохранение…" : "Сохранить"}</Button><Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}><XIcon data-icon="inline-start" />Отмена</Button></div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                <SaveIcon data-icon="inline-start" />
+                {saving ? "Сохранение…" : "Сохранить"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={saving}
+              >
+                <XIcon data-icon="inline-start" />
+                Отмена
+              </Button>
+            </div>
           </form>
         )}
       </ContentSheet>

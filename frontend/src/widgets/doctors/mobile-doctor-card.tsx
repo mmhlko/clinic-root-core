@@ -2,11 +2,11 @@ import { ActiveSwitch } from "@/components/shared/active-switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { DoctorListItem } from "@/features/doctors/types/doctors.types";
 import { activityColorsStyles } from "@/shared/constants/colors";
 import { getDoctorFullName } from "@/shared/helpers/getDoctorFullName";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
-import { Separator } from "@base-ui/react";
 import { cn } from "cn";
 import { ReactNode } from "react";
 

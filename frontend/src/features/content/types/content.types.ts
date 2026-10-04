@@ -18,6 +18,7 @@ export interface Service {
   sortOrder: number;
   isActive: boolean;
   direction?: ServiceDirection | null;
+  promotion?: Promotion | null;
 }
 export interface Promotion {
   id: string;

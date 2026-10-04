@@ -12,6 +12,7 @@ import { ServiceModel } from '../services/service.model.js';
 import { CreatePromotionDto } from './dto/create-promotion.dto.js';
 import { UpdatePromotionDto } from './dto/update-promotion.dto.js';
 import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class PromotionsService {
@@ -54,18 +55,27 @@ export class PromotionsService {
       );
     }
 
+    const validFrom = dto.validFrom
+      ? new Date(dto.validFrom)
+      : null;
+    const validTo = dto.validTo
+      ? new Date(dto.validTo)
+      : null;
+
+    await this.assertNoOverlappingPromotion(
+      dto.serviceId ?? null,
+      validFrom,
+      validTo,
+    );
+
     return this.promotionModel.create({
       title: dto.title,
       description: dto.description ?? null,
       imageUrl: dto.imageUrl ?? null,
       oldPrice: dto.oldPrice ?? null,
       newPrice: dto.newPrice ?? null,
-      validFrom: dto.validFrom
-        ? new Date(dto.validFrom)
-        : null,
-      validTo: dto.validTo
-        ? new Date(dto.validTo)
-        : null,
+      validFrom,
+      validTo,
       serviceId: dto.serviceId ?? null,
       sortOrder: dto.sortOrder ?? 0,
     });
@@ -201,6 +211,15 @@ export class PromotionsService {
       promotion.serviceId = dto.serviceId;
     }
 
+    if (promotion.isActive) {
+      await this.assertNoOverlappingPromotion(
+        promotion.serviceId,
+        promotion.validFrom,
+        promotion.validTo,
+        promotion.id,
+      );
+    }
+
     if (dto.sortOrder !== undefined) {
       promotion.sortOrder = dto.sortOrder;
     }
@@ -220,6 +239,15 @@ export class PromotionsService {
     if (!promotion) {
       throw new NotFoundException(
         'Promotion not found',
+      );
+    }
+
+    if (isActive) {
+      await this.assertNoOverlappingPromotion(
+        promotion.serviceId,
+        promotion.validFrom,
+        promotion.validTo,
+        promotion.id,
       );
     }
 
@@ -281,5 +309,56 @@ export class PromotionsService {
         success: true,
       };
     });
+  }
+
+  private async assertNoOverlappingPromotion(
+    serviceId: string | null,
+    validFrom: Date | null,
+    validTo: Date | null,
+    excludedPromotionId?: string,
+  ) {
+    if (!serviceId) {
+      return;
+    }
+
+    const startsAt = validFrom?.getTime() ?? Date.now();
+    const endsAt = validTo?.getTime() ?? Number.POSITIVE_INFINITY;
+
+    if (endsAt < Date.now()) {
+      return;
+    }
+
+    if (startsAt > endsAt) {
+      throw new ConflictException(
+        'Promotion end date must be after its start date',
+      );
+    }
+
+    const existingPromotions =
+      await this.promotionModel.findAll({
+        where: {
+          serviceId,
+          isActive: true,
+          ...(excludedPromotionId
+            ? { id: { [Op.ne]: excludedPromotionId } }
+            : {}),
+        },
+        attributes: ['id', 'validFrom', 'validTo'],
+      });
+
+    const overlaps = existingPromotions.some((existing) => {
+      const existingStartsAt =
+        existing.validFrom?.getTime() ?? Number.NEGATIVE_INFINITY;
+      const existingEndsAt =
+        existing.validTo?.getTime() ?? Number.POSITIVE_INFINITY;
+
+      return startsAt <= existingEndsAt && existingStartsAt <= endsAt;
+    });
+
+    if (overlaps) {
+      throw new ConflictException(
+        'An active promotion already exists for this service during this period',
+      );
+    }
   }
 }

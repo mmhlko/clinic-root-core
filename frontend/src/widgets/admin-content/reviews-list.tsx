@@ -19,6 +19,7 @@ import type { Review } from "@/features/content/types/content.types";
 import { ReviewRating } from "@/components/shared/review-rating";
 import { statusColorsStyles } from "@/shared/constants/colors";
 import { EStatusVariant } from "@/shared/types/admin";
+import { Separator } from "@/components/ui/separator";
 
 type SheetMode = "view" | "create" | "edit";
 type DoctorOption = { id: string; firstName: string; lastName: string };
@@ -268,7 +269,10 @@ export function ReviewsList({
                 : "Не указана"}
             </TableCell>
             <TableCell>
-              <Badge variant="outline" className={getReviewStatusColor(item.status)}>
+              <Badge
+                variant="outline"
+                className={getReviewStatusColor(item.status)}
+              >
                 {getReviewStatusLabel(item.status)}
               </Badge>
             </TableCell>
@@ -286,7 +290,6 @@ export function ReviewsList({
         renderCard={(item, dragHandle) => (
           <article key={item.id} className="rounded-lg border bg-card p-4">
             <div className="flex items-start gap-3">
-              {dragHandle}
               <button
                 className="min-w-0 flex-1 text-left"
                 onClick={() => openSheet("view", item)}
@@ -299,18 +302,28 @@ export function ReviewsList({
                   {item.text}
                 </span>
               </button>
-              {actionMenu(item)}
+              {/* Drag */}
+              <div className="shrink-0">{dragHandle}</div>
             </div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3">
-              <Badge variant="outline" className={getReviewStatusColor(item.status)}>
-                {getReviewStatusLabel(item.status)}
-              </Badge>
-              <Switch
-                checked={item.isActive}
-                disabled={item.status !== "published" || busyId === item.id}
-                onCheckedChange={(value) => void toggle(item, value)}
-                aria-label={`Показ отзыва: ${item.authorName}`}
-              />
+
+            <Separator className="my-4" />
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <Switch
+                  checked={item.isActive}
+                  disabled={item.status !== "published" || busyId === item.id}
+                  onCheckedChange={(value) => void toggle(item, value)}
+                  aria-label={`Показ отзыва: ${item.authorName}`}
+                />
+                <Badge
+                  variant="outline"
+                  className={getReviewStatusColor(item.status)}
+                >
+                  {getReviewStatusLabel(item.status)}
+                </Badge>
+              </div>
+              {actionMenu(item)}
             </div>
           </article>
         )}
@@ -333,7 +346,10 @@ export function ReviewsList({
         {mode === "view" && selected ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Badge variant="outline" className={getReviewStatusColor(selected.status)}>
+              <Badge
+                variant="outline"
+                className={getReviewStatusColor(selected.status)}
+              >
                 {getReviewStatusLabel(selected.status)}
               </Badge>
               <Button variant="outline" onClick={() => setMode("edit")}>
