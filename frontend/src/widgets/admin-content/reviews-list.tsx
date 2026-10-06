@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
-import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
+import { ContentActionsMenu, ContentMenuAction } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
 import { ContentList } from "@/widgets/admin-content/content-list";
@@ -19,7 +19,8 @@ import type { Review } from "@/features/content/types/content.types";
 import { ReviewRating } from "@/components/shared/review-rating";
 import { statusColorsStyles } from "@/shared/constants/colors";
 import { EStatusVariant } from "@/shared/types/admin";
-import { Separator } from "@/components/ui/separator";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { activityColorsStyles } from "@/shared/constants/colors";
 
 type SheetMode = "view" | "create" | "edit";
 type DoctorOption = { id: string; firstName: string; lastName: string };
@@ -173,45 +174,49 @@ export function ReviewsList({
     }
   }
 
-  function actionMenu(item: Review) {
-    return (
-      <ContentActionsMenu
-        item={item}
-        itemLabel={item.authorName}
-        actions={[
-          {
-            label: "Просмотреть",
-            onSelect: (value) => openSheet("view", value),
-          },
-          {
-            label: "Редактировать",
-            onSelect: (value) => openSheet("edit", value),
-          },
-          ...(item.status === "pending"
-            ? [
-                {
-                  label: "Опубликовать",
-                  onSelect: (value: Review) => moderate(value, "publish"),
-                },
-                {
-                  label: "Отклонить",
-                  onSelect: (value: Review) => moderate(value, "reject"),
-                },
-              ]
-            : []),
-          {
-            label: "Удалить",
-            destructive: true,
-            onSelect: remove,
-            confirm: {
-              title: "Удалить отзыв?",
-              description: "Отзыв будет удалён без возможности восстановления.",
+  function getActions(item: Review): ContentMenuAction<Review>[] {
+    return [
+      {
+        label: "Просмотреть",
+        onSelect: (value) => openSheet("view", value),
+      },
+      {
+        label: "Редактировать",
+        onSelect: (value) => openSheet("edit", value),
+      },
+      ...(item.status === "pending"
+        ? [
+            {
+              label: "Опубликовать",
+              onSelect: (value: Review) => moderate(value, "publish"),
             },
-          },
-        ]}
-      />
-    );
+            {
+              label: "Отклонить",
+              onSelect: (value: Review) => moderate(value, "reject"),
+            },
+          ]
+        : []),
+      {
+        label: "Удалить",
+        destructive: true,
+        onSelect: remove,
+        confirm: {
+          title: "Удалить отзыв?",
+          description: "Отзыв будет удалён без возможности восстановления.",
+        },
+      },
+    ];
   }
+
+    function actionMenu(item: Review) {
+      return (
+        <ContentActionsMenu
+          item={item}
+          itemLabel={item.authorName}
+          actions={getActions(item)}
+        />
+      );
+    }
 
   return (
     <div className="space-y-3">
@@ -269,10 +274,7 @@ export function ReviewsList({
                 : "Не указана"}
             </TableCell>
             <TableCell>
-              <Badge
-                variant="outline"
-                className={getReviewStatusColor(item.status)}
-              >
+              <Badge className={getReviewStatusColor(item.status)}>
                 {getReviewStatusLabel(item.status)}
               </Badge>
             </TableCell>
@@ -284,48 +286,44 @@ export function ReviewsList({
                 aria-label={`Показ отзыва: ${item.authorName}`}
               />
             </TableCell>
-            <TableCell className="text-right">{actionMenu(item)}</TableCell>
+            <TableCell className="text-right">
+              <ContentActionsMenu
+                item={item}
+                itemLabel={item.authorName}
+                actions={getActions(item)}
+              />
+            </TableCell>
           </>
         )}
         renderCard={(item, dragHandle) => (
-          <article key={item.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">
-              <button
-                className="min-w-0 flex-1 text-left"
-                onClick={() => openSheet("view", item)}
+          <SortableCard
+            item={item}
+            dragHandle={dragHandle}
+            onSwitch={(value) => void toggle(item, value)}
+            switchDisabled={item.status !== "published"}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[item.isActive ? "active" : "inactive"]
+                }
               >
-                <span className="block font-medium">{item.authorName}</span>
-                <span className="mt-1 block text-sm">
-                  <ReviewRating rating={item.rating} />
-                </span>
-                <span className="mt-2 line-clamp-3 block whitespace-pre-wrap text-sm text-muted-foreground">
-                  {item.text}
-                </span>
-              </button>
-              {/* Drag */}
-              <div className="shrink-0">{dragHandle}</div>
-            </div>
+                {item.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+            }
+            actionsMenu={actionMenu(item)}
 
-            <Separator className="my-4" />
-
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <Switch
-                  checked={item.isActive}
-                  disabled={item.status !== "published" || busyId === item.id}
-                  onCheckedChange={(value) => void toggle(item, value)}
-                  aria-label={`Показ отзыва: ${item.authorName}`}
-                />
-                <Badge
-                  variant="outline"
-                  className={getReviewStatusColor(item.status)}
-                >
-                  {getReviewStatusLabel(item.status)}
-                </Badge>
-              </div>
-              {actionMenu(item)}
-            </div>
-          </article>
+          >
+            <span className="block font-medium">{item.authorName}</span>
+            <span className="mt-1 block text-sm text-muted-foreground">
+              {getReviewStatusLabel(item.status)}
+            </span>
+            <span className="mt-1 block text-sm">
+              <ReviewRating rating={item.rating} />
+            </span>
+            <span className="mt-2 line-clamp-3 block whitespace-pre-wrap text-sm text-muted-foreground">
+              {item.text}
+            </span>
+          </SortableCard>
         )}
       />
 

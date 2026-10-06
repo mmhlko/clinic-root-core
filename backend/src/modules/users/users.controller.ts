@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Param,
@@ -189,6 +190,34 @@ export class UsersController {
     throw new ForbiddenException(
       'You do not have permission to change user status',
     );
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Удалить пользователя' })
+  @Roles(UserRole.ROOT, UserRole.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async remove(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+  ) {
+    const currentUser = req.user;
+    const targetUser = await this.usersService.findById(id);
+
+    if (currentUser.sub === targetUser.id) {
+      throw new ForbiddenException('User cannot delete themselves');
+    }
+
+    if (
+      currentUser.role !== UserRole.ROOT &&
+      (currentUser.role !== UserRole.ADMIN ||
+        targetUser.role !== UserRole.MANAGER)
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to delete this user',
+      );
+    }
+
+    return this.usersService.remove(id);
   }
 
   @Get('me')

@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
-import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
+import { ContentActionsMenu, ContentMenuAction } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
 import { ContentList } from "@/widgets/admin-content/content-list";
 import { ContentSheet } from "@/widgets/admin-content/content-sheet";
 import { contentClientApi } from "@/features/content/api/content-client-api";
 import type { ServiceDirection } from "@/features/content/types/content.types";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { activityColorsStyles } from "@/shared/constants/colors";
 
 type SheetMode = "view" | "create" | "edit";
 
@@ -79,6 +81,33 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
     }
   }
 
+  const getActions = (): ContentMenuAction<ServiceDirection>[] => {
+    return [
+      { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
+      { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
+      {
+        label: "Удалить",
+        destructive: true,
+        onSelect: remove,
+        confirm: {
+          title: "Удалить направление?",
+          description:
+            "Удаление невозможно, пока направление привязано к услугам или врачам.",
+        },
+      },
+    ];
+  };
+
+    function actionMenu(item: ServiceDirection) {
+      return (
+        <ContentActionsMenu
+          item={item}
+          itemLabel={item.name}
+          actions={getActions()}
+        />
+      );
+    }
+
   return (
     <div className="space-y-3">
       <ContentList
@@ -110,40 +139,34 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
             <TableCell className="w-10 px-2">{dragHandle}</TableCell>
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="max-w-xl truncate text-muted-foreground">{item.description || "Без описания"}</TableCell>
-            <TableCell className="text-right">
-              <ContentActionsMenu
-                item={item}
-                itemLabel={item.name}
-                actions={[
-                  { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
-                  { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
-                  { label: "Удалить", destructive: true, onSelect: remove, confirm: { title: "Удалить направление?", description: "Удаление невозможно, пока направление привязано к услугам или врачам." } },
-                ]}
-              />
-            </TableCell>
+            <TableCell className="text-right">{actionMenu(item)}</TableCell>
           </>
         )}
         renderCard={(item, dragHandle) => (
-          <article key={item.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">
-              {dragHandle}
-              <button className="min-w-0 flex-1 text-left" onClick={() => openSheet("view", item)}>
-                <span className="block font-medium">{item.name}</span>
-                <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
-                  {item.description || "Без описания"}
-                </span>
-              </button>
-              <ContentActionsMenu
-                item={item}
-                itemLabel={item.name}
-                actions={[
-                  { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
-                  { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
-                  { label: "Удалить", destructive: true, onSelect: remove, confirm: { title: "Удалить направление?", description: "Удаление невозможно, пока направление привязано к услугам или врачам." } },
-                ]}
-              />
-            </div>
-          </article>
+          <SortableCard
+            item={item}
+            dragHandle={dragHandle}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[item.isActive ? "active" : "inactive"]
+                }
+              >
+                {item.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+            }
+            actionsMenu={actionMenu(item)}
+          >
+            <button
+              className="w-full text-left"
+              onClick={() => openSheet("view", item)}
+            >
+              <span className="block font-medium">{item.name}</span>
+              <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                {item.description || "Без описания"}
+              </span>
+            </button>
+          </SortableCard>
         )}
       />
 

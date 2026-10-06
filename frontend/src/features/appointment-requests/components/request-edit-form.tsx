@@ -89,12 +89,12 @@ export function RequestEditForm({ request, onSaved, onCancel }: RequestEditFormP
     <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="request-name">Имя</Label>
-          <Input id="request-name" value={name} onChange={(event) => setName(event.target.value)} disabled={saving} />
+          <Label htmlFor="request-name" required>Имя</Label>
+          <Input id="request-name" value={name} onChange={(event) => setName(event.target.value)} disabled={saving} required />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="request-phone">Телефон</Label>
-          <Input id="request-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} />
+          <Label htmlFor="request-phone" required>Телефон</Label>
+          <Input id="request-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} disabled={saving} required />
         </div>
       </div>
 

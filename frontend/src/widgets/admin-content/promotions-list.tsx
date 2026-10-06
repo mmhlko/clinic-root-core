@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
-import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
+import {
+  ContentActionsMenu,
+  type ContentMenuAction,
+} from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
 import { ContentList } from "@/widgets/admin-content/content-list";
@@ -19,6 +22,11 @@ import type { Promotion, Service } from "@/features/content/types/content.types"
 import { statusColorsStyles } from "@/shared/constants/colors";
 import { EStatusVariant } from "@/shared/types/admin";
 import { cn } from "cn";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { activityColorsStyles } from "@/shared/constants/colors";
+import { ImageUpload } from "@/features/image-upload/hooks/image-upload";
+import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
+import { UploadedImage } from "@/features/image-upload/types/images.types";
 
 type SheetMode = "view" | "create" | "edit";
 
@@ -91,9 +99,7 @@ export function PromotionsList({
     setOpen(true);
   }
 
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  async function save(form: FormData): Promise<boolean> {
     const body = {
       title: String(form.get("title")),
       description: String(form.get("description") || ""),
@@ -117,11 +123,13 @@ export function PromotionsList({
         type: "success",
         description: selected ? "Акция обновлена." : "Акция добавлена.",
       });
+      return true;
     } catch (cause: unknown) {
       toast.add({
         type: "error",
         description: getContentApiErrorMessage(cause, "Не удалось сохранить акцию."),
       });
+      return false;
     } finally {
       setSaving(false);
     }
@@ -157,16 +165,28 @@ export function PromotionsList({
     }
   }
 
+  function getActions(): ContentMenuAction<Promotion>[] {
+    return [
+      { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
+      { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
+      {
+        label: "Удалить",
+        destructive: true,
+        onSelect: remove,
+        confirm: {
+          title: "Удалить акцию?",
+          description: "Акция будет удалена без возможности восстановления.",
+        },
+      },
+    ];
+  }
+
   function actionMenu(item: Promotion) {
     return (
       <ContentActionsMenu
         item={item}
         itemLabel={item.title}
-        actions={[
-          { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
-          { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
-          { label: "Удалить", destructive: true, onSelect: remove, confirm: { title: "Удалить акцию?", description: "Акция будет удалена без возможности восстановления." } },
-        ]}
+        actions={getActions()}
       />
     );
   }
@@ -252,55 +272,38 @@ export function PromotionsList({
           const status = getPromotionStatus(item);
 
           return (
-            <article key={item.id} className="rounded-lg border bg-card p-4">
-              <div className="flex items-start gap-3">
-                {dragHandle}
-                <button
-                  className="min-w-0 flex-1 text-left"
-                  onClick={() => openSheet("view", item)}
+            <SortableCard
+              item={item}
+              dragHandle={dragHandle}
+              onSwitch={(value) => void toggle(item, value)}
+              switchDisabled={busyId === item.id}
+              status={
+                <Badge
+                  className={
+                    activityColorsStyles[item.isActive ? "active" : "inactive"]
+                  }
                 >
-                  <span className="block font-medium">{item.title}</span>
-                  <span className="mt-1 block text-sm text-muted-foreground">
-                    {item.service?.name ?? "Без услуги"}
-                  </span>
-                  <span className="mt-1 block text-sm">
-                    {item.newPrice == null
-                      ? "Цена не указана"
-                      : `${item.newPrice} ₽`}
-                  </span>
-                </button>
-                {actionMenu(item)}
-              </div>
-              <div className="mt-3 space-y-3 border-t pt-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-muted-foreground">
-                    Статус акции
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={cn(statusColorsStyles[status.status])}
-                  >
-                    {status.message}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">
-                      Видимость на сайте
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Показывать акцию посетителям
-                    </p>
-                  </div>
-                  <Switch
-                    checked={item.isActive}
-                    disabled={busyId === item.id}
-                    onCheckedChange={(value) => void toggle(item, value)}
-                    aria-label={`Показывать акцию «${item.title}» на сайте`}
-                  />
-                </div>
-              </div>
-            </article>
+                  {item.isActive ? "Активен" : "Скрыт"}
+                </Badge>
+              }
+              actionsMenu={actionMenu(item)}
+            >
+              <button
+                className="w-full text-left"
+                onClick={() => openSheet("view", item)}
+              >
+                <span className="block font-medium">{item.title}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  {item.service?.name ?? "Без услуги"}
+                </span>
+                <span className="mt-1 block text-sm">
+                  {item.newPrice == null ? "Цена не указана" : `${item.newPrice} ₽`}
+                </span>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Статус акции: {status.message}
+                </span>
+              </button>
+            </SortableCard>
           );
         }}
       />
@@ -371,89 +374,95 @@ export function PromotionsList({
             </dl>
           </div>
         ) : (
-          <form onSubmit={(event) => void save(event)} className="space-y-4">
-            <ContentField
-              label="Название"
-              name="title"
-              required
-              defaultValue={selected?.title}
-            />
-            <ContentField
-              label="Описание"
-              name="description"
-              textarea
-              defaultValue={selected?.description}
-            />
-            <ContentField
-              label="URL изображения"
-              name="imageUrl"
-              type="url"
-              defaultValue={selected?.imageUrl}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ContentField
-                label="Старая цена"
-                name="oldPrice"
-                type="number"
-                min={0}
-                defaultValue={selected?.oldPrice}
-              />
-              <ContentField
-                label="Новая цена"
-                name="newPrice"
-                type="number"
-                min={0}
-                defaultValue={selected?.newPrice}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ContentField
-                label="Начало"
-                name="validFrom"
-                type="datetime-local"
-                defaultValue={toLocalDateTime(selected?.validFrom)}
-              />
-              <ContentField
-                label="Окончание"
-                name="validTo"
-                type="datetime-local"
-                defaultValue={toLocalDateTime(selected?.validTo)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="serviceId">Услуга</Label>
-              <select
-                id="serviceId"
-                name="serviceId"
-                defaultValue={selected?.serviceId ?? ""}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="">Без услуги</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={saving}>
-                <SaveIcon data-icon="inline-start" />
-                {saving ? "Сохранение…" : "Сохранить"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={saving}
-              >
-                <XIcon data-icon="inline-start" />
-                Отмена
-              </Button>
-            </div>
-          </form>
+          <PromotionForm
+            key={selected?.id ?? "new-promotion"}
+            item={selected}
+            saving={saving}
+            services={services}
+            onSave={save}
+            onCancel={() => setOpen(false)}
+          />
         )}
       </ContentSheet>
     </div>
+  );
+}
+
+function PromotionForm({
+  item,
+  saving,
+  services,
+  onSave,
+  onCancel,
+}: {
+  item: Promotion | null;
+  saving: boolean;
+  services: Service[];
+  onSave: (form: FormData) => Promise<boolean>;
+  onCancel: () => void;
+}) {
+  const initialImage: UploadedImage | null = item?.imageUrl
+    ? { id: item.imageUrl, url: item.imageUrl }
+    : null;
+  const { image, isUploading, isDeleting, upload, remove, cleanup, commit } =
+    useImageUpload({ initialImage });
+
+  useEffect(() => () => { void cleanup(); }, [cleanup]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    form.set("imageUrl", image?.url ?? "");
+    const saved = await onSave(form);
+    if (saved) commit();
+  }
+
+  async function cancel() {
+    await cleanup();
+    onCancel();
+  }
+
+  return (
+    <form onSubmit={(event) => void submit(event)} className="space-y-4">
+      <ContentField label="Название" name="title" required defaultValue={item?.title} />
+      <ContentField label="Описание" name="description" textarea defaultValue={item?.description} />
+      <div className="space-y-2">
+        <Label>Изображение</Label>
+        <ImageUpload
+          image={image}
+          alt={item?.title ?? "Изображение акции"}
+          onUpload={upload}
+          onRemove={remove}
+          isUploading={isUploading}
+          isDeleting={isDeleting}
+          aspectRatio="16/9"
+        />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ContentField label="Старая цена" name="oldPrice" type="number" min={0} defaultValue={item?.oldPrice} />
+        <ContentField label="Новая цена" name="newPrice" type="number" min={0} defaultValue={item?.newPrice} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ContentField label="Начало" name="validFrom" type="datetime-local" defaultValue={toLocalDateTime(item?.validFrom)} />
+        <ContentField label="Окончание" name="validTo" type="datetime-local" defaultValue={toLocalDateTime(item?.validTo)} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="serviceId">Услуга</Label>
+        <select id="serviceId" name="serviceId" defaultValue={item?.serviceId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm">
+          <option value="">Без услуги</option>
+          {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
+        </select>
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" disabled={saving || isUploading || isDeleting}>
+          <SaveIcon data-icon="inline-start" />
+          {saving ? "Сохранение…" : "Сохранить"}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => void cancel()} disabled={saving || isUploading || isDeleting}>
+          <XIcon data-icon="inline-start" />
+          Отмена
+        </Button>
+      </div>
+    </form>
   );
 }

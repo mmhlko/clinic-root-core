@@ -9,8 +9,11 @@ const nextConfig: NextConfig = {
       {
         source: '/api/:path*',
         destination: `${backendUrl}/:path*`,
-        basePath: false,
       },
+      {
+        source: "/uploads/:path*",
+        destination: `${backendUrl}/uploads/:path*`,
+      }
     ];
   },
 };

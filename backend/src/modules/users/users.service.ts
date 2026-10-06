@@ -74,6 +74,7 @@ export class UsersService {
 			password: hashedPassword,
 			role: dto.role ?? UserRole.MANAGER,
 			locationId,
+			avatarUrl: dto.avatarUrl ?? null,
 		});
 
 		return {
@@ -86,6 +87,7 @@ export class UsersService {
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 			locationId: user.locationId,
+			isActive: user.isActive,
 		};
 	}
 
@@ -247,6 +249,12 @@ export class UsersService {
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 		};
+	}
+
+	async remove(id: string) {
+		const user = await this.findById(id);
+		await user.destroy();
+		return { id };
 	}
 
 	async findById(id: string) {

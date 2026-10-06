@@ -31,7 +31,7 @@ export function ContentField({
 }: ContentFieldProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name} required={required}>{label}</Label>
       {textarea ? (
         <Textarea
           id={name}

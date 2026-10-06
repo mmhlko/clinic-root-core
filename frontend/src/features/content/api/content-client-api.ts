@@ -128,6 +128,9 @@ class ContentClientApi extends RootApi {
   setUserActive(id: string, isActive: boolean) {
     return this.requestPut<AdminUser>(`/users/${id}/active`, { isActive });
   }
+  deleteUser(id: string) {
+    return this.requestDelete<{ id: string }>(`/users/${id}`);
+  }
   updateClinic(body: Partial<Omit<Clinic, "id">>) {
     return this.requestPatch<Clinic>("/clinic", body);
   }

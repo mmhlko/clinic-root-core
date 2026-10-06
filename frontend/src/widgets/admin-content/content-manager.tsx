@@ -628,20 +628,22 @@ function Field({
   type = "text",
   defaultValue = "",
   textarea = false,
+  required = false,
 }: {
   label: string;
   name: string;
   type?: string;
   defaultValue?: string;
   textarea?: boolean;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name} required={required}>{label}</Label>
       {textarea ? (
-        <Textarea id={name} name={name} defaultValue={defaultValue} />
+        <Textarea id={name} name={name} defaultValue={defaultValue} required={required} />
       ) : (
-        <Input id={name} name={name} type={type} defaultValue={defaultValue} />
+        <Input id={name} name={name} type={type} defaultValue={defaultValue} required={required} />
       )}
     </div>
   );
@@ -687,11 +689,12 @@ function ServiceForm({
       className="space-y-4 rounded-xl border bg-card p-4"
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Название" name="name" defaultValue={item?.name} />
+        <Field label="Название" name="name" defaultValue={item?.name} required />
         <div className="space-y-2">
-          <Label>Направление</Label>
+          <Label required>Направление</Label>
           <select
             name="directionId"
+            required
             defaultValue={item?.directionId ?? ""}
             className="h-9 w-full rounded-md border bg-background px-3 text-sm"
           >
@@ -760,7 +763,7 @@ function PromotionForm({
       }}
       className="space-y-4 rounded-xl border bg-card p-4"
     >
-      <Field label="Название" name="title" defaultValue={item?.title} />
+      <Field label="Название" name="title" defaultValue={item?.title} required />
       <Field
         label="Описание"
         name="description"
@@ -856,14 +859,15 @@ function ReviewForm({
       }}
       className="space-y-4 rounded-xl border bg-card p-4"
     >
-      <Field label="Автор" name="authorName" defaultValue={item?.authorName} />
-      <Field label="Текст" name="text" defaultValue={item?.text} textarea />
+      <Field label="Автор" name="authorName" defaultValue={item?.authorName} required />
+      <Field label="Текст" name="text" defaultValue={item?.text} textarea required />
       <div className="grid gap-4 md:grid-cols-3">
         <Field
           label="Оценка 1–5"
           name="rating"
           type="number"
           defaultValue={item?.rating ?? 5}
+          required
         />
         <Field
           label="Дата"
@@ -920,7 +924,7 @@ function DocumentForm({
       }}
       className="space-y-4 rounded-xl border bg-card p-4"
     >
-      <Field label="Название" name="title" defaultValue={item?.title} />
+      <Field label="Название" name="title" defaultValue={item?.title} required />
       <Field
         label="Описание"
         name="description"
@@ -934,7 +938,7 @@ function DocumentForm({
         defaultValue={item?.sortOrder ?? 0}
       />
       <div className="space-y-2">
-        <Label>Файл {item ? "(необязательно при редактировании)" : ""}</Label>
+        <Label required={!item}>Файл {item ? "(необязательно при редактировании)" : ""}</Label>
         <Input
           name="file"
           type="file"
@@ -970,25 +974,28 @@ function UserForm({
       className="space-y-4 rounded-xl border bg-card p-4"
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Имя" name="firstName" defaultValue={item?.firstName} />
-        <Field label="Фамилия" name="lastName" defaultValue={item?.lastName} />
+        <Field label="Имя" name="firstName" defaultValue={item?.firstName} required />
+        <Field label="Фамилия" name="lastName" defaultValue={item?.lastName} required />
       </div>
       <Field
         label="Email"
         name="email"
         type="email"
         defaultValue={item?.email}
+        required
       />
       <Field
         label={item ? "Новый пароль (необязательно)" : "Пароль"}
         name="password"
         type="password"
+        required={!item}
       />
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label>Роль</Label>
+          <Label required>Роль</Label>
           <select
             name="role"
+            required
             defaultValue={item?.role ?? "manager"}
             className="h-9 w-full rounded-md border bg-background px-3 text-sm"
           >
@@ -1041,7 +1048,7 @@ function DirectionForm({
       }}
       className="space-y-4 rounded-xl border bg-card p-4"
     >
-      <Field name="name" label="Название" />
+      <Field name="name" label="Название" required />
       <Field name="description" label="Описание" textarea />
       <Field
         name="sortOrder"
@@ -1149,16 +1156,26 @@ function FaqEditor({
       </div>
       {items.map((x) => (
         <div key={x.id} className="grid gap-3 rounded-xl border bg-card p-4">
-          <Input
-            value={x.question}
-            onChange={(e) => update(x.id, "question", e.target.value)}
-            placeholder="Вопрос"
-          />
-          <Textarea
-            value={x.answer}
-            onChange={(e) => update(x.id, "answer", e.target.value)}
-            placeholder="Ответ"
-          />
+          <div className="space-y-2">
+            <Label htmlFor={`faq-question-${x.id}`} required>Вопрос</Label>
+            <Input
+              id={`faq-question-${x.id}`}
+              value={x.question}
+              onChange={(e) => update(x.id, "question", e.target.value)}
+              placeholder="Вопрос"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`faq-answer-${x.id}`} required>Ответ</Label>
+            <Textarea
+              id={`faq-answer-${x.id}`}
+              value={x.answer}
+              onChange={(e) => update(x.id, "answer", e.target.value)}
+              placeholder="Ответ"
+              required
+            />
+          </div>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Input

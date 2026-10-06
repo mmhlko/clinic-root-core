@@ -49,6 +49,9 @@ class ContentServerApi extends RootApi {
   users(token: string) {
     return this.requestGet<AdminUser[]>("/users", { accessToken: token });
   }
+  user(id: string, token: string) {
+    return this.requestGet<AdminUser>(`/users/${id}`, { accessToken: token });
+  }
   locations(token: string) {
     return this.requestGet<ClinicLocation[]>("/clinic/locations/admin", {
       accessToken: token,

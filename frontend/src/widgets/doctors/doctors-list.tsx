@@ -1,144 +1,36 @@
 "use client";
 
-import Link from "next/link";
-import { ReactNode, useState } from "react";
-
-import { MoreHorizontalIcon } from "lucide-react";
+import { useState } from "react";
 
 import type { DoctorListItem } from "@/features/doctors/types/doctors.types";
 import { doctorsClientApi } from "@/features/doctors/api/doctors-client-api";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { getDoctorFullName } from "@/shared/helpers/getDoctorFullName";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ListStats } from "@/components/shared/list-stats";
 import { ActiveSwitch } from "@/components/shared/active-switch";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { PersonIdentity } from "@/components/shared/person-identity";
 import { toast } from "@/components/ui/toast";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
 import { useReorder } from "@/shared/hooks/use-reorder";
-import { SortableTableList } from "@/components/shared/sortable-list/sortable-table-list";
-import { SortableCardList } from "@/components/shared/sortable-list/sortable-card-list";
-import { MobileDoctorCard } from "./mobile-doctor-card";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { ContentActionsMenu } from "../admin-content/content-actions-menu";
+import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { activityColorsStyles } from "@/shared/constants/colors";
+import { ContentList } from "../admin-content/content-list";
 
 interface DoctorsListProps {
   doctors: DoctorListItem[];
 }
 
-interface SortableDoctorRowProps {
-  doctor: DoctorListItem;
-  onSwitch: (id: string, isActive: boolean) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-  deleting: boolean;
-  dragHandle: ReactNode;
-}
-
-function DoctorMenu({
-  doctor,
-  onDelete,
-  deleting,
-}: {
-  doctor: DoctorListItem;
-  onDelete: (id: string) => Promise<void>;
-  deleting: boolean;
-}) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              disabled={deleting}
-            />
-          }
-        >
-          <MoreHorizontalIcon />
-          <span className="sr-only">Открыть меню</span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            nativeButton={false}
-            render={<Link href={`/admin/doctors/${doctor.id}/edit`} />}
-          >
-            Редактировать
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            disabled={deleting}
-            onClick={() => setConfirmDelete(true)}
-          >
-            Удалить
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <ConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title="Удалить врача?"
-        description="Врач будет удалён из административной панели. Это действие нельзя отменить."
-        confirmText="Удалить"
-        confirmButtonVariant="destructive"
-        disabled={deleting}
-        onConfirm={() => onDelete(doctor.id)}
-      />
-    </>
-  );
-}
-
-function DoctorIdentity({ doctor }: { doctor: DoctorListItem }) {
-  const avatarUrl = getImageUrl(doctor.photoMedia?.url);
-  return (
-    <div className="flex items-center gap-3">
-      <Avatar className="size-10 shrink-0 rounded-full">
-        <AvatarImage src={avatarUrl} alt={getDoctorFullName(doctor)} />
-        <AvatarFallback>
-          {doctor.firstName?.[0] ?? "В"}
-          {doctor.lastName?.[0] ?? ""}
-        </AvatarFallback>
-      </Avatar>
-      <div className="min-w-0">
-        <div className="truncate font-medium">{getDoctorFullName(doctor)}</div>
-        <div className="truncate text-xs text-muted-foreground">
-          {doctor.specialization}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
+  const router = useRouter();
   const [doctors, setDoctors] = useState(initialDoctors);
   const [busyId, setBusyId] = useState<string | null>(null);
   const total = doctors.length;
   const active = doctors.filter((doctor) => doctor.isActive).length;
   const inactive = total - active;
-
-  const { sensors, handleDragEnd } = useReorder({
-    items: doctors,
-    getId: (doctor) => doctor.id,
-    setItems: setDoctors,
-    onReorder: (ids) => doctorsClientApi.reorderDoctors(ids),
-    onError: () => {
-      toast.add({
-        type: "error",
-        description: "Не удалось сохранить порядок врачей.",
-      });
-    },
-  });
 
   const handleSwitch = async (id: string, isActive: boolean) => {
     const previous = doctors.find((doctor) => doctor.id === id)?.isActive;
@@ -187,92 +79,118 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
     }
   };
 
+  const doctorIdentity = (doctor: DoctorListItem) => (
+    <PersonIdentity
+      name={getDoctorFullName(doctor)}
+      subtitle={doctor.specialization}
+      avatarUrl={getImageUrl(doctor.photoMedia?.url)}
+      initials={`${doctor.firstName?.[0] ?? "В"}${doctor.lastName?.[0] ?? ""}`}
+    />
+  );
+
+  function statusSwitch(doctor: DoctorListItem) {
+    return (
+      <ActiveSwitch
+        checked={doctor.isActive}
+        disabled={busyId === doctor.id}
+        onChange={(isActive) => handleSwitch(doctor.id, isActive)}
+        label={doctor.isActive ? "Активен" : "Неактивен"}
+      />
+    );
+  }
+
+  function doctorMenu(doctor: DoctorListItem) {
+    return (
+      <ContentActionsMenu
+        item={doctor}
+        itemLabel={getDoctorFullName(doctor)}
+        actions={[
+          {
+            label: "Редактировать",
+            onSelect: (doctor) =>
+              router.push(`/admin/doctors/${doctor.id}/edit`),
+          },
+          {
+            label: "Удалить",
+            destructive: true,
+            onSelect: () => handleDelete(doctor.id),
+            disabled: busyId === doctor.id,
+            confirm: {
+              title: "Удалить врача?",
+              description: "Врач будет удалён из административной панели.",
+            },
+          },
+        ]}
+      />
+    );
+  }
+
   return (
     <div className="space-y-3">
       <ListStats total={total} active={active} inactive={inactive} />
-      <div className="md:hidden space-y-3">
-        {doctors.length === 0 ? (
-          <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-            Врачей пока нет.
-          </div>
-        ) : (
-          <SortableCardList
-            items={doctors}
-            getId={(doctor) => doctor.id}
-            sensors={sensors}
-            onDragEnd={handleDragEnd}
-            dndId="doctors-mobile-dnd"
-            emptyMessage="Врачей пока нет."
-            renderCard={(doctor, dragHandle) => (
-              <MobileDoctorCard
-                key={doctor.id}
-                doctor={doctor}
-                onSwitch={handleSwitch}
-                onDelete={handleDelete}
-                deleting={busyId === doctor.id}
-                dragHandle={dragHandle}
-                menu={
-                  <DoctorMenu
-                    doctor={doctor}
-                    onDelete={handleDelete}
-                    deleting={busyId === doctor.id}
-                  />
-                }
-              />
-            )}
-          />
+      <ContentList
+        title="Врачишки"
+        items={doctors}
+        setItems={setDoctors}
+        getId={(doctor) => doctor.id}
+        getSearchText={(doctor) =>
+          `${doctor.firstName} ${doctor.lastName} ${doctor.specialization}`
+        }
+        onAdd={() => router.push("/admin/doctors/new")}
+        columnCount={3}
+        emptyMessage="Врачей пока нет. Добавьте нового врача, чтобы он появился в списке."
+        reorder={(ids) => doctorsClientApi.reorderDoctors(ids)}
+        onReorderError={() => {
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок врачей.",
+          });
+        }}
+        renderHeader={() => (
+          <TableRow>
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">Перемещение</span>
+            </TableHead>
+            <TableHead>Специалист</TableHead>
+            <TableHead>Статус активности</TableHead>
+            <TableHead className="w-12 text-right">
+              <span className="sr-only">Действия</span>
+            </TableHead>
+          </TableRow>
         )}
-      </div>
-
-      <div className="hidden md:block overflow-hidden rounded-lg border bg-card">
-        <SortableTableList
-          items={doctors}
-          getId={(doctor) => doctor.id}
-          sensors={sensors}
-          onDragEnd={handleDragEnd}
-          dndId="doctors-dnd"
-          columnCount={4}
-          emptyMessage="Врачей пока нет."
-          renderHeader={() => (
-            <TableRow>
-              <TableHead className="w-10 px-2">
-                <span className="sr-only">Перемещение</span>
-              </TableHead>
-
-              <TableHead>Врач</TableHead>
-
-              <TableHead>Статус</TableHead>
-
-              <TableHead className="w-10 text-right" />
-            </TableRow>
-          )}
-          renderCells={(doctor, dragHandle) => (
-            <>
-              <TableCell className="w-10 px-2">{dragHandle}</TableCell>
-
-              <TableCell>
-                <DoctorIdentity doctor={doctor} />
-              </TableCell>
-
-              <TableCell>
-                <ActiveSwitch
-                  checked={doctor.isActive}
-                  onChange={(checked) => handleSwitch(doctor.id, checked)}
-                  label={doctor.isActive ? "Активен" : "Скрыт"}
-                />
-              </TableCell>
-
-              <TableCell className="w-10 text-right">
-                <DoctorMenu
-                  doctor={doctor}
-                  onDelete={handleDelete}
-                  deleting={busyId === doctor.id}
-                />
-              </TableCell>
-            </>
-          )}
-        />
-      </div>
+        renderCells={(doctor, dragHandle) => (
+          <>
+            <TableCell className="w-10 px-2">{dragHandle}</TableCell>
+            <TableCell>{doctorIdentity(doctor)}</TableCell>
+            <TableCell>{statusSwitch(doctor)}</TableCell>
+            <TableCell className="text-right">{doctorMenu(doctor)}</TableCell>
+          </>
+        )}
+        renderCard={(doctor, dragHandle) => (
+          <SortableCard
+            item={doctor}
+            dragHandle={dragHandle}
+            onSwitch={(checked) => handleSwitch(doctor.id, checked)}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[doctor.isActive ? "active" : "inactive"]
+                }
+              >
+                {doctor.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+            }
+            actionsMenu={doctorMenu(doctor)}
+          >
+            <PersonIdentity
+              name={getDoctorFullName(doctor)}
+              subtitle={doctor.specialization}
+              avatarUrl={getImageUrl(doctor.photoMedia?.url)}
+              initials={`${doctor.firstName?.[0] ?? "В"}${doctor.lastName?.[0] ?? ""}`}
+            />
+          </SortableCard>
+        )}
+      />
     </div>
   );
 }

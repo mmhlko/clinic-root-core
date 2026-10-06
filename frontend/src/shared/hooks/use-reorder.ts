@@ -13,7 +13,7 @@ interface UseReorderOptions<T> {
   items: T[];
   getId: (item: T) => string;
   setItems: Dispatch<SetStateAction<T[]>>;
-  onReorder: (ids: string[]) => Promise<{ success: boolean }>;
+  onReorder?: (ids: string[]) => Promise<{ success: boolean }>;
   onError?: () => void;
 }
 
@@ -45,7 +45,7 @@ export function useReorder<T>({
       (item) => getId(item) === String(over.id),
     );
 
-    if (oldIndex === -1 || newIndex === -1) {
+    if (oldIndex === -1 || newIndex === -1 || !onReorder) {
       return;
     }
 

@@ -60,8 +60,8 @@ export function AppointmentRequestForm({
           Оставьте контакты — администратор свяжется с вами.
         </p>
       </div>
-      <Input name="name" placeholder="Ваше имя" required />
-      <Input name="phone" placeholder="Телефон" type="tel" required />
+      <Input name="name" placeholder="Ваше имя *" required />
+      <Input name="phone" placeholder="Телефон *" type="tel" required />
       <div className="grid gap-4 md:grid-cols-2">
         <select
           name="serviceId"

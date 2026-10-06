@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
-import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
+import { ContentActionsMenu, ContentMenuAction } from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
 import { ContentList } from "@/widgets/admin-content/content-list";
 import { ContentSheet } from "@/widgets/admin-content/content-sheet";
 import { contentClientApi } from "@/features/content/api/content-client-api";
 import type { FaqItem } from "@/features/content/types/content.types";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { activityColorsStyles } from "@/shared/constants/colors";
 
 type SheetMode = "view" | "create" | "edit";
 
@@ -118,6 +120,27 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
     }
   }
 
+  const actions: ContentMenuAction<FaqItem>[] = [
+    {
+      label: "Просмотреть",
+      onSelect: (value) => openSheet("view", value),
+    },
+    {
+      label: "Редактировать",
+      onSelect: (value) => openSheet("edit", value),
+    },
+    {
+      label: "Удалить",
+      destructive: true,
+      disabled: saving,
+      onSelect: remove,
+      confirm: {
+        title: "Удалить вопрос?",
+        description: "Вопрос будет удалён из FAQ.",
+      },
+    },
+  ];
+
   function actionMenu(item: FaqItem) {
     return (
       <ContentActionsMenu
@@ -155,6 +178,9 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
         setItems={setItems}
         getId={(item) => item.id}
         getSearchText={(item) => `${item.question} ${item.answer}`}
+        onAdd={() => openSheet("create")}
+        columnCount={4}
+        emptyMessage="Вопросов пока нет."
         reorder={(ids) => contentClientApi.reorderFaq(ids)}
         onReorderError={() =>
           toast.add({
@@ -162,9 +188,6 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
             description: "Не удалось сохранить порядок вопросов.",
           })
         }
-        onAdd={() => openSheet("create")}
-        columnCount={4}
-        emptyMessage="Вопросов пока нет."
         renderHeader={() => (
           <TableRow>
             <TableHead className="w-10 px-2">
@@ -201,35 +224,28 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
           </>
         )}
         renderCard={(item, dragHandle) => (
-          <article key={item.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">
-              {dragHandle}
-              <button
-                className="min-w-0 flex-1 text-left"
-                onClick={() => openSheet("view", item)}
+          <SortableCard
+            item={item}
+            dragHandle={dragHandle}
+            onSwitch={(value) => void toggle(item, value)}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[item.isActive ? "active" : "inactive"]
+                }
               >
-                <span className="block font-medium">{item.question}</span>
-                <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
-                  {item.answer}
-                </span>
-              </button>
-              {actionMenu(item)}
-            </div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3">
-              <Badge variant="outline">
                 {item.isActive ? "Активен" : "Скрыт"}
               </Badge>
-              <Switch
-                checked={item.isActive}
-                disabled={saving}
-                onCheckedChange={(value) => void toggle(item, value)}
-                aria-label={`Активность вопроса: ${item.question}`}
-              />
-            </div>
-          </article>
+            }
+            actionsMenu={actionMenu(item)}
+          >
+            <span className="block font-medium">{item.question}</span>
+            <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+              {item.answer}
+            </span>
+          </SortableCard>
         )}
       />
-
       <ContentSheet
         open={open}
         onOpenChange={setOpen}

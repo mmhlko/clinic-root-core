@@ -21,9 +21,9 @@ interface ContentListProps<T> {
   items: T[];
   setItems: Dispatch<SetStateAction<T[]>>;
   getId: (item: T) => string;
-  getSearchText: (item: T) => string;
-  reorder: (ids: string[]) => Promise<{ success: boolean }>;
-  onReorderError: () => void;
+  getSearchText?: (item: T) => string;
+  reorder?: (ids: string[]) => Promise<{ success: boolean }>;
+  onReorderError?: () => void;
   onAdd: () => void;
   renderHeader: () => ReactNode;
   renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
@@ -50,7 +50,7 @@ export function ContentList<T>({
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredItems = useMemo(() => {
-    if (!normalizedQuery) return items;
+    if (!normalizedQuery || !getSearchText) return items;
     return items.filter((item) =>
       getSearchText(item).toLowerCase().includes(normalizedQuery),
     );

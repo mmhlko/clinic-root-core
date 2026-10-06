@@ -11,6 +11,7 @@ import {
   Settings,
   Stethoscope,
   Users,
+  ShieldCog,
 } from "lucide-react";
 
 import {
@@ -18,6 +19,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NavMain } from "./nav-main";
@@ -26,6 +30,8 @@ import { AuthUser } from "@/features/auth/types/auth.types";
 import { useAuth } from "@/features/auth/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { SidebarItem } from "./types/app-sidebar.types";
+import { Clinic } from "@/features/content/types/content.types";
+import Link from "next/link";
 
 
 const navItems: SidebarItem[] = [
@@ -104,6 +110,7 @@ const navItems: SidebarItem[] = [
 
 type AppSidebarProps = {
   user: AuthUser;
+  clinic: Clinic
 };
 
 function filterVisibleItems(
@@ -121,6 +128,7 @@ function filterVisibleItems(
 
 export function AppSidebar({
   user,
+  clinic,
   ...props
 }: AppSidebarProps & React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
@@ -134,15 +142,19 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="flex h-20 items-center gap-3 border-b border-slate-200 px-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
-            УД
-          </div>
-          <div>
-            <div className="text-lg font-semibold">УльтраДент</div>
-            <div className="text-xs text-slate-500">Администрация</div>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              render={
+                <Link href="/admin">
+                  <Stethoscope className="size-5!" />
+                  <span className="text-base font-semibold">{clinic.name}</span>
+                </Link>
+              }
+            ></SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={visibleNavItems} />

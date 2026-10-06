@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Switch } from "../ui/switch";
-import { Spinner } from "../ui/spinner";
 
 interface ActiveSwitchProps {
   checked: boolean;
@@ -15,7 +14,7 @@ export function ActiveSwitch({
   checked,
   onChange,
   disabled = false,
-  label = "Активен",
+  label,
 }: ActiveSwitchProps) {
   const [pending, setPending] = useState(false);
 
@@ -37,9 +36,9 @@ export function ActiveSwitch({
         disabled={disabled || pending}
         aria-label={label}
       />
-      <span className="text-sm text-muted-foreground">
+      {label && <span className="text-sm text-muted-foreground">
         {label}
-      </span>
+      </span>}
     </div>
   );
 }

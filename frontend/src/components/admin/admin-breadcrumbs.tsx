@@ -40,6 +40,11 @@ const pageCrumbs: Record<string, Crumb[]> = {
   "/admin/documents": [dashboardCrumb, { label: "Документы" }],
   "/admin/faq": [dashboardCrumb, { label: "FAQ" }],
   "/admin/users": [dashboardCrumb, { label: "Пользователи" }],
+  "/admin/users/new": [
+    dashboardCrumb,
+    { label: "Пользователи", href: "/admin/users" },
+    { label: "Новый пользователь" },
+  ],
   "/admin/settings": [
     dashboardCrumb,
     { label: "Настройки клиники" },
@@ -81,6 +86,28 @@ function getCrumbs(pathname: string): Crumb[] {
       dashboardCrumb,
       { label: "Врачи", href: "/admin/doctors" },
       { label: "Редактирование врача" },
+    ];
+  }
+
+  const userDetailsMatch = pathname.match(/^\/admin\/users\/([^/]+)$/);
+  if (userDetailsMatch && userDetailsMatch[1] !== "new") {
+    return [
+      dashboardCrumb,
+      { label: "Пользователи", href: "/admin/users" },
+      { label: "Пользователь" },
+    ];
+  }
+
+  const userEditMatch = pathname.match(/^\/admin\/users\/([^/]+)\/edit$/);
+  if (userEditMatch) {
+    return [
+      dashboardCrumb,
+      { label: "Пользователи", href: "/admin/users" },
+      {
+        label: "Пользователь",
+        href: `/admin/users/${userEditMatch[1]}`,
+      },
+      { label: "Редактирование" },
     ];
   }
 

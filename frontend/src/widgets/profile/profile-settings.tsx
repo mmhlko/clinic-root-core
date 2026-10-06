@@ -107,8 +107,6 @@ export function ProfileSettings() {
             onRemove={remove}
             isUploading={isUploading}
             isDeleting={isDeleting}
-            aspectRatio="1/1"
-            className="max-w-44"
           />
         </div>
         <div className="grid content-start gap-4 sm:grid-cols-2">

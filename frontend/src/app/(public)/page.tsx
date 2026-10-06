@@ -9,6 +9,8 @@ import {
 import { AppointmentRequestForm } from "@/widgets/public/appointment-request-form";
 import { publicServerApi } from "@/features/api/public-server-api";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [
     clinic,

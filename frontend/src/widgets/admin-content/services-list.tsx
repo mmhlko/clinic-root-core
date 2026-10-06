@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
-import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
+import {
+  ContentActionsMenu,
+  type ContentMenuAction,
+} from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
 import { ContentList } from "@/widgets/admin-content/content-list";
@@ -19,6 +22,8 @@ import type { Service, ServiceDirection } from "@/features/content/types/content
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { PromotionHoverCard } from "@/components/shared/promotion-hover-card";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { activityColorsStyles } from "@/shared/constants/colors";
 
 type SheetMode = "view" | "create" | "edit";
 
@@ -109,16 +114,29 @@ export function ServicesList({
     }
   }
 
+  function getActions(): ContentMenuAction<Service>[] {
+    return [
+      { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
+      { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
+      {
+        label: "Удалить",
+        destructive: true,
+        onSelect: remove,
+        confirm: {
+          title: "Удалить услугу?",
+          description:
+            "Удаление невозможно, пока к услуге привязаны заявки пациентов.",
+        },
+      },
+    ];
+  }
+
   function actionMenu(item: Service) {
     return (
       <ContentActionsMenu
         item={item}
         itemLabel={item.name}
-        actions={[
-          { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
-          { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
-          { label: "Удалить", destructive: true, onSelect: remove, confirm: { title: "Удалить услугу?", description: "Удаление невозможно, пока к услуге привязаны заявки пациентов." } },
-        ]}
+        actions={getActions()}
       />
     );
   }
@@ -191,37 +209,36 @@ export function ServicesList({
           </>
         )}
         renderCard={(item, dragHandle) => (
-          <article key={item.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">
-              {dragHandle}
-              <button
-                className="min-w-0 flex-1 text-left"
-                onClick={() => openSheet("view", item)}
+          <SortableCard
+            item={item}
+            dragHandle={dragHandle}
+            onSwitch={(value) => void toggle(item, value)}
+            switchDisabled={busyId === item.id}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[item.isActive ? "active" : "inactive"]
+                }
               >
-                <span className="block font-medium">{item.name}</span>
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  {item.direction?.name ?? "Без направления"}
-                </span>
-                <span className="mt-1 block text-sm">
-                  {item.price == null
-                    ? "Цена не указана"
-                    : `${item.isPriceFrom ? "от " : ""}${item.price} ₽`}
-                </span>
-              </button>
-              {actionMenu(item)}
-            </div>
-            <div className="mt-3 flex items-center justify-between border-t pt-3">
-              <Badge variant="outline">
-                {item.isActive ? "Активна" : "Скрыта"}
+                {item.isActive ? "Активен" : "Скрыт"}
               </Badge>
-              <Switch
-                checked={item.isActive}
-                disabled={busyId === item.id}
-                onCheckedChange={(value) => void toggle(item, value)}
-                aria-label={`Активность: ${item.name}`}
-              />
-            </div>
-          </article>
+            }
+            actionsMenu={actionMenu(item)}          >
+            <button
+              className="w-full text-left"
+              onClick={() => openSheet("view", item)}
+            >
+              <span className="block font-medium">{item.name}</span>
+              <span className="mt-1 block text-sm text-muted-foreground">
+                {item.direction?.name ?? "Без направления"}
+              </span>
+              <span className="mt-1 block text-sm">
+                {item.price == null
+                  ? "Цена не указана"
+                  : `${item.isPriceFrom ? "от " : ""}${item.price} ₽`}
+              </span>
+            </button>
+          </SortableCard>
         )}
       />
 
