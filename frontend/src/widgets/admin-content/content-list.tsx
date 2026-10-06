@@ -25,6 +25,7 @@ interface ContentListProps<T> {
   reorder?: (ids: string[]) => Promise<{ success: boolean }>;
   onReorderError?: () => void;
   onAdd: () => void;
+  addDisabled?: boolean;
   renderHeader: () => ReactNode;
   renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
   renderCard: (item: T, dragHandle: ReactNode) => ReactNode;
@@ -41,6 +42,7 @@ export function ContentList<T>({
   reorder,
   onReorderError,
   onAdd,
+  addDisabled = false,
   renderHeader,
   renderCells,
   renderCard,
@@ -89,7 +91,7 @@ export function ContentList<T>({
           placeholder={`Поиск: ${title.toLowerCase()}…`}
           className="sm:max-w-sm"
         />
-        <Button onClick={onAdd}>
+        <Button onClick={onAdd} disabled={addDisabled}>
           <PlusIcon data-icon="inline-start" />
           Добавить
         </Button>

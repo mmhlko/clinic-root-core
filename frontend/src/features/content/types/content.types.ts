@@ -78,6 +78,7 @@ export interface AdminUser {
   role: UserRole;
   avatarUrl: string | null;
   locationId: string | null;
+  location?: ClinicLocation | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

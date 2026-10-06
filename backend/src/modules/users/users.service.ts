@@ -267,7 +267,13 @@ export class UsersService {
 		const user = await this.userModel.findByPk(id, {
 			attributes: {
 				exclude: ['password', 'hashedRefreshToken']
-			}
+			},
+			include: [
+				{
+					model: ClinicLocationModel,
+					as: 'location',
+				},
+			]
 		});
 		if (!user) throw new NotFoundException('User not found');
 		return user;

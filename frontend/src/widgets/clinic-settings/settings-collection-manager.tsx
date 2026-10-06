@@ -3,19 +3,16 @@
 import {
   SubmitEvent,
   useState,
-  type Dispatch,
   type ReactNode,
-  type SetStateAction,
 } from "react";
-import type { DragEndEvent } from "@dnd-kit/core";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ContentActionsMenu } from "@/widgets/admin-content/content-actions-menu";
+import {
+  ContentActionsMenu,
+  type ContentMenuAction,
+} from "@/widgets/admin-content/content-actions-menu";
+import { ContentList } from "@/widgets/admin-content/content-list";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
 import {
   Sheet,
   SheetContent,
@@ -30,13 +27,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
-import { cn } from "cn";
 import { activityColorsStyles } from "@/shared/constants/colors";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
-import { SortableCardList } from "@/components/shared/sortable-list/sortable-card-list";
-import { SortableTableList } from "@/components/shared/sortable-list/sortable-table-list";
-import { useReorder } from "@/shared/hooks/use-reorder";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type SettingsCollectionItem = {
   id: string;
@@ -49,6 +41,7 @@ type Props<T extends SettingsCollectionItem> = {
   description: string;
   emptyMessage: string;
   items: T[];
+  getSearchText: (item: T) => string;
   createItem: (nextOrder: number) => T;
   renderFields: (
     item: T,
@@ -66,6 +59,7 @@ export function SettingsCollectionManager<T extends SettingsCollectionItem>({
   description,
   emptyMessage,
   items: initialItems,
+  getSearchText,
   createItem,
   renderFields,
   renderSummary,
@@ -133,109 +127,31 @@ export function SettingsCollectionManager<T extends SettingsCollectionItem>({
       "Не удалось удалить запись.",
     ).then(() => undefined);
 
-  const setOrderedItems: Dispatch<SetStateAction<T[]>> = (update) => {
-    setItems((current) => {
-      const next = typeof update === "function" ? update(current) : update;
-      return next.map((item, index) => ({ ...item, sortOrder: index }));
-    });
-  };
-
-  const { sensors, handleDragEnd } = useReorder({
-    items,
-    getId: (item) => item.id,
-    setItems: setOrderedItems,
-    onReorder: async (ids) => {
-      const orderedItems = ids
-        .map((id) => items.find((item) => item.id === id))
-        .filter((item): item is T => item !== undefined)
-        .map((item, sortOrder) => ({ ...item, sortOrder }));
-      await reorderItems(orderedItems);
-      return { success: true };
+  const getActions = (): ContentMenuAction<T>[] => [
+    {
+      label: "Редактировать",
+      disabled: saving,
+      onSelect: setDraft,
     },
-    onError: () => {
-      toast.add({
-        type: "error",
-        description: "Не удалось сохранить порядок записей.",
-      });
+    {
+      label: "Удалить",
+      disabled: saving,
+      destructive: true,
+      confirm: {
+        title: "Удалить запись?",
+        description: "Это действие нельзя отменить.",
+      },
+      onSelect: handleDelete,
     },
-  });
+  ];
 
   const renderActions = (item: T) => (
     <ContentActionsMenu
       item={item}
       itemLabel={title.toLowerCase()}
-      actions={[
-        {
-          label: "Редактировать",
-          disabled: saving,
-          onSelect: setDraft,
-        },
-        {
-          label: "Удалить",
-          disabled: saving,
-          destructive: true,
-          confirm: {
-            title: "Удалить запись?",
-            description: "Это действие нельзя отменить.",
-          },
-          onSelect: handleDelete,
-        },
-      ]}
+      actions={getActions()}
     />
   );
-
-  const renderCard = (item: T, dragHandle: ReactNode) => (
-    <Card key={item.id} className="gap-0 overflow-hidden py-0">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          {dragHandle}
-          <div className="min-w-0 flex-1 pt-0.5">
-            {renderSummary(item)}
-            <Badge
-              className={cn(
-                "mt-2 h-6 px-2 text-xs",
-                activityColorsStyles[item.isActive ? "active" : "inactive"],
-              )}
-            >
-              <span
-                className={`size-1.5 rounded-full ${
-                  item.isActive ? "bg-current" : "bg-muted-foreground"
-                }`}
-              />
-              {item.isActive ? "Активно" : "Скрыто"}
-            </Badge>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {renderActions(item)}
-          </div>
-        </div>
-        <div className="my-4 border-t" />
-        <div className="flex items-center gap-3">
-          <Switch
-            checked={item.isActive}
-            disabled={saving}
-            aria-label={`Активность: ${title}`}
-            onCheckedChange={(checked) => handleActiveChange(item, checked)}
-          />
-          <div className="min-w-0">
-            <div className="text-sm font-medium leading-4">
-              Активность записи
-            </div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {item.isActive
-                ? "Отображается на сайте"
-                : "Не отображается на сайте"}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const handleSortedDragEnd = (event: DragEndEvent) => {
-    if (saving) return;
-    return handleDragEnd(event);
-  };
 
   const startCreating = () => {
     setDraft(
@@ -247,92 +163,85 @@ export function SettingsCollectionManager<T extends SettingsCollectionItem>({
 
   return (
     <section className="space-y-4">
-      <div className="hidden justify-end sm:flex">
-        <Button
-          type="button"
-          className="sm:w-auto"
-          disabled={saving}
-          onClick={startCreating}
-        >
-          <Plus className="size-4" />
-          Добавить
-        </Button>
-      </div>
-
-      <ScrollArea className="h-[calc(100dvh-16rem)] min-h-48 md:h-auto">
-        <div className="pb-24 sm:pb-0">
-          <div className="md:hidden">
-            <SortableCardList
-              items={items}
-              getId={(item) => item.id}
-              sensors={sensors}
-              onDragEnd={handleSortedDragEnd}
-              dndId={`${title}-settings-mobile-dnd`}
-              emptyMessage={emptyMessage}
-              renderCard={renderCard}
-            />
-          </div>
-
-          <div className="hidden overflow-hidden rounded-lg border bg-card md:block">
-            <SortableTableList
-              items={items}
-              getId={(item) => item.id}
-              sensors={sensors}
-              onDragEnd={handleSortedDragEnd}
-              dndId={`${title}-settings-desktop-dnd`}
-              columnCount={4}
-              emptyMessage={emptyMessage}
-              dragLabel={`Переместить: ${title.toLowerCase()}`}
-              renderHeader={() => (
-                <TableRow>
-                  <TableHead className="w-10 px-2">
-                    <span className="sr-only">Перемещение</span>
-                  </TableHead>
-                  <TableHead>{title}</TableHead>
-                  <TableHead>Статус</TableHead>
-                  <TableHead className="w-24 text-right" />
-                </TableRow>
-              )}
-              renderCells={(item, dragHandle) => (
-                <>
-                  <TableCell className="w-10 px-2">{dragHandle}</TableCell>
-                  <TableCell className="max-w-0">{renderSummary(item)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={item.isActive}
-                        disabled={saving}
-                        aria-label={`Активность: ${title}`}
-                        onCheckedChange={(checked) =>
-                          handleActiveChange(item, checked)
-                        }
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {item.isActive ? "Активно" : "Скрыто"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="w-24 text-right">
-                    {renderActions(item)}
-                  </TableCell>
-                </>
-              )}
-            />
-          </div>
-        </div>
-      </ScrollArea>
-
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-lg backdrop-blur sm:hidden">
-        <Button
-          type="button"
-          className="w-full"
-          disabled={saving}
-          onClick={startCreating}
-        >
-          <Plus className="size-4" />
-          Добавить
-        </Button>
-      </div>
+      <ContentList
+        title={title}
+        items={items}
+        setItems={setItems}
+        getId={(item) => item.id}
+        getSearchText={getSearchText}
+        reorder={async (ids) => {
+          const orderedItems = ids
+            .map((id) => items.find((item) => item.id === id))
+            .filter((item): item is T => item !== undefined)
+            .map((item, sortOrder) => ({ ...item, sortOrder }));
+          await reorderItems(orderedItems);
+          return { success: true };
+        }}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок записей.",
+          })
+        }
+        onAdd={startCreating}
+        addDisabled={saving}
+        renderHeader={() => (
+          <TableRow>
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">Перемещение</span>
+            </TableHead>
+            <TableHead>{title}</TableHead>
+            <TableHead>Статус</TableHead>
+            <TableHead className="w-24 text-right" />
+          </TableRow>
+        )}
+        renderCells={(item, dragHandle) => (
+          <>
+            <TableCell className="w-10 px-2">{dragHandle}</TableCell>
+            <TableCell className="max-w-0">{renderSummary(item)}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={item.isActive}
+                  disabled={saving}
+                  aria-label={`Активность: ${title}`}
+                  onCheckedChange={(checked) =>
+                    handleActiveChange(item, checked)
+                  }
+                />
+                <span className="text-sm text-muted-foreground">
+                  {item.isActive ? "Активно" : "Скрыто"}
+                </span>
+              </div>
+            </TableCell>
+            <TableCell className="w-24 text-right">
+              {renderActions(item)}
+            </TableCell>
+          </>
+        )}
+        renderCard={(item, dragHandle) => (
+          <SortableCard
+            item={item}
+            dragHandle={dragHandle}
+            onSwitch={(checked) => handleActiveChange(item, checked)}
+            switchDisabled={saving}
+            actionsMenu={renderActions(item)}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[item.isActive ? "active" : "inactive"]
+                }
+              >
+                {item.isActive ? "Активно" : "Скрыто"}
+              </Badge>
+            }
+          >
+            {renderSummary(item)}
+          </SortableCard>
+        )}
+        columnCount={4}
+        emptyMessage={emptyMessage}
+      />
 
       <Sheet
         open={draft !== null}

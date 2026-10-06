@@ -1,32 +1,36 @@
 import { isAxiosError } from "axios";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { requireRole } from "@/features/auth/api/require-role";
+import { requireUserSession } from "@/features/auth/api/require-admin-session";
 import { contentServerApi } from "@/features/content/api/content-server-api";
-import type { UserRole } from "@/features/content/types/content.types";
 import { UserAccountPage } from "@/widgets/users/user-account-page";
+import type { AdminUser } from "@/features/content/types/content.types";
 
 export default async function UserDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const [{ id }, session] = await Promise.all([
-    params,
-    requireRole(["root", "admin"] as UserRole[]),
-  ]);
+  const [{ id }, session] = await Promise.all([params, requireUserSession()]);
 
-  let user;
-  let locations;
+  const isOwnProfile = id === session.user.id;
+  const canManageUsers =
+    session.user.role === "root" || session.user.role === "admin";
+
+  if (!canManageUsers && !isOwnProfile) {
+    redirect("/admin");
+  }
+
+  let user: AdminUser;
   try {
-    [user, locations] = await Promise.all([
-      contentServerApi.user(id, session.accessToken),
-      contentServerApi.locations(session.accessToken),
-    ]);
+    user = isOwnProfile
+      ? await contentServerApi.currentUser(session.accessToken)
+      : await contentServerApi.user(id, session.accessToken);
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 404) {
       notFound();
     }
+
     throw error;
   }
 
@@ -36,12 +40,6 @@ export default async function UserDetailsPage({
     (session.user.role === "admin" && user.role === "manager");
 
   return (
-    <UserAccountPage
-      mode="view"
-      user={user}
-      locations={locations}
-      currentRole={session.user.role}
-      canEdit={canEdit}
-    />
+    <UserAccountPage user={user} isOwnProfile={isOwnProfile} canEdit={canEdit} />
   );
 }

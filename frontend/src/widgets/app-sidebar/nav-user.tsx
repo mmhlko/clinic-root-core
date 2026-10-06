@@ -95,7 +95,7 @@ export function NavUser({ user, onLogout }: SidebarUserMenuProps) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer" render={<Link href={`/admin/users/${user.id}/edit`} />}>
+              <DropdownMenuItem className="cursor-pointer" render={<Link href={`/admin/users/${user.id}`} />}>
                 <CircleUserRound />
                 Профиль
               </DropdownMenuItem>

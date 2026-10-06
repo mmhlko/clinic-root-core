@@ -58,6 +58,9 @@ export function BranchesSettings({ locations, canManage }: {
       description="Управляйте адресами и контактами клиники."
       emptyMessage="Филиалы еще не добавлены."
       items={locations}
+      getSearchText={(item) =>
+        `${item.name} ${item.address} ${item.phone ?? ""} ${item.email ?? ""}`
+      }
       createItem={(sortOrder) => ({
         id: `new-${crypto.randomUUID()}`,
         name: "",
@@ -180,6 +183,9 @@ export function BenefitsSettings({ features }: { features: ClinicFeature[] }) {
       description="Добавляйте преимущества и управляйте их отображением на сайте."
       emptyMessage="Преимущества еще не добавлены."
       items={features}
+      getSearchText={(item) =>
+        `${item.title} ${item.description ?? ""}`
+      }
       createItem={(sortOrder) => ({
         id: `new-${crypto.randomUUID()}`,
         title: "",
@@ -272,6 +278,9 @@ export function SocialsSettings({ socialLinks }: {
       description="Управляйте ссылками и их отображением на сайте."
       emptyMessage="Ссылки на социальные сети еще не добавлены."
       items={socialLinks}
+      getSearchText={(item) =>
+        `${socialPlatforms.find((platform) => platform.value === item.platform)?.label ?? item.platform} ${item.url}`
+      }
       createItem={(sortOrder) => ({
         id: `new-${crypto.randomUUID()}`,
         platform: "vk",
@@ -368,6 +377,7 @@ export function StatisticsSettings({ statistics }: {
       description="Управляйте показателями, отображаемыми на сайте."
       emptyMessage="Показатели статистики еще не добавлены."
       items={statistics}
+      getSearchText={(item) => `${item.value} ${item.label}`}
       createItem={(sortOrder) => ({
         id: `new-${crypto.randomUUID()}`,
         value: "",

@@ -200,13 +200,10 @@ export function UserList({
           <SortableCard
             item={user}
             dragHandle={dragHandle}
-            actions={getUserActions(user)}
             onSwitch={(isActive) => toggleActive(user, isActive)}
             switchDisabled={!canManage(user) || busyId === user.id}
-            switchLabel={`Активность пользователя: ${getUserName(user)}`}
             activeDescription="Учетная запись активна"
             inactiveDescription="Учетная запись неактивна"
-            itemLabel={getUserName(user)}
             status={
               <Badge
                 className={
@@ -216,6 +213,7 @@ export function UserList({
                 {user.isActive ? "Активен" : "Скрыт"}
               </Badge>
             }
+            actionsMenu={userMenu(user)}
           >
             <button
               className="w-full text-left"
