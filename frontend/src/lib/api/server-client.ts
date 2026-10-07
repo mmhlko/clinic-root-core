@@ -2,7 +2,7 @@ import "server-only";
 
 import axios from "axios";
 
-const backendUrl = process.env.BACKEND_API_URL ?? "http://localhost:3001";
+const backendUrl = process.env.BACKEND_API_URL ?? "http://localhost:3000";
 
 const serverApiClient = axios.create({
   baseURL: backendUrl,

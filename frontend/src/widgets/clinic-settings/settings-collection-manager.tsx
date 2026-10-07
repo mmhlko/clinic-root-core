@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  SubmitEvent,
+  type SubmitEvent,
   useState,
   type ReactNode,
 } from "react";

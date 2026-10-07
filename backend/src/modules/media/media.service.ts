@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -21,17 +22,20 @@ import {
 
 import { randomUUID } from 'crypto';
 
-import type { Transaction } from 'sequelize';
+import { Op, type Transaction } from 'sequelize';
 
 import {
   MediaModel,
   MediaStatus,
 } from './media.model.js';
+import { Cron } from '@nestjs/schedule';
 
 type MediaType = 'image' | 'document';
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name)
+
   private readonly imagesDir = join(
     process.cwd(),
     'uploads',
@@ -409,5 +413,54 @@ export class MediaService {
     return {
       message: 'Media deleted',
     };
+  }
+
+  @Cron('0 * * * *')
+  async cleanupTemporaryMedia(): Promise<void> {
+    this.logger.log("Start cleanupTemporaryMedia")
+    const ttlHours = 24;
+
+    if (!Number.isFinite(ttlHours) || ttlHours <= 0) {
+      this.logger.error(
+        `Invalid MEDIA_TEMPORARY_TTL_HOURS: ${process.env.MEDIA_TEMPORARY_TTL_HOURS}`,
+      );
+      return;
+    }
+
+    const cutoff = new Date(
+      Date.now() - ttlHours * 60 * 60 * 1000,
+    );
+
+    const temporaryMedia = await this.mediaModel.findAll({
+      where: {
+        status: MediaStatus.TEMPORARY,
+        createdAt: {
+          [Op.lt]: cutoff,
+        },
+      },
+    });
+
+    if (temporaryMedia.length === 0) {
+      return;
+    }
+
+    this.logger.log(
+      `Found ${temporaryMedia.length} temporary media file(s) for cleanup`,
+    );
+
+    for (const media of temporaryMedia) {
+      try {
+        await this.delete(media);
+
+        this.logger.log(
+          `Deleted temporary media: ${media.id} (${media.filename})`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to delete temporary media ${media.id} (${media.filename})`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
   }
 }

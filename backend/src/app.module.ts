@@ -19,11 +19,14 @@ import { DocumentsModule } from './modules/documents/documents.module.js';
 import { AppointmentRequestsModule } from './modules/appointment-requests/appointment-requests.module.js';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { validateEnvironment } from './config/env.validation.js';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: validateEnvironment,
     }),
 
     SequelizeModule.forRootAsync({
@@ -52,11 +55,13 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 
         autoLoadModels: true,
 
-        synchronize: true,
+        synchronize:
+          configService.getOrThrow<string>('DATABASE_SYNCHRONIZE') === 'true',
 
         logging: false,
       }),
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [
         {

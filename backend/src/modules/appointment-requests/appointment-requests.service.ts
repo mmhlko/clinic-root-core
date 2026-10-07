@@ -23,13 +23,23 @@ export class AppointmentRequestsService {
   async create(dto: CreateAppointmentRequestDto) {
     const phone = normalizeRussianPhone(dto.phone);
     if (dto.serviceId) {
-      const service = await ServiceModel.findByPk(dto.serviceId);
+      const service = await ServiceModel.findOne({
+        where: {
+          id: dto.serviceId,
+          isActive: true
+        }
+      } );
       if (!service) {
         throw new NotFoundException('Service not found');
       }
     }
     if (dto.doctorId) {
-      const doctor = await DoctorModel.findByPk(dto.doctorId);
+      const doctor = await DoctorModel.findOne({
+        where: {
+          id: dto.doctorId,
+          isActive: true
+        }
+      } );
       if (!doctor) {
         throw new NotFoundException('Doctor not found');
       }

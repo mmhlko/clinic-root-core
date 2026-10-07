@@ -30,7 +30,17 @@ describe('AuthService', () => {
         AuthService,
         { provide: JwtService, useValue: jwtService },
         { provide: UsersService, useValue: usersService },
-        { provide: ConfigService, useValue: { get: vi.fn() } },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: vi.fn(),
+            getOrThrow: (key: string) => {
+              if (key === 'JWT_ACCESS_SECRET') return 'test-access-secret';
+              if (key === 'JWT_REFRESH_SECRET') return 'test-refresh-secret';
+              throw new Error(`Missing test configuration: ${key}`);
+            },
+          },
+        },
       ],
     }).compile();
 
