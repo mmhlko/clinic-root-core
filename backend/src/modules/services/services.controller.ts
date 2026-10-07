@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseBoolPipe,
@@ -21,6 +22,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 @ApiTags('Services')
 @ApiBearerAuth('access-token')
@@ -58,6 +60,20 @@ export class ServicesController {
     return this.servicesService.findAll(false);
   }
 
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Изменить порядок отображения' })
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  )
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async reorder(
+    @Body() dto: ReorderDto
+  ) {
+    return this.servicesService.reorderServices(dto.ids)
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Обновить услугу' })
   @Roles(
@@ -71,6 +87,13 @@ export class ServicesController {
     @Body() dto: UpdateServiceDto,
   ) {
     return this.servicesService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async remove(@Param('id') id: string) {
+    return this.servicesService.remove(id);
   }
 
   @Put(':id/active')

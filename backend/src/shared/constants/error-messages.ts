@@ -1,0 +1,183 @@
+export const ERROR_MESSAGES = {
+  accountInactive: "Учётная запись отключена.",
+  activeServiceNotFound: "Активная услуга не найдена.",
+  appointmentRequestNotFound: "Заявка не найдена.",
+  clinicAlreadyExists: "Клиника уже создана.",
+  clinicFeatureNotFound: "Характеристика клиники не найдена.",
+  clinicLocationAlreadyExists: "Филиал с такими данными уже существует.",
+  clinicLocationHasAssignedUsers: "Нельзя удалить филиал, к которому привязаны пользователи.",
+  clinicLocationNotFound: "Филиал не найден.",
+  clinicNotFound: "Клиника не найдена.",
+  clinicStatisticNotFound: "Статистика клиники не найдена.",
+  documentFileRequired: "Для документа необходимо прикрепить файл.",
+  documentNotFound: "Документ не найден.",
+  doctorNotFound: "Врач не найден.",
+  duplicateClinicLocation: "Филиал с такими данными уже существует.",
+  duplicatePromotion: "Акция с таким названием уже существует.",
+  duplicateService: "Услуга с таким названием уже существует в этом направлении.",
+  duplicateServiceDirection: "Направление с таким названием уже существует.",
+  duplicateSkill: "Такой навык уже существует.",
+  duplicateSocialLink: "Ссылка для этой социальной сети уже добавлена.",
+  duplicateSocialPlatform: "Для каждой социальной сети можно добавить только одну ссылку.",
+  educationNotFound: "Образование врача не найдено.",
+  emailAlreadyInUse: "Этот email уже используется. Укажите другой.",
+  faqNotFound: "Вопрос FAQ не найден.",
+  fileNotFound: "Файл не найден.",
+  fileRequired: "Необходимо прикрепить файл.",
+  imageNotFound: "Изображение не найдено.",
+  insufficientPermissions: "Недостаточно прав для выполнения этого действия.",
+  invalidEmailOrPassword: "Неверный email или пароль.",
+  invalidFilename: "Недопустимое имя файла.",
+  invalidMediaUrl: "Недопустимый адрес медиафайла.",
+  invalidPhone: "Укажите корректный российский номер мобильного телефона.",
+  invalidRefreshToken: "Сессия истекла. Войдите в систему ещё раз.",
+  invalidInput: "Проверьте корректность введённых данных.",
+  managerLocationRequired: "Для менеджера необходимо указать филиал.",
+  mediaNotFound: "Медиафайл не найден.",
+  onlyManagerCanHaveLocation: "Филиал можно назначить только менеджеру.",
+  onlyPublishedReviewCanBeActivated: "Активировать можно только опубликованный отзыв.",
+  oneOrMoreDoctorsNotFound: "Некоторые выбранные врачи не найдены.",
+  oneOrMoreDocumentsNotFound: "Некоторые выбранные документы не найдены.",
+  oneOrMoreFaqsNotFound: "Некоторые выбранные вопросы FAQ не найдены.",
+  oneOrMorePromotionsNotFound: "Некоторые выбранные акции не найдены.",
+  oneOrMoreReviewsNotFound: "Некоторые выбранные отзывы не найдены.",
+  oneOrMoreServiceDirectionsNotFound: "Некоторые выбранные направления не найдены.",
+  oneOrMoreServicesNotFound: "Некоторые выбранные услуги не найдены.",
+  oneOrMoreSkillsNotFound: "Некоторые выбранные навыки не найдены.",
+  permissionToChangeUserStatusRequired: "Недостаточно прав для изменения статуса пользователя.",
+  permissionToEditUsersRequired: "Недостаточно прав для редактирования пользователей.",
+  profileRoleAndLocationImmutable: "Нельзя изменить роль или филиал через настройки профиля.",
+  promotionNotFound: "Акция не найдена.",
+  reviewNotFound: "Отзыв не найден.",
+  rootRoleRestriction: "Суперпользователь может создавать только администраторов и менеджеров.",
+  serviceCannotBeDeletedWithRequests: "Нельзя удалить услугу, к которой привязаны заявки.",
+  serviceDirectionCannotBeDeleted: "Нельзя удалить направление, к которому привязаны услуги или врачи.",
+  serviceDirectionNotFound: "Направление услуг не найдено.",
+  serviceNotFound: "Услуга не найдена.",
+  skillNotFound: "Навык не найден.",
+  socialLinkNotFound: "Ссылка на социальную сеть не найдена.",
+  temporaryMediaNotFound: "Временный медиафайл не найден.",
+  temporaryPhotoNotFound: "Временное фото не найдено.",
+  userCannotChangeOwnActivity: "Нельзя изменить собственный статус пользователя.",
+  userCannotChangeOwnRole: "Нельзя изменить собственную роль.",
+  userCannotChangeRole: "Недостаточно прав для изменения роли пользователя.",
+  userCannotManageAdmins: "Недостаточно прав для управления администраторами.",
+  userCannotManageOtherUsers: "Недостаточно прав для управления этим пользователем.",
+  userCannotManageUsers: "Недостаточно прав для управления пользователями.",
+  userNotFound: "Пользователь не найден.",
+  userNotFoundOrPasswordIncorrect: "Неверный email или пароль.",
+  userRoleChangeForbidden: "Недостаточно прав для изменения роли пользователя.",
+  userWithEmailAlreadyExists: "Пользователь с таким email уже существует.",
+  workNotFound: "Работа не найдена.",
+} as const;
+
+const backendMessageTranslations: Record<string, string> = {
+  "Active service not found": ERROR_MESSAGES.activeServiceNotFound,
+  "Admin can create only manager": ERROR_MESSAGES.userCannotManageUsers,
+  "Admin can edit only themselves or managers": ERROR_MESSAGES.userCannotManageOtherUsers,
+  "Admin can manage only managers": ERROR_MESSAGES.userCannotManageAdmins,
+  "Admin cannot change their own role": ERROR_MESSAGES.userCannotChangeOwnRole,
+  "Admin cannot change user role": ERROR_MESSAGES.userCannotChangeRole,
+  "Appointment request not found": ERROR_MESSAGES.appointmentRequestNotFound,
+  "Cannot delete a direction that is assigned to services or doctors":
+    ERROR_MESSAGES.serviceDirectionCannotBeDeleted,
+  "Cannot delete a service referenced by appointment requests":
+    ERROR_MESSAGES.serviceCannotBeDeletedWithRequests,
+  "Clinic already exists": ERROR_MESSAGES.clinicAlreadyExists,
+  "Clinic location already exists": ERROR_MESSAGES.clinicLocationAlreadyExists,
+  "Cannot delete clinic location with assigned users":
+    ERROR_MESSAGES.clinicLocationHasAssignedUsers,
+  "Clinic location not found": ERROR_MESSAGES.clinicLocationNotFound,
+  "Clinic not found": ERROR_MESSAGES.clinicNotFound,
+  "Current email is occupied, please choose another email":
+    ERROR_MESSAGES.emailAlreadyInUse,
+  "Document file is required": ERROR_MESSAGES.documentFileRequired,
+  "Document not found": ERROR_MESSAGES.documentNotFound,
+  "Doctor not found": ERROR_MESSAGES.doctorNotFound,
+  "Each social platform can only be added once":
+    ERROR_MESSAGES.duplicateSocialPlatform,
+  "File is required": ERROR_MESSAGES.fileRequired,
+  "File not found": ERROR_MESSAGES.fileNotFound,
+  "Image not found": ERROR_MESSAGES.imageNotFound,
+  "Insufficient permissions": ERROR_MESSAGES.insufficientPermissions,
+  "Invalid email or password": ERROR_MESSAGES.invalidEmailOrPassword,
+  "Invalid filename": ERROR_MESSAGES.invalidFilename,
+  "Invalid media URL": ERROR_MESSAGES.invalidMediaUrl,
+  "Invalid refresh token": ERROR_MESSAGES.invalidRefreshToken,
+  "Invalid Russian mobile phone number": ERROR_MESSAGES.invalidPhone,
+  "Invalid Russian phone number": ERROR_MESSAGES.invalidPhone,
+  "Manager must have a clinic location": ERROR_MESSAGES.managerLocationRequired,
+  "Media not found": ERROR_MESSAGES.mediaNotFound,
+  "One or more doctors not found": ERROR_MESSAGES.oneOrMoreDoctorsNotFound,
+  "One or more documents not found": ERROR_MESSAGES.oneOrMoreDocumentsNotFound,
+  "One or more faqs not found": ERROR_MESSAGES.oneOrMoreFaqsNotFound,
+  "One or more promotions not found": ERROR_MESSAGES.oneOrMorePromotionsNotFound,
+  "One or more reviews not found": ERROR_MESSAGES.oneOrMoreReviewsNotFound,
+  "One or more service directions not found":
+    ERROR_MESSAGES.oneOrMoreServiceDirectionsNotFound,
+  "One or more services not found": ERROR_MESSAGES.oneOrMoreServicesNotFound,
+  "One or more skills not found": ERROR_MESSAGES.oneOrMoreSkillsNotFound,
+  "Only manager can have a clinic location":
+    ERROR_MESSAGES.onlyManagerCanHaveLocation,
+  "Only published reviews can be activated":
+    ERROR_MESSAGES.onlyPublishedReviewCanBeActivated,
+  "Profile updates cannot change role or clinic location":
+    ERROR_MESSAGES.profileRoleAndLocationImmutable,
+  "Promotion with this title already exists": ERROR_MESSAGES.duplicatePromotion,
+  "Promotion not found": ERROR_MESSAGES.promotionNotFound,
+  "Review not found": ERROR_MESSAGES.reviewNotFound,
+  "Root can create only admin or manager": ERROR_MESSAGES.rootRoleRestriction,
+  "Service already exists in this direction": ERROR_MESSAGES.duplicateService,
+  "Service direction already exists": ERROR_MESSAGES.duplicateServiceDirection,
+  "Service direction not found": ERROR_MESSAGES.serviceDirectionNotFound,
+  "Service not found": ERROR_MESSAGES.serviceNotFound,
+  "Skill already exists": ERROR_MESSAGES.duplicateSkill,
+  "Skill not found": ERROR_MESSAGES.skillNotFound,
+  "Social link for this platform already exists":
+    ERROR_MESSAGES.duplicateSocialLink,
+  "Social link not found": ERROR_MESSAGES.socialLinkNotFound,
+  "Temporary media not found": ERROR_MESSAGES.temporaryMediaNotFound,
+  "Temporary photo not found": ERROR_MESSAGES.temporaryPhotoNotFound,
+  "User account is inactive": ERROR_MESSAGES.accountInactive,
+  "User account is innactive": ERROR_MESSAGES.accountInactive,
+  "User can not change activity on yourself":
+    ERROR_MESSAGES.userCannotChangeOwnActivity,
+  "User not found": ERROR_MESSAGES.userNotFound,
+  "User not found or incorrect password":
+    ERROR_MESSAGES.userNotFoundOrPasswordIncorrect,
+  "User with this email already exists":
+    ERROR_MESSAGES.userWithEmailAlreadyExists,
+  "Work not found": ERROR_MESSAGES.workNotFound,
+  "You do not have permission to change user status":
+    ERROR_MESSAGES.permissionToChangeUserStatusRequired,
+  "You do not have permission to edit users":
+    ERROR_MESSAGES.permissionToEditUsersRequired,
+  "isActive must be boolean": ERROR_MESSAGES.invalidInput,
+};
+
+const dynamicMessageTranslations: Array<[RegExp, string]> = [
+  [/^Clinic feature .+ not found$/, ERROR_MESSAGES.clinicFeatureNotFound],
+  [/^Clinic statistic .+ not found$/, ERROR_MESSAGES.clinicStatisticNotFound],
+  [/^Doctor .+ not found$/, ERROR_MESSAGES.doctorNotFound],
+  [/^Document .+ not found$/, ERROR_MESSAGES.documentNotFound],
+  [/^Education .+ not found$/, ERROR_MESSAGES.educationNotFound],
+  [/^(?:FAQ|Faq) .+ not found$/, ERROR_MESSAGES.faqNotFound],
+  [/^Promotion .+ not found$/, ERROR_MESSAGES.promotionNotFound],
+  [/^Review .+ not found$/, ERROR_MESSAGES.reviewNotFound],
+  [/^ServiceDirection .+ not found$/, ERROR_MESSAGES.serviceDirectionNotFound],
+  [/^Service .+ not found$/, ERROR_MESSAGES.serviceNotFound],
+  [/^Social link .+ not found$/, ERROR_MESSAGES.socialLinkNotFound],
+];
+
+export function localizeErrorMessage(message: string): string {
+  const normalizedMessage = message.trim();
+  const translated = backendMessageTranslations[normalizedMessage];
+  if (translated) return translated;
+
+  const dynamicTranslation = dynamicMessageTranslations.find(([pattern]) =>
+    pattern.test(normalizedMessage),
+  );
+  if (dynamicTranslation) return dynamicTranslation[1];
+
+  return message;
+}

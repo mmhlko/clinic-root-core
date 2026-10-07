@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Param,
@@ -77,8 +78,28 @@ export class UsersController {
   @ApiOperation({ summary: 'Получить список пользователей' })
   @Roles(UserRole.ROOT, UserRole.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async findAll() {
-    return this.usersService.findAll();
+  async findAll(@Req() req: AuthRequest) {
+    const roles = req.user.role === UserRole.ROOT
+      ? undefined
+      : [UserRole.ADMIN, UserRole.MANAGER];
+
+    return this.usersService.findAll(roles);
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Обновить профиль текущего пользователя' })
+  @UseGuards(AuthGuard('jwt'))
+  async updateMe(
+    @Req() req: AuthRequest,
+    @Body() dto: UpdateUserDto,
+  ) {
+    if (dto.role !== undefined || dto.locationId !== undefined) {
+      throw new ForbiddenException(
+        'Profile updates cannot change role or clinic location',
+      );
+    }
+
+    return this.usersService.updateProfile(req.user.sub, dto);
   }
 
   @Patch(':id')
@@ -169,6 +190,34 @@ export class UsersController {
     throw new ForbiddenException(
       'You do not have permission to change user status',
     );
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Удалить пользователя' })
+  @Roles(UserRole.ROOT, UserRole.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async remove(
+    @Req() req: AuthRequest,
+    @Param('id') id: string,
+  ) {
+    const currentUser = req.user;
+    const targetUser = await this.usersService.findById(id);
+
+    if (currentUser.sub === targetUser.id) {
+      throw new ForbiddenException('User cannot delete themselves');
+    }
+
+    if (
+      currentUser.role !== UserRole.ROOT &&
+      (currentUser.role !== UserRole.ADMIN ||
+        targetUser.role !== UserRole.MANAGER)
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to delete this user',
+      );
+    }
+
+    return this.usersService.remove(id);
   }
 
   @Get('me')

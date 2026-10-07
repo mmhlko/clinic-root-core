@@ -12,6 +12,8 @@ import { DoctorModel } from '../doctors/doctor.model.js';
 
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { UpdateReviewDto } from './dto/update-review.dto.js';
+import { MediaModel } from '../media/media.model.js';
+import { Sequelize } from 'sequelize-typescript';
 
 @Injectable()
 export class ReviewsService {
@@ -21,6 +23,8 @@ export class ReviewsService {
 
     @InjectModel(DoctorModel)
     private readonly doctorModel: typeof DoctorModel,
+
+    private readonly sequelize: Sequelize,
   ) { }
 
   async create(dto: CreateReviewDto) {
@@ -77,8 +81,14 @@ export class ReviewsService {
             'lastName',
             'middleName',
             'specialization',
-            'photoUrl',
             'isActive',
+          ],
+          include: [
+            {
+              model: MediaModel,
+              as: 'photoMedia',
+              attributes: ['id', 'url']
+            },
           ],
           required: false,
         },
@@ -107,8 +117,14 @@ export class ReviewsService {
             'lastName',
             'middleName',
             'specialization',
-            'photoUrl',
             'isActive',
+          ],
+          include: [
+            {
+              model: MediaModel,
+              as: 'photoMedia',
+              attributes: ['id', 'url']
+            },
           ],
           required: false,
         },
@@ -118,6 +134,33 @@ export class ReviewsService {
         ['reviewDate', 'DESC'],
         ['createdAt', 'DESC'],
       ],
+    });
+  }
+
+  async reorderReviews(reviewIds: string[]) {
+    return this.sequelize.transaction(async (transaction) => {
+      const reviews = await this.reviewModel.findAll({
+        where: { id: reviewIds },
+        transaction,
+      });
+
+      if (reviews.length !== reviewIds.length) {
+        throw new NotFoundException('One or more reviews not found');
+      }
+
+      const reviewsById = new Map(reviews.map((review) => [review.id, review]));
+
+      for (const [index, reviewId] of reviewIds.entries()) {
+        const review = reviewsById.get(reviewId);
+        if (!review) {
+          throw new NotFoundException(`Review ${reviewId} not found`);
+        }
+
+        review.sortOrder = index;
+        await review.save({ transaction });
+      }
+
+      return { success: true };
     });
   }
 
@@ -151,8 +194,14 @@ export class ReviewsService {
               'lastName',
               'middleName',
               'specialization',
-              'photoUrl',
               'isActive',
+            ],
+            include: [
+              {
+                model: MediaModel,
+                as: 'photoMedia',
+                attributes: ['id', 'url']
+              },
             ],
             required: false,
           },

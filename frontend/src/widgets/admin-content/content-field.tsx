@@ -1,0 +1,58 @@
+"use client";
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+interface ContentFieldProps {
+  label: string;
+  name: string;
+  defaultValue?: string | number | null;
+  type?: string;
+  textarea?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+}
+
+export function ContentField({
+  label,
+  name,
+  defaultValue = "",
+  type = "text",
+  textarea = false,
+  required = false,
+  disabled = false,
+  min,
+  max,
+  minLength,
+}: ContentFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={name} required={required}>{label}</Label>
+      {textarea ? (
+        <Textarea
+          id={name}
+          name={name}
+          defaultValue={defaultValue ?? ""}
+          required={required}
+          disabled={disabled}
+        />
+      ) : (
+        <Input
+          id={name}
+          name={name}
+          type={type}
+          defaultValue={defaultValue ?? ""}
+          required={required}
+          disabled={disabled}
+          min={min}
+          max={max}
+          minLength={minLength}
+        />
+      )}
+    </div>
+  );
+}

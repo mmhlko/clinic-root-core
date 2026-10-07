@@ -23,6 +23,7 @@ import { UpdateReviewDto } from './dto/update-review.dto.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
+import { ReorderDto } from '../../shared/dto/reorder.dto.js';
 
 @ApiTags('Reviews')
 @ApiBearerAuth('access-token')
@@ -79,6 +80,14 @@ export class ReviewsController {
   )
   async findPending() {
     return this.reviewsService.findPending();
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Изменить порядок отображения отзывов' })
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async reorder(@Body() dto: ReorderDto) {
+    return this.reviewsService.reorderReviews(dto.ids);
   }
 
   // Изменение отзыва из админки

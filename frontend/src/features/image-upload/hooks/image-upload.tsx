@@ -19,7 +19,6 @@ interface ImageUploadProps {
   isUploading?: boolean;
   isDeleting?: boolean;
   disabled?: boolean;
-  error?: string | null;
   accept?: string;
   aspectRatio?: "1/1" | "4/5" | "16/9" | "3/1"
   className?: string;
@@ -40,7 +39,6 @@ export function ImageUpload({
   isUploading = false,
   isDeleting = false,
   disabled = false,
-  error = null,
   accept = "image/jpeg,image/png,image/webp",
   aspectRatio = "4/5",
   className
@@ -151,17 +149,12 @@ export function ImageUpload({
             </Button>
           }
           title="Удалить фото?"
+          nativeButton
           confirmText="Удалить"
           confirmButtonVariant="destructive"
           onConfirm={onRemove}
           media={<Trash2 />}
         />
-      )}
-
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
       )}
     </div>
   );

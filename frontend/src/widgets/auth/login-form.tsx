@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input"
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => void;
   isSubmitting: boolean;
-  error: string | null;
   className?: string;
 }
 
@@ -24,7 +23,6 @@ export function LoginForm({
   className,
   onSubmit,
   isSubmitting,
-  error,
 }: LoginFormProps) {
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
@@ -44,7 +42,7 @@ export function LoginForm({
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email" required>Email</FieldLabel>
                 <Input
                   id="email"
                   name="email"
@@ -56,7 +54,7 @@ export function LoginForm({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="password">Пароль</FieldLabel>
+                <FieldLabel htmlFor="password" required>Пароль</FieldLabel>
                 <Input
                   id="password"
                   name="password"
@@ -65,8 +63,6 @@ export function LoginForm({
                   required
                 />
               </Field>
-
-              {error && <p role="alert">{error}</p>}
 
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Входим..." : "Войти"}

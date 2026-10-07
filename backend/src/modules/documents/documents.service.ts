@@ -55,6 +55,33 @@ export class DocumentsService {
     });
   }
 
+  async reorderDocuments(documentIds: string[]) {
+    return this.sequelize.transaction(async (transaction) => {
+      const documents = await this.documentModel.findAll({
+        where: { id: documentIds },
+        transaction,
+      });
+
+      if (documents.length !== documentIds.length) {
+        throw new NotFoundException('One or more documents not found');
+      }
+
+      const documentsById = new Map(documents.map((document) => [document.id, document]));
+
+      for (const [index, documentId] of documentIds.entries()) {
+        const document = documentsById.get(documentId);
+        if (!document) {
+          throw new NotFoundException(`Document ${documentId} not found`);
+        }
+
+        document.sortOrder = index;
+        await document.save({ transaction });
+      }
+
+      return { success: true };
+    });
+  }
+
   /**
    * Получить один документ
    */

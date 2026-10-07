@@ -7,6 +7,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { ServiceDirectionModel } from './directions/service-direction.model.js';
+import type { PromotionModel } from '../promotions/promotion.model.js';
 
 
 export interface ServiceCreationAttributes {
@@ -43,6 +44,8 @@ export class ServiceModel extends Model<
 
   @BelongsTo(() => ServiceDirectionModel)
   declare direction: ServiceDirectionModel;
+
+  declare promotion?: PromotionModel | null;
 
   @Column({
     type: DataType.STRING,

@@ -1,7 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MoreHorizontalIcon, SearchIcon } from "lucide-react";
+import {
+  CircleCheckIcon,
+  CirclePlusIcon,
+  CircleXIcon,
+  Clock3Icon,
+  ListIcon,
+  MoreHorizontalIcon,
+  SearchIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ContentFilterTabs,
+  type ContentFilterTab,
+} from "@/components/shared/content-filter-tabs";
 import {
   Table,
   TableBody,
@@ -53,10 +65,7 @@ const statusItems = [
   { label: "Отменена", value: EStatusVariant.CANCELLED },
 ];
 
-const statusFilterItems = [
-  { label: "Все статусы", value: "all" as const },
-  ...statusItems,
-];
+type RequestFilter = EStatusVariant | "all";
 
 function RequestStatusSelect({
   request,
@@ -157,7 +166,7 @@ export function RequestsList({
 }) {
   const [requests, setRequests] = useState(initialRequests);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<EStatusVariant | "all">("all");
+  const [status, setStatus] = useState<RequestFilter>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] =
     useState<AppointmentRequest | null>(null);
@@ -183,6 +192,46 @@ export function RequestsList({
     [requests],
   );
 
+  const filterTabs = useMemo<ContentFilterTab<RequestFilter>[]>(
+    () => [
+      {
+        value: "all",
+        label: "Все",
+        count: requests.length,
+        icon: ListIcon,
+      },
+      {
+        value: EStatusVariant.NEW,
+        label: "Новые",
+        count: requests.filter((request) => request.status === EStatusVariant.NEW).length,
+        icon: CirclePlusIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.NEW],
+      },
+      {
+        value: EStatusVariant.IN_PROGRESS,
+        label: "В работе",
+        count: requests.filter((request) => request.status === EStatusVariant.IN_PROGRESS).length,
+        icon: Clock3Icon,
+        badgeStyle: statusColorsStyles[EStatusVariant.IN_PROGRESS],
+      },
+      {
+        value: EStatusVariant.COMPLETED,
+        label: "Завершённые",
+        count: requests.filter((request) => request.status === EStatusVariant.COMPLETED).length,
+        icon: CircleCheckIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.COMPLETED],
+      },
+      {
+        value: EStatusVariant.CANCELLED,
+        label: "Отменённые",
+        count: requests.filter((request) => request.status === EStatusVariant.CANCELLED).length,
+        icon: CircleXIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.CANCELLED],
+      },
+    ],
+    [requests],
+  );
+
   const filteredRequests = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return requests.filter((request) => {
@@ -194,6 +243,12 @@ export function RequestsList({
       return matchesStatus && matchesQuery;
     });
   }, [query, requests, status]);
+  const emptyRequestsMessage =
+    requests.length === 0
+      ? "Заявок пока нет"
+      : status !== "all" && !query.trim()
+        ? "Заявок с таким статусом пока нет"
+        : "По вашему запросу ничего не найдено";
 
   function openRequest(request: AppointmentRequest, edit = false) {
     setSelectedRequest(request);
@@ -261,27 +316,6 @@ export function RequestsList({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        {[
-          { label: "Всего", value: counts.total },
-          { label: "Новая", value: counts.new },
-          { label: "В работе", value: counts.inProgress },
-          { label: "Завершена", value: counts.completed },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="min-w-0 rounded-lg border bg-card px-3 py-2.5 sm:px-4 sm:py-3"
-          >
-            <p className="truncate text-xs text-muted-foreground sm:text-sm">
-              {item.label}
-            </p>
-            <p className="mt-0.5 text-xl font-semibold tracking-tight sm:text-2xl">
-              {item.value}
-            </p>
-          </div>
-        ))}
-      </div>
-
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -292,29 +326,12 @@ export function RequestsList({
             className="pl-9"
           />
         </div>
-        <Select<EStatusVariant | "all">
-          items={statusFilterItems}
-          value={status}
-          onValueChange={(value) => {
-            if (value !== null) {
-              setStatus(value);
-            }
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Статус" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {statusFilterItems.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
       </div>
+      <ContentFilterTabs
+        value={status}
+        onValueChange={setStatus}
+        items={filterTabs}
+      />
 
       <div className="hidden overflow-hidden rounded-lg border bg-card md:block">
         <Table>
@@ -380,9 +397,7 @@ export function RequestsList({
                   colSpan={6}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  {requests.length === 0
-                    ? "Заявок пока нет"
-                    : "По вашему запросу ничего не найдено"}
+                  {emptyRequestsMessage}
                 </TableCell>
               </TableRow>
             )}
@@ -449,9 +464,7 @@ export function RequestsList({
         ))}
         {filteredRequests.length === 0 && (
           <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-            {requests.length === 0
-              ? "Заявок пока нет"
-              : "По вашему запросу ничего не найдено"}
+            {emptyRequestsMessage}
           </div>
         )}
       </div>

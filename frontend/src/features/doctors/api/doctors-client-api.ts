@@ -2,7 +2,7 @@ import "client-only";
 
 import { RootApi } from "@/lib/api/root.api";
 import apiClient from "@/lib/api/client";
-import { UpdateActivityStatusResponse } from "@/shared/types/dto";
+import { ReorderResponse, UpdateActivityStatusResponse } from "@/shared/types/dto";
 import type {
   CreateDoctorRequest,
   Doctor,
@@ -34,9 +34,9 @@ class DoctorClientApi extends RootApi {
     })
   }
 
-  reorderDoctors(doctorIds: string[]) {
-    return this.requestPatch('/doctors/reorder', {
-      doctorIds
+  reorderDoctors(ids: string[]) {
+    return this.requestPatch<ReorderResponse>('/doctors/reorder', {
+      ids
     })
   }
 

@@ -65,6 +65,7 @@ export function UploadMedia(
     UseInterceptors(
       FileInterceptor('file', {
         storage: memoryStorage(),
+        defParamCharset: 'utf8',
 
         limits: {
           fileSize: config.maxSize,

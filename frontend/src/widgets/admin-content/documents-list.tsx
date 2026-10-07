@@ -1,0 +1,417 @@
+"use client";
+
+import { useRef, useState, type FormEvent } from "react";
+import {
+  ExternalLinkIcon,
+  FileTextIcon,
+  PencilIcon,
+  SaveIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
+
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentMedia,
+  AttachmentTitle,
+} from "@/components/ui/attachment";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/toast";
+import {
+  ContentActionsMenu,
+  type ContentMenuAction,
+} from "@/widgets/admin-content/content-actions-menu";
+import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
+import { ContentField } from "@/widgets/admin-content/content-field";
+import { ContentList } from "@/widgets/admin-content/content-list";
+import { ContentSheet } from "@/widgets/admin-content/content-sheet";
+import { contentClientApi } from "@/features/content/api/content-client-api";
+import type { DocumentItem } from "@/features/content/types/content.types";
+import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
+import { activityColorsStyles } from "@/shared/constants/colors";
+
+type SheetMode = "view" | "create" | "edit";
+
+export function DocumentsList({
+  initialItems,
+}: {
+  initialItems: DocumentItem[];
+}) {
+  const [items, setItems] = useState(initialItems);
+  const [selected, setSelected] = useState<DocumentItem | null>(null);
+  const [mode, setMode] = useState<SheetMode>("view");
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function openSheet(nextMode: SheetMode, item: DocumentItem | null = null) {
+    setSelected(item);
+    setMode(nextMode);
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setOpen(true);
+  }
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const payload = new FormData();
+    payload.append("title", String(form.get("title")));
+    payload.append("description", String(form.get("description") || ""));
+    payload.append("sortOrder", String(selected?.sortOrder ?? items.length));
+    const file = form.get("file");
+    if (file instanceof File && file.size > 0) payload.append("file", file);
+
+    setSaving(true);
+    try {
+      const result = selected
+        ? await contentClientApi.updateDocument(selected.id, payload)
+        : await contentClientApi.createDocument(payload);
+      setItems((current) =>
+        selected
+          ? current.map((item) => (item.id === result.id ? result : item))
+          : [...current, result],
+      );
+      setOpen(false);
+      toast.add({
+        type: "success",
+        description: selected ? "Документ обновлён." : "Документ добавлен.",
+      });
+    } catch (cause: unknown) {
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(
+          cause,
+          "Не удалось сохранить документ.",
+        ),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggle(item: DocumentItem, isActive: boolean) {
+    setBusyId(item.id);
+    setItems((current) =>
+      current.map((value) =>
+        value.id === item.id ? { ...value, isActive } : value,
+      ),
+    );
+    try {
+      const updated = await contentClientApi.setDocumentActive(
+        item.id,
+        isActive,
+      );
+      setItems((current) =>
+        current.map((value) => (value.id === item.id ? updated : value)),
+      );
+    } catch (cause: unknown) {
+      setItems((current) =>
+        current.map((value) =>
+          value.id === item.id ? { ...value, isActive: item.isActive } : value,
+        ),
+      );
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(
+          cause,
+          "Не удалось изменить статус документа.",
+        ),
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function remove(item: DocumentItem) {
+    try {
+      await contentClientApi.deleteDocument(item.id);
+      setItems((current) => current.filter((value) => value.id !== item.id));
+      if (selected?.id === item.id) setOpen(false);
+    } catch (cause: unknown) {
+      toast.add({
+        type: "error",
+        description: getContentApiErrorMessage(
+          cause,
+          "Не удалось удалить документ.",
+        ),
+      });
+    }
+  }
+
+  function getActions(): ContentMenuAction<DocumentItem>[] {
+    return [
+      { label: "Просмотреть", onSelect: (value) => openSheet("view", value) },
+      { label: "Редактировать", onSelect: (value) => openSheet("edit", value) },
+      {
+        label: "Удалить",
+        destructive: true,
+        onSelect: remove,
+        confirm: {
+          title: "Удалить документ?",
+          description:
+            "Документ и загруженный файл будут удалены без возможности восстановления.",
+        },
+      },
+    ];
+  }
+
+  function actionMenu(item: DocumentItem) {
+    return (
+      <ContentActionsMenu
+        item={item}
+        itemLabel={item.title}
+        actions={getActions()}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <ContentList
+        title="Документы"
+        items={items}
+        setItems={setItems}
+        getId={(item) => item.id}
+        getSearchText={(item) =>
+          `${item.title} ${item.description ?? ""} ${item.fileName}`
+        }
+        reorder={(ids) => contentClientApi.reorderDocuments(ids)}
+        onReorderError={() =>
+          toast.add({
+            type: "error",
+            description: "Не удалось сохранить порядок документов.",
+          })
+        }
+        onAdd={() => openSheet("create")}
+        columnCount={5}
+        emptyMessage="Документов пока нет."
+        renderHeader={() => (
+          <TableRow>
+            <TableHead className="w-10 px-2">
+              <span className="sr-only">Перемещение</span>
+            </TableHead>
+            <TableHead>Документ</TableHead>
+            <TableHead>Файл</TableHead>
+            <TableHead>Видимость</TableHead>
+            <TableHead className="w-12 text-right" />
+          </TableRow>
+        )}
+        renderCells={(item, dragHandle) => (
+          <>
+            <TableCell className="w-10 px-2">{dragHandle}</TableCell>
+            <TableCell>
+              <button
+                className="text-left font-medium hover:underline"
+                onClick={() => openSheet("view", item)}
+              >
+                {item.title}
+              </button>
+              <span className="block max-w-md truncate text-xs text-muted-foreground">
+                {item.description}
+              </span>
+            </TableCell>
+            <TableCell>
+              {item.fileName}
+              <span className="block text-xs text-muted-foreground">
+                {item.fileType}
+              </span>
+            </TableCell>
+            <TableCell>
+              <Switch
+                checked={item.isActive}
+                disabled={busyId === item.id}
+                onCheckedChange={(value) => void toggle(item, value)}
+                aria-label={`Активность: ${item.title}`}
+              />
+            </TableCell>
+            <TableCell className="text-right">{actionMenu(item)}</TableCell>
+          </>
+        )}
+        renderCard={(item, dragHandle) => (
+          <SortableCard
+            item={item}
+            dragHandle={dragHandle}
+            onSwitch={(value) => void toggle(item, value)}
+            switchDisabled={busyId === item.id}
+            status={
+              <Badge
+                className={
+                  activityColorsStyles[item.isActive ? "active" : "inactive"]
+                }
+              >
+                {item.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+            }
+            actionsMenu={actionMenu(item)}
+          >
+            <button
+              className="w-full text-left"
+              onClick={() => openSheet("view", item)}
+            >
+              <span className="block font-medium">{item.title}</span>
+              <span className="mt-1 block truncate text-sm text-muted-foreground">
+                {item.fileName} · {item.fileType}
+              </span>
+            </button>
+          </SortableCard>
+        )}
+      />
+
+      <ContentSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={
+          mode === "view"
+            ? (selected?.title ?? "Документ")
+            : mode === "create"
+              ? "Новый документ"
+              : "Редактировать документ"
+        }
+        description={
+          mode === "view"
+            ? "Информация о документе"
+            : "Укажите описание и выберите файл."
+        }
+      >
+        {mode === "view" && selected ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline">
+                {selected.isActive ? "Активен" : "Скрыт"}
+              </Badge>
+              <Button variant="outline" onClick={() => setMode("edit")}>
+                <PencilIcon data-icon="inline-start" />
+                Редактировать
+              </Button>
+            </div>
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+              {selected.description || "Без описания"}
+            </p>
+            <dl className="divide-y rounded-lg border text-sm">
+              <div className="grid grid-cols-[100px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Файл</dt>
+                <dd className="break-all">{selected.fileName}</dd>
+              </div>
+              <div className="grid grid-cols-[100px_1fr] gap-3 p-3">
+                <dt className="text-muted-foreground">Формат</dt>
+                <dd>{selected.fileType}</dd>
+              </div>
+            </dl>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={
+                <a href={selected.fileUrl} target="_blank" rel="noreferrer" />
+              }
+            >
+              <ExternalLinkIcon data-icon="inline-start" />
+              Открыть файл
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={(event) => void save(event)} className="space-y-4">
+            <ContentField
+              label="Название"
+              name="title"
+              required
+              defaultValue={selected?.title}
+            />
+            <ContentField
+              label="Описание"
+              name="description"
+              textarea
+              defaultValue={selected?.description}
+            />
+            <div className="space-y-2">
+              <Label htmlFor="file">
+                Файл {selected ? "(необязательно при редактировании)" : ""}
+              </Label>
+              <Input
+                ref={fileInputRef}
+                id="file"
+                name="file"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                required={!selected}
+                className="sr-only"
+                onChange={(event) =>
+                  setFile(event.currentTarget.files?.[0] ?? null)
+                }
+              />
+              <div className="flex flex-col items-center gap-2">
+                <Attachment
+                  state={file || selected ? "done" : "idle"}
+                  className="w-full flex-1"
+                >
+                  <AttachmentMedia>
+                    <FileTextIcon />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>
+                      {file?.name ?? selected?.fileName ?? "Файл не выбран"}
+                    </AttachmentTitle>
+                    <AttachmentDescription>
+                      {file
+                        ? `${file.type || "Документ"} · ${(file.size / 1024 / 1024).toFixed(2)} МБ`
+                        : selected?.fileType ?? "PDF или DOC"}
+                    </AttachmentDescription>
+                  </AttachmentContent>
+                  {file && (
+                    <AttachmentActions>
+                      <AttachmentAction
+                        type="button"
+                        aria-label="Убрать выбранный файл"
+                        onClick={() => {
+                          setFile(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                          }
+                        }}
+                      >
+                        <Trash2Icon />
+                      </AttachmentAction>
+                    </AttachmentActions>
+                  )}
+                </Attachment>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {file || selected ? "Заменить файл" : "Выбрать файл"}
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                <SaveIcon data-icon="inline-start" />
+                {saving ? "Сохранение…" : "Сохранить"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={saving}
+              >
+                <XIcon data-icon="inline-start" />
+                Отмена
+              </Button>
+            </div>
+          </form>
+        )}
+      </ContentSheet>
+    </div>
+  );
+}

@@ -11,6 +11,10 @@ import { ServiceModel } from './service.model.js';
 import { CreateServiceDto } from './dto/create-service.dto.js';
 import { ServiceDirectionModel } from './directions/service-direction.model.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
+import { Sequelize } from 'sequelize-typescript';
+import { AppointmentRequestModel } from '../appointment-requests/appointment-request.model.js';
+import { PromotionModel } from '../promotions/promotion.model.js';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class ServicesService {
@@ -20,6 +24,14 @@ export class ServicesService {
 
     @InjectModel(ServiceDirectionModel)
     private readonly serviceDirectionModel: typeof ServiceDirectionModel,
+
+    @InjectModel(AppointmentRequestModel)
+    private readonly appointmentRequestModel: typeof AppointmentRequestModel,
+
+    @InjectModel(PromotionModel)
+    private readonly promotionModel: typeof PromotionModel,
+
+    private readonly sequelize: Sequelize,
   ) { }
 
   async create(dto: CreateServiceDto) {
@@ -62,7 +74,7 @@ export class ServicesService {
   }
 
   async findAll(onlyActive = false) {
-    return this.serviceModel.findAll({
+    const services = await this.serviceModel.findAll({
       where: onlyActive
         ? { isActive: true }
         : undefined,
@@ -78,6 +90,10 @@ export class ServicesService {
         },
       ],
     });
+
+    await this.attachCurrentPromotions(services);
+
+    return services;
   }
 
   async update(id: string, dto: UpdateServiceDto) {
@@ -161,6 +177,27 @@ export class ServicesService {
     return service;
   }
 
+  async remove(id: string) {
+    const service = await this.serviceModel.findByPk(id);
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const requestsCount = await this.appointmentRequestModel.count({
+      where: { serviceId: id },
+    });
+
+    if (requestsCount) {
+      throw new ConflictException(
+        'Cannot delete a service referenced by appointment requests',
+      );
+    }
+
+    await service.destroy();
+    return { success: true };
+  }
+
   async findById({
     id,
     onlyActive = false,
@@ -168,8 +205,7 @@ export class ServicesService {
     id: string;
     onlyActive?: boolean;
   }) {
-    const service =
-      await this.serviceModel.findOne({
+    const service = await this.serviceModel.findOne({
         where: {
           id,
           ...(onlyActive
@@ -195,6 +231,93 @@ export class ServicesService {
       );
     }
 
+    await this.attachCurrentPromotions([service]);
+
     return service;
+  }
+
+  private currentPromotionWhere() {
+    const now = new Date();
+
+    return {
+      isActive: true,
+      [Op.and]: [
+        {
+          [Op.or]: [
+            { validFrom: null },
+            { validFrom: { [Op.lte]: now } },
+          ],
+        },
+        {
+          [Op.or]: [
+            { validTo: null },
+            { validTo: { [Op.gte]: now } },
+          ],
+        },
+      ],
+    };
+  }
+
+  private async attachCurrentPromotions(services: ServiceModel[]) {
+    if (services.length === 0) {
+      return;
+    }
+
+    const promotions = await this.promotionModel.findAll({
+      where: {
+        serviceId: {
+          [Op.in]: services.map((service) => service.id),
+        },
+        ...this.currentPromotionWhere(),
+      },
+      order: [['sortOrder', 'ASC']],
+    });
+
+    const promotionByServiceId = new Map(
+      promotions.map((promotion) => [promotion.serviceId, promotion]),
+    );
+
+    for (const service of services) {
+      service.setDataValue(
+        'promotion',
+        promotionByServiceId.get(service.id) ?? null,
+      );
+    }
+  }
+
+  async reorderServices(serviceIds: string[]) {
+    return this.sequelize.transaction(async (transaction) => {
+      const services = await this.serviceModel.findAll({
+        where: {
+          id: serviceIds,
+        },
+
+        transaction,
+      });
+
+      if (services.length !== serviceIds.length) {
+        throw new NotFoundException('One or more services not found');
+      }
+
+      const servicesById = new Map(services.map((service) => [service.id, service]));
+
+      for (const [index, serviceId] of serviceIds.entries()) {
+        const service = servicesById.get(serviceId);
+
+        if (!service) {
+          throw new NotFoundException(`Service ${serviceId} not found`);
+        }
+
+        service.sortOrder = index;
+
+        await service.save({
+          transaction,
+        });
+      }
+
+      return {
+        success: true,
+      };
+    });
   }
 }

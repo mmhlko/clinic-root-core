@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -22,6 +23,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { UserRole } from '../../users/user-role.enum.js';
 import { ClinicLocationService } from '../services/clinic-location.service.js';
+import { ReorderDto } from '../../../shared/dto/reorder.dto.js';
 
 @ApiBearerAuth('access-token')
 @Controller('clinic/locations')
@@ -71,6 +73,19 @@ export class ClinicLocationController {
     );
   }
 
+  @Patch('reorder')
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+  )
+  @UseGuards(
+    AuthGuard('jwt'),
+    RolesGuard,
+  )
+  async reorder(@Body() dto: ReorderDto) {
+    return this.clinicLocationService.reorder(dto.ids);
+  }
+
   // Обновление филиала
   @Patch(':id')
   @Roles(
@@ -110,6 +125,19 @@ export class ClinicLocationController {
       id,
       isActive,
     );
+  }
+
+  @Delete(':id')
+  @Roles(
+    UserRole.ROOT,
+    UserRole.ADMIN,
+  )
+  @UseGuards(
+    AuthGuard('jwt'),
+    RolesGuard,
+  )
+  async remove(@Param('id') id: string) {
+    return this.clinicLocationService.remove(id);
   }
 
   // Один активный филиал для публичного сайта

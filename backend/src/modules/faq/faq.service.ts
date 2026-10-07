@@ -17,7 +17,7 @@ export class FaqService {
     private readonly faqModel: typeof FaqModel,
 
     private readonly sequelize: Sequelize,
-  ) {}
+  ) { }
 
   async findAll(onlyActive = false) {
     return this.faqModel.findAll({
@@ -80,6 +80,42 @@ export class FaqService {
         transaction,
         order: [['sortOrder', 'ASC']],
       });
+    });
+  }
+
+  async reorderFaqs(faqIds: string[]) {
+    return this.sequelize.transaction(async (transaction) => {
+      const faqs = await this.faqModel.findAll({
+        where: {
+          id: faqIds,
+        },
+
+        transaction,
+      });
+
+      if (faqs.length !== faqIds.length) {
+        throw new NotFoundException('One or more faqs not found');
+      }
+
+      const faqsById = new Map(faqs.map((faq) => [faq.id, faq]));
+
+      for (const [index, faqId] of faqIds.entries()) {
+        const faq = faqsById.get(faqId);
+
+        if (!faq) {
+          throw new NotFoundException(`Faq ${faqId} not found`);
+        }
+
+        faq.sortOrder = index;
+
+        await faq.save({
+          transaction,
+        });
+      }
+
+      return {
+        success: true,
+      };
     });
   }
 }

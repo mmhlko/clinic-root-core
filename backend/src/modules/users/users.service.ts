@@ -74,6 +74,7 @@ export class UsersService {
 			password: hashedPassword,
 			role: dto.role ?? UserRole.MANAGER,
 			locationId,
+			avatarUrl: dto.avatarUrl ?? null,
 		});
 
 		return {
@@ -86,6 +87,7 @@ export class UsersService {
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 			locationId: user.locationId,
+			isActive: user.isActive,
 		};
 	}
 
@@ -190,6 +192,45 @@ export class UsersService {
 		};
 	}
 
+	async updateProfile(id: string, dto: UpdateUserDto) {
+		const user = await this.findById(id);
+
+		if (dto.email && dto.email !== user.email) {
+			const existingUser = await this.userModel.findOne({
+				where: { email: dto.email },
+			});
+
+			if (existingUser) {
+				throw new ConflictException(
+					'User with this email already exists',
+				);
+			}
+		}
+
+		if (dto.firstName !== undefined) user.firstName = dto.firstName;
+		if (dto.lastName !== undefined) user.lastName = dto.lastName;
+		if (dto.email !== undefined) user.email = dto.email;
+		if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
+		if (dto.password !== undefined) {
+			user.password = await bcrypt.hash(dto.password, 12);
+		}
+
+		await user.save();
+
+		return {
+			id: user.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			email: user.email,
+			role: user.role,
+			avatarUrl: user.avatarUrl,
+			isActive: user.isActive,
+			createdAt: user.createdAt,
+			updatedAt: user.updatedAt,
+			locationId: user.locationId,
+		};
+	}
+
 	async setActive(id: string, isActive: boolean) {
 		const user = await this.findById(id);
 
@@ -210,6 +251,12 @@ export class UsersService {
 		};
 	}
 
+	async remove(id: string) {
+		const user = await this.findById(id);
+		await user.destroy();
+		return { id };
+	}
+
 	async findById(id: string) {
 		const user = await this.userModel.findByPk(id);
 		if (!user) throw new NotFoundException('User not found');
@@ -220,7 +267,13 @@ export class UsersService {
 		const user = await this.userModel.findByPk(id, {
 			attributes: {
 				exclude: ['password', 'hashedRefreshToken']
-			}
+			},
+			include: [
+				{
+					model: ClinicLocationModel,
+					as: 'location',
+				},
+			]
 		});
 		if (!user) throw new NotFoundException('User not found');
 		return user;
@@ -236,8 +289,9 @@ export class UsersService {
 		return user.save();
 	}
 
-	async findAll() {
+	async findAll(roles?: UserRole[]) {
 		const users = await this.userModel.findAll({
+			where: roles ? { role: roles } : undefined,
 			attributes: {
 				exclude: ['password', 'hashedRefreshToken'],
 			},

@@ -1,0 +1,5 @@
+#.deploy
+docker-compose.dev.yml
+docker-compose.yml
+.data
+.env*

@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/admin/page-header";
+import { PageHeader } from "@/components/shared/page-header";
 import { requireUserSession } from "@/features/auth/api/require-admin-session";
 import { appointmentRequestsServerApi } from "@/features/appointment-requests/api/appointment-requests-server-api";
 import { RequestsList } from "@/widgets/appointment-requests/requests-list";

@@ -28,7 +28,7 @@ export class RootApi {
 		const response = await this.client.post<TResponse>(
 			url,
 			body,
-			{ headers: this.getHeaders(options) },
+			{ headers: this.getHeaders(options, body) },
 		);
 
 		return response.data;
@@ -42,7 +42,7 @@ export class RootApi {
 		const response = await this.client.patch<TResponse>(
 			url,
 			body,
-			{ headers: this.getHeaders(options) },
+			{ headers: this.getHeaders(options, body) },
 		);
 
 		return response.data;
@@ -74,9 +74,14 @@ export class RootApi {
 		return response.data;
 	}
 
-	private getHeaders(options?: ApiRequestOptions) {
+	private getHeaders(options?: ApiRequestOptions, body?: unknown) {
+		const isFormData =
+			typeof FormData !== "undefined" && body instanceof FormData;
+
 		return {
-			...(options?.contentType
+			...(isFormData
+				? { "Content-Type": undefined }
+				: options?.contentType
 				? { "Content-Type": options.contentType }
 				: {}),
 			...(options?.accessToken

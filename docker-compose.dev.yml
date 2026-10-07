@@ -1,0 +1,23 @@
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: clinics-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clinics
+      POSTGRES_USER: clinics
+      POSTGRES_PASSWORD: clinics_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinics -d clinics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
