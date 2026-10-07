@@ -170,6 +170,7 @@ export class UsersService {
 
 		if (dto.password !== undefined) {
 			user.password = await bcrypt.hash(dto.password, 12);
+			user.hashedRefreshToken = null;
 		}
 
 		if (dto.avatarUrl !== undefined) {
@@ -213,6 +214,7 @@ export class UsersService {
 		if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
 		if (dto.password !== undefined) {
 			user.password = await bcrypt.hash(dto.password, 12);
+			user.hashedRefreshToken = null;
 		}
 
 		await user.save();
@@ -235,6 +237,10 @@ export class UsersService {
 		const user = await this.findById(id);
 
 		user.isActive = isActive;
+
+		if (!isActive) {
+			user.hashedRefreshToken = null;
+		}
 
 		await user.save();
 

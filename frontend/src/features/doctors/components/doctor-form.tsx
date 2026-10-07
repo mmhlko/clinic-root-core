@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { SubmitEvent, useState } from "react";
+import { useState } from "react";
+import type { SubmitEvent } from 'react';
 import { isAxiosError } from "axios";
 import { Plus, Trash2 } from "lucide-react";
 

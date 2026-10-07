@@ -44,26 +44,6 @@ export class MediaController {
     );
   }
 
-  @Post('files')
-  @UploadMedia('document')
-  @Roles(
-    UserRole.ROOT,
-    UserRole.ADMIN,
-    UserRole.MANAGER,
-  )
-  @UseGuards(
-    AuthGuard('jwt'),
-    RolesGuard,
-  )
-  async uploadFile(
-    @UploadedFile()
-    file: Express.Multer.File,
-  ) {
-    return this.mediaService.uploadFile(
-      file,
-    );
-  }
-
   @Delete('images/:filename')
   @Roles(
     UserRole.ROOT,
@@ -78,24 +58,6 @@ export class MediaController {
     @Param('filename') filename: string,
   ) {
     return this.mediaService.removeImage(
-      filename,
-    );
-  }
-
-  @Delete('files/:filename')
-  @Roles(
-    UserRole.ROOT,
-    UserRole.ADMIN,
-    UserRole.MANAGER,
-  )
-  @UseGuards(
-    AuthGuard('jwt'),
-    RolesGuard,
-  )
-  async removeFile(
-    @Param('filename') filename: string,
-  ) {
-    return this.mediaService.removeFile(
       filename,
     );
   }
