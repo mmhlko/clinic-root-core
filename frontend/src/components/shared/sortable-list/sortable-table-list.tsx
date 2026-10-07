@@ -36,6 +36,7 @@ interface SortableTableListProps<T> {
   emptyMessage?: string;
   columnCount: number;
   dndId: string;
+  reorderDisabled?: boolean;
   dragLabel?: string;
 }
 
@@ -44,17 +45,20 @@ interface SortableTableRowProps<T> {
   getId: (item: T) => string;
   renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
   dragLabel: string;
+  reorderDisabled: boolean;
 }
 
 interface DragHandleProps {
   attributes: ReturnType<typeof useSortable>["attributes"];
   listeners: ReturnType<typeof useSortable>["listeners"];
+  disabled: boolean;
 }
 
 function DragHandle({
   attributes,
   listeners,
   label,
+  disabled,
 }: DragHandleProps & { label: string }) {
 
   return (
@@ -64,7 +68,8 @@ function DragHandle({
       type="button"
       variant="ghost"
       size="icon"
-      className="size-8 cursor-grab text-muted-foreground hover:bg-transparent active:cursor-grabbing"
+      className="size-8 cursor-grab text-muted-foreground hover:bg-transparent active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+      disabled={disabled}
     >
       <GripVerticalIcon className="size-4" />
       <span className="sr-only">{label}</span>
@@ -77,6 +82,7 @@ function SortableTableRow<T>({
   getId,
   renderCells,
   dragLabel,
+  reorderDisabled,
 }: SortableTableRowProps<T>) {
   const id = getId(item);
   const {
@@ -88,6 +94,7 @@ function SortableTableRow<T>({
     isDragging,
   } = useSortable({
     id,
+    disabled: reorderDisabled,
   });
 
   return (
@@ -102,7 +109,12 @@ function SortableTableRow<T>({
     >
       {renderCells(
         item,
-        <DragHandle attributes={attributes} listeners={listeners} label={dragLabel} />,
+        <DragHandle
+          attributes={attributes}
+          listeners={listeners}
+          label={dragLabel}
+          disabled={reorderDisabled}
+        />,
       )}
     </TableRow>
   );
@@ -118,6 +130,7 @@ export function SortableTableList<T>({
   emptyMessage = "Элементов пока нет.",
   columnCount,
   dndId,
+  reorderDisabled = false,
   dragLabel = "Переместить врача",
 }: SortableTableListProps<T>) {
   const itemsIds = items.map(getId);
@@ -154,6 +167,7 @@ export function SortableTableList<T>({
                   getId={getId}
                   renderCells={renderCells}
                   dragLabel={dragLabel}
+                  reorderDisabled={reorderDisabled}
                 />
               ))
             )}

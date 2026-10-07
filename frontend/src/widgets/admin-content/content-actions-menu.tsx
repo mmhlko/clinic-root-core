@@ -20,7 +20,7 @@ export interface ContentMenuAction<T> {
   destructive?: boolean;
   confirm?: {
     title: string;
-    description: string;
+    description?: string;
   };
 }
 

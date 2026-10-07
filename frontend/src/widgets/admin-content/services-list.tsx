@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { ListIcon } from "lucide-react";
 import { PencilIcon, SaveIcon, Tag, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +25,13 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { PromotionHoverCard } from "@/components/shared/promotion-hover-card";
 import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
 import { activityColorsStyles } from "@/shared/constants/colors";
+import {
+  ContentFilterTabs,
+  type ContentFilterTab,
+} from "@/components/shared/content-filter-tabs";
 
 type SheetMode = "view" | "create" | "edit";
+const UNASSIGNED_DIRECTION = "__unassigned__";
 
 export function ServicesList({
   initialItems,
@@ -40,6 +46,30 @@ export function ServicesList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [directionFilter, setDirectionFilter] = useState("all");
+  const filterTabs = useMemo<ContentFilterTab<string>[]>(
+    () => [
+      {
+        value: "all",
+        label: "Все направления",
+        count: items.length,
+        icon: ListIcon,
+      },
+      ...directions.map((direction) => ({
+        value: direction.id,
+        label: direction.name,
+        count: items.filter(
+          (item) => item.direction?.id === direction.id,
+        ).length,
+      })),
+      {
+        value: UNASSIGNED_DIRECTION,
+        label: "Без направления",
+        count: items.filter((item) => !item.direction).length,
+      },
+    ],
+    [directions, items],
+  );
 
   function openSheet(nextMode: SheetMode, item: Service | null = null) {
     setSelected(item);
@@ -143,10 +173,22 @@ export function ServicesList({
 
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
+      <ContentFilterTabs
+        value={directionFilter}
+        onValueChange={setDirectionFilter}
+        items={filterTabs}
+      />
       <ContentList
         title="Услуги"
         items={items}
+        filter={(item) =>
+          directionFilter === "all" ||
+          (directionFilter === UNASSIGNED_DIRECTION
+            ? !item.direction
+            : item.direction?.id === directionFilter)
+        }
+        disableReorder={directionFilter !== "all"}
         setItems={setItems}
         getId={(item) => item.id}
         getSearchText={(item) =>

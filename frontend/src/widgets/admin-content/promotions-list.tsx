@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  CalendarClockIcon,
+  CircleAlertIcon,
+  CircleCheckIcon,
+  Clock3Icon,
+  ListIcon,
+} from "lucide-react";
 import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +34,14 @@ import { activityColorsStyles } from "@/shared/constants/colors";
 import { ImageUpload } from "@/features/image-upload/hooks/image-upload";
 import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
 import { UploadedImage } from "@/features/image-upload/types/images.types";
+import Image from "next/image";
+import {
+  ContentFilterTabs,
+  type ContentFilterTab,
+} from "@/components/shared/content-filter-tabs";
 
 type SheetMode = "view" | "create" | "edit";
+type PromotionFilter = "all" | EStatusVariant;
 
 function toLocalDateTime(value?: string | null) {
   if (!value) return "";
@@ -92,6 +105,54 @@ export function PromotionsList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<PromotionFilter>("all");
+  const filterTabs = useMemo<ContentFilterTab<PromotionFilter>[]>(
+    () => [
+      {
+        value: "all",
+        label: "Все",
+        count: items.length,
+        icon: ListIcon,
+      },
+      {
+        value: EStatusVariant.IN_PROGRESS,
+        label: "Активные",
+        count: items.filter(
+          (item) => getPromotionStatus(item).status === EStatusVariant.IN_PROGRESS,
+        ).length,
+        icon: CircleCheckIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.IN_PROGRESS],
+      },
+      {
+        value: EStatusVariant.NEW,
+        label: "Запланированные",
+        count: items.filter(
+          (item) => getPromotionStatus(item).status === EStatusVariant.NEW,
+        ).length,
+        icon: CalendarClockIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.NEW],
+      },
+      {
+        value: EStatusVariant.COMPLETED,
+        label: "Завершённые",
+        count: items.filter(
+          (item) => getPromotionStatus(item).status === EStatusVariant.COMPLETED,
+        ).length,
+        icon: Clock3Icon,
+        badgeStyle: statusColorsStyles[EStatusVariant.COMPLETED],
+      },
+      {
+        value: EStatusVariant.CANCELLED,
+        label: "Некорректный период",
+        count: items.filter(
+          (item) => getPromotionStatus(item).status === EStatusVariant.CANCELLED,
+        ).length,
+        icon: CircleAlertIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.CANCELLED],
+      },
+    ],
+    [items],
+  );
 
   function openSheet(nextMode: SheetMode, item: Promotion | null = null) {
     setSelected(item);
@@ -192,10 +253,20 @@ export function PromotionsList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
+      <ContentFilterTabs
+        value={statusFilter}
+        onValueChange={setStatusFilter}
+        items={filterTabs}
+      />
       <ContentList
         title="Акции"
         items={items}
+        filter={(item) =>
+          statusFilter === "all" ||
+          getPromotionStatus(item).status === statusFilter
+        }
+        disableReorder={statusFilter !== "all"}
         setItems={setItems}
         getId={(item) => item.id}
         getSearchText={(item) =>
@@ -225,49 +296,58 @@ export function PromotionsList({
             <TableHead className="w-12 text-right" />
           </TableRow>
         )}
-        renderCells={(item, dragHandle) => (
-          <>
-            <TableCell className="w-10 px-2">{dragHandle}</TableCell>
-            <TableCell>
-              <button
-                className="text-left font-medium hover:underline"
-                onClick={() => openSheet("view", item)}
-              >
-                {item.title}
-              </button>
-            </TableCell>
-            <TableCell>
-              {item.service?.name ?? "Без услуги"}
-              <span className="block text-xs text-muted-foreground">
-                {item.newPrice == null
-                  ? "Цена не указана"
-                  : `${item.newPrice} ₽`}
-              </span>
-            </TableCell>
-            <TableCell>
-              {item.validFrom ? new Date(item.validFrom).toLocaleDateString() : "Не указано"}
-            </TableCell>
-            <TableCell>
-              {item.validTo ? new Date(item.validTo).toLocaleDateString() : "Не указано"}
-            </TableCell>
-            <TableCell>
-              <Badge variant="outline" className={cn(
-                statusColorsStyles[getPromotionStatus(item).status]
-              )}>
-                {getPromotionStatus(item) ? getPromotionStatus(item).message : "Неизвестно"}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Switch
-                checked={item.isActive}
-                disabled={busyId === item.id}
-                onCheckedChange={(value) => void toggle(item, value)}
-                aria-label={`Активность: ${item.title}`}
-              />
-            </TableCell>
-            <TableCell className="text-right">{actionMenu(item)}</TableCell>
-          </>
-        )}
+        renderCells={(item, dragHandle) => {
+          const status = getPromotionStatus(item);
+
+          return (
+            <>
+              <TableCell className="w-10 px-2">{dragHandle}</TableCell>
+              <TableCell>
+                <button
+                  className="text-left font-medium hover:underline"
+                  onClick={() => openSheet("view", item)}
+                >
+                  {item.title}
+                </button>
+              </TableCell>
+              <TableCell>
+                {item.service?.name ?? "Без услуги"}
+                <span className="block text-xs text-muted-foreground">
+                  {item.newPrice == null
+                    ? "Цена не указана"
+                    : `${item.newPrice} ₽`}
+                </span>
+              </TableCell>
+              <TableCell>
+                {item.validFrom
+                  ? new Date(item.validFrom).toLocaleDateString()
+                  : "Не указано"}
+              </TableCell>
+              <TableCell>
+                {item.validTo
+                  ? new Date(item.validTo).toLocaleDateString()
+                  : "Не указано"}
+              </TableCell>
+              <TableCell>
+                <Badge
+                  variant="outline"
+                  className={cn(statusColorsStyles[status.status])}
+                >
+                  {status.message}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Switch
+                  checked={item.isActive}
+                  disabled={busyId === item.id}
+                  onCheckedChange={(value) => void toggle(item, value)}
+                  aria-label={`Активность: ${item.title}`}
+                />
+              </TableCell>
+              <TableCell className="text-right">{actionMenu(item)}</TableCell>
+            </>
+          );
+        }}
         renderCard={(item, dragHandle) => {
           const status = getPromotionStatus(item);
 
@@ -297,7 +377,9 @@ export function PromotionsList({
                   {item.service?.name ?? "Без услуги"}
                 </span>
                 <span className="mt-1 block text-sm">
-                  {item.newPrice == null ? "Цена не указана" : `${item.newPrice} ₽`}
+                  {item.newPrice == null
+                    ? "Цена не указана"
+                    : `${item.newPrice} ₽`}
                 </span>
                 <span className="mt-1 block text-sm text-muted-foreground">
                   Статус акции: {status.message}
@@ -327,7 +409,13 @@ export function PromotionsList({
         {mode === "view" && selected ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Badge variant="outline">
+              <Badge
+                className={cn(
+                  activityColorsStyles[
+                    selected.isActive ? "active" : "inactive"
+                  ],
+                )}
+              >
                 {selected.isActive ? "Активна" : "Скрыта"}
               </Badge>
               <Button variant="outline" onClick={() => setMode("edit")}>
@@ -338,6 +426,17 @@ export function PromotionsList({
             <p className="whitespace-pre-wrap text-sm">
               {selected.description || "Без описания"}
             </p>
+            {selected.imageUrl && (
+              <div className="overflow-hidden rounded-lg border">
+                <Image
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  width={1200}
+                  height={675}
+                  className="h-auto w-full"
+                />
+              </div>
+            )}
             <dl className="divide-y rounded-lg border text-sm">
               <div className="grid grid-cols-[110px_1fr] gap-3 p-3">
                 <dt className="text-muted-foreground">Услуга</dt>

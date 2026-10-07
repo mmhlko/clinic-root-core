@@ -1,8 +1,24 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { ExternalLinkIcon, PencilIcon, SaveIcon, XIcon } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import {
+  ExternalLinkIcon,
+  FileTextIcon,
+  PencilIcon,
+  SaveIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentMedia,
+  AttachmentTitle,
+} from "@/components/ui/attachment";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,10 +52,14 @@ export function DocumentsList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function openSheet(nextMode: SheetMode, item: DocumentItem | null = null) {
     setSelected(item);
     setMode(nextMode);
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setOpen(true);
   }
 
@@ -319,12 +339,60 @@ export function DocumentsList({
                 Файл {selected ? "(необязательно при редактировании)" : ""}
               </Label>
               <Input
+                ref={fileInputRef}
                 id="file"
                 name="file"
                 type="file"
                 accept=".pdf,.doc,.docx"
                 required={!selected}
+                className="sr-only"
+                onChange={(event) =>
+                  setFile(event.currentTarget.files?.[0] ?? null)
+                }
               />
+              <div className="flex flex-col items-center gap-2">
+                <Attachment
+                  state={file || selected ? "done" : "idle"}
+                  className="w-full flex-1"
+                >
+                  <AttachmentMedia>
+                    <FileTextIcon />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>
+                      {file?.name ?? selected?.fileName ?? "Файл не выбран"}
+                    </AttachmentTitle>
+                    <AttachmentDescription>
+                      {file
+                        ? `${file.type || "Документ"} · ${(file.size / 1024 / 1024).toFixed(2)} МБ`
+                        : selected?.fileType ?? "PDF или DOC"}
+                    </AttachmentDescription>
+                  </AttachmentContent>
+                  {file && (
+                    <AttachmentActions>
+                      <AttachmentAction
+                        type="button"
+                        aria-label="Убрать выбранный файл"
+                        onClick={() => {
+                          setFile(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                          }
+                        }}
+                      >
+                        <Trash2Icon />
+                      </AttachmentAction>
+                    </AttachmentActions>
+                  )}
+                </Attachment>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {file || selected ? "Заменить файл" : "Выбрать файл"}
+                </Button>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={saving}>

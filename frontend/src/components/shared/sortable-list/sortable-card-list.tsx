@@ -25,24 +25,29 @@ interface SortableCardListProps<T> {
   renderCard: (item: T, dragHandle: ReactNode) => ReactNode;
   emptyMessage?: string;
   dndId: string;
+  reorderDisabled?: boolean;
 }
 
 interface SortableCardProps {
   id: string;
   children: (dragHandle: ReactNode) => ReactNode;
+  reorderDisabled: boolean;
 }
 
 function DragHandle({
   attributes,
   listeners,
+  disabled,
 }: {
   attributes: ReturnType<typeof useSortable>["attributes"];
   listeners: ReturnType<typeof useSortable>["listeners"];
+  disabled: boolean;
 }) {
   return (
     <button
       type="button"
-      className="touch-none cursor-grab text-muted-foreground active:cursor-grabbing"
+      className="touch-none cursor-grab text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+      disabled={disabled}
       {...attributes}
       {...listeners}
       aria-label="Переместить"
@@ -52,7 +57,7 @@ function DragHandle({
   );
 }
 
-function SortableCard({ id, children }: SortableCardProps) {
+function SortableCard({ id, children, reorderDisabled }: SortableCardProps) {
   const {
     attributes,
     listeners,
@@ -60,7 +65,7 @@ function SortableCard({ id, children }: SortableCardProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: reorderDisabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -74,7 +79,11 @@ function SortableCard({ id, children }: SortableCardProps) {
       className={isDragging ? "relative z-10 opacity-70" : undefined}
     >
       {children(
-        <DragHandle attributes={attributes} listeners={listeners} />,
+        <DragHandle
+          attributes={attributes}
+          listeners={listeners}
+          disabled={reorderDisabled}
+        />,
       )}
     </div>
   );
@@ -88,6 +97,7 @@ export function SortableCardList<T>({
   renderCard,
   emptyMessage = "Элементов пока нет.",
   dndId,
+  reorderDisabled = false,
 }: SortableCardListProps<T>) {
   if (!items.length) {
     return (
@@ -111,7 +121,11 @@ export function SortableCardList<T>({
       >
         <div className="space-y-3">
           {items.map((item) => (
-            <SortableCard key={getId(item)} id={getId(item)}>
+            <SortableCard
+              key={getId(item)}
+              id={getId(item)}
+              reorderDisabled={reorderDisabled}
+            >
               {(dragHandle) => renderCard(item, dragHandle)}
             </SortableCard>
           ))}

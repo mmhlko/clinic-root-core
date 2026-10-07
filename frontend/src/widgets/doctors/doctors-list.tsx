@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { CircleCheckIcon, CircleXIcon, ListIcon } from "lucide-react";
 
 import type { DoctorListItem } from "@/features/doctors/types/doctors.types";
 import { doctorsClientApi } from "@/features/doctors/api/doctors-client-api";
 
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { getDoctorFullName } from "@/shared/helpers/getDoctorFullName";
-import { ListStats } from "@/components/shared/list-stats";
 import { ActiveSwitch } from "@/components/shared/active-switch";
 import { PersonIdentity } from "@/components/shared/person-identity";
 import { toast } from "@/components/ui/toast";
@@ -19,6 +19,12 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { activityColorsStyles } from "@/shared/constants/colors";
 import { ContentList } from "../admin-content/content-list";
+import {
+  ContentFilterTabs,
+  type ContentFilterTab,
+} from "@/components/shared/content-filter-tabs";
+
+type DoctorFilter = "all" | "visible" | "hidden";
 
 interface DoctorsListProps {
   doctors: DoctorListItem[];
@@ -28,9 +34,32 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   const router = useRouter();
   const [doctors, setDoctors] = useState(initialDoctors);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const total = doctors.length;
-  const active = doctors.filter((doctor) => doctor.isActive).length;
-  const inactive = total - active;
+  const [visibility, setVisibility] = useState<DoctorFilter>("all");
+  const filterTabs = useMemo<ContentFilterTab<DoctorFilter>[]>(
+    () => [
+      {
+        value: "all",
+        label: "Все",
+        count: doctors.length,
+        icon: ListIcon,
+      },
+      {
+        value: "visible",
+        label: "Видимые",
+        count: doctors.filter((doctor) => doctor.isActive).length,
+        icon: CircleCheckIcon,
+        badgeStyle: activityColorsStyles.active,
+      },
+      {
+        value: "hidden",
+        label: "Скрытые",
+        count: doctors.filter((doctor) => !doctor.isActive).length,
+        icon: CircleXIcon,
+        badgeStyle: activityColorsStyles.inactive,
+      },
+    ],
+    [doctors],
+  );
 
   const handleSwitch = async (id: string, isActive: boolean) => {
     const previous = doctors.find((doctor) => doctor.id === id)?.isActive;
@@ -126,11 +155,20 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <ListStats total={total} active={active} inactive={inactive} />
+    <div className="space-y-5">
+      <ContentFilterTabs
+        value={visibility}
+        onValueChange={setVisibility}
+        items={filterTabs}
+      />
       <ContentList
-        title="Врачишки"
+        title="Врачи"
         items={doctors}
+        filter={(doctor) =>
+          visibility === "all" ||
+          (visibility === "visible" ? doctor.isActive : !doctor.isActive)
+        }
+        disableReorder={visibility !== "all"}
         setItems={setDoctors}
         getId={(doctor) => doctor.id}
         getSearchText={(doctor) =>

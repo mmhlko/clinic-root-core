@@ -19,6 +19,8 @@ import { useReorder } from "@/shared/hooks/use-reorder";
 interface ContentListProps<T> {
   title: string;
   items: T[];
+  filter?: (item: T) => boolean;
+  disableReorder?: boolean;
   setItems: Dispatch<SetStateAction<T[]>>;
   getId: (item: T) => string;
   getSearchText?: (item: T) => string;
@@ -36,6 +38,8 @@ interface ContentListProps<T> {
 export function ContentList<T>({
   title,
   items,
+  filter,
+  disableReorder = false,
   setItems,
   getId,
   getSearchText,
@@ -52,11 +56,19 @@ export function ContentList<T>({
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredItems = useMemo(() => {
-    if (!normalizedQuery || !getSearchText) return items;
-    return items.filter((item) =>
-      getSearchText(item).toLowerCase().includes(normalizedQuery),
-    );
-  }, [getSearchText, items, normalizedQuery]);
+    return items.filter((item) => {
+      if (filter && !filter(item)) return false;
+      return (
+        !normalizedQuery ||
+        !getSearchText ||
+        getSearchText(item).toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [filter, getSearchText, items, normalizedQuery]);
+  const reorderingDisabled =
+    disableReorder ||
+    normalizedQuery.length > 0 ||
+    filteredItems.length !== items.length;
 
   const setOrderedItems: Dispatch<SetStateAction<T[]>> = (update) => {
     setItems((current) => {
@@ -78,7 +90,7 @@ export function ContentList<T>({
     onError: onReorderError,
   });
   const handleFilteredDragEnd = (event: DragEndEvent) => {
-    if (normalizedQuery) return;
+    if (reorderingDisabled) return;
     return handleDragEnd(event);
   };
 
@@ -104,7 +116,14 @@ export function ContentList<T>({
           sensors={sensors}
           onDragEnd={handleFilteredDragEnd}
           dndId={`${title}-mobile-dnd`}
-          emptyMessage={normalizedQuery ? "Ничего не найдено." : emptyMessage}
+          reorderDisabled={reorderingDisabled}
+          emptyMessage={
+            normalizedQuery
+              ? "Ничего не найдено."
+              : disableReorder
+                ? "Нет элементов в этой категории."
+                : emptyMessage
+          }
           renderCard={renderCard}
         />
       </div>
@@ -116,9 +135,16 @@ export function ContentList<T>({
           sensors={sensors}
           onDragEnd={handleFilteredDragEnd}
           dndId={`${title}-desktop-dnd`}
+          reorderDisabled={reorderingDisabled}
           columnCount={columnCount}
           dragLabel={`Переместить: ${title.toLowerCase()}`}
-          emptyMessage={normalizedQuery ? "Ничего не найдено." : emptyMessage}
+          emptyMessage={
+            normalizedQuery
+              ? "Ничего не найдено."
+              : disableReorder
+                ? "Нет элементов в этой категории."
+                : emptyMessage
+          }
           renderHeader={renderHeader}
           renderCells={renderCells}
         />

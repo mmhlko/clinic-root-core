@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { CheckIcon, PencilIcon, SaveIcon, XIcon } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
+import {
+  CheckIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+  Clock3Icon,
+  ListIcon,
+  PencilIcon,
+  SaveIcon,
+  XIcon,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +18,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
-import { ContentActionsMenu, ContentMenuAction } from "@/widgets/admin-content/content-actions-menu";
+import {
+  ContentActionsMenu,
+  ContentMenuAction,
+} from "@/widgets/admin-content/content-actions-menu";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { ContentField } from "@/widgets/admin-content/content-field";
 import { ContentList } from "@/widgets/admin-content/content-list";
@@ -21,9 +33,15 @@ import { statusColorsStyles } from "@/shared/constants/colors";
 import { EStatusVariant } from "@/shared/types/admin";
 import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
 import { activityColorsStyles } from "@/shared/constants/colors";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  ContentFilterTabs,
+  type ContentFilterTab,
+} from "@/components/shared/content-filter-tabs";
 
 type SheetMode = "view" | "create" | "edit";
 type DoctorOption = { id: string; firstName: string; lastName: string };
+type ReviewFilter = "all" | Review["status"];
 
 function getReviewStatusLabel(status: Review["status"]) {
   switch (status) {
@@ -60,7 +78,40 @@ export function ReviewsList({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<ReviewFilter>("all");
 
+  const filterTabs = useMemo<ContentFilterTab<ReviewFilter>[]>(
+    () => [
+      {
+        value: "all",
+        label: "Все",
+        count: items.length,
+        icon: ListIcon,
+      },
+      {
+        value: "pending",
+        label: "На модерации",
+        count: items.filter((item) => item.status === "pending").length,
+        icon: Clock3Icon,
+        badgeStyle: statusColorsStyles[EStatusVariant.IN_PROGRESS],
+      },
+      {
+        value: "published",
+        label: "Опубликованы",
+        count: items.filter((item) => item.status === "published").length,
+        icon: CircleCheckIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.COMPLETED],
+      },
+      {
+        value: "rejected",
+        label: "Отклонены",
+        count: items.filter((item) => item.status === "rejected").length,
+        icon: CircleXIcon,
+        badgeStyle: statusColorsStyles[EStatusVariant.CANCELLED],
+      },
+    ],
+    [items],
+  );
   function openSheet(nextMode: SheetMode, item: Review | null = null) {
     setSelected(item);
     setMode(nextMode);
@@ -185,16 +236,23 @@ export function ReviewsList({
         onSelect: (value) => openSheet("edit", value),
       },
       ...(item.status === "pending"
-        ? [
+        ? ([
             {
               label: "Опубликовать",
               onSelect: (value: Review) => moderate(value, "publish"),
+              confirm: {
+                title: "Опубликовать отзыв?",
+              },
             },
             {
               label: "Отклонить",
               onSelect: (value: Review) => moderate(value, "reject"),
+              destructive: true,
+              confirm: {
+                title: "Отклонить отзыв?",
+              },
             },
-          ]
+          ] satisfies ContentMenuAction<Review>[])
         : []),
       {
         label: "Удалить",
@@ -208,21 +266,28 @@ export function ReviewsList({
     ];
   }
 
-    function actionMenu(item: Review) {
-      return (
-        <ContentActionsMenu
-          item={item}
-          itemLabel={item.authorName}
-          actions={getActions(item)}
-        />
-      );
-    }
+  function actionMenu(item: Review) {
+    return (
+      <ContentActionsMenu
+        item={item}
+        itemLabel={item.authorName}
+        actions={getActions(item)}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
+      <ContentFilterTabs
+        value={filter}
+        onValueChange={setFilter}
+        items={filterTabs}
+      />
       <ContentList
         title="Отзывы"
         items={items}
+        filter={(item) => filter === "all" || item.status === filter}
+        disableReorder={filter !== "all"}
         setItems={setItems}
         getId={(item) => item.id}
         getSearchText={(item) =>
@@ -311,7 +376,6 @@ export function ReviewsList({
               </Badge>
             }
             actionsMenu={actionMenu(item)}
-
           >
             <span className="block font-medium">{item.authorName}</span>
             <span className="mt-1 block text-sm text-muted-foreground">
@@ -380,17 +444,32 @@ export function ReviewsList({
             </dl>
             {selected.status === "pending" && (
               <div className="flex gap-2">
-                <Button onClick={() => void moderate(selected, "publish")}>
-                  <CheckIcon data-icon="inline-start" />
-                  Опубликовать
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => void moderate(selected, "reject")}
-                >
-                  <XIcon data-icon="inline-start" />
-                  Отклонить
-                </Button>
+                <ConfirmDialog
+                  title="Опубликовать отзыв?"
+                  onConfirm={() => void moderate(selected, "publish")}
+                  confirmText="Опубликовать"
+                  confirmButtonVariant="default"
+                  nativeButton
+                  trigger={
+                    <Button size="lg" type="button" variant="default">
+                      <CheckIcon data-icon="inline-start" />
+                      Опубликовать
+                    </Button>
+                  }
+                />
+                <ConfirmDialog
+                  title="Отклонить отзыв?"
+                  onConfirm={() => void moderate(selected, "reject")}
+                  confirmText="Отклонить"
+                  confirmButtonVariant="destructive"
+                  nativeButton
+                  trigger={
+                    <Button size="lg" type="button" variant="destructive">
+                      <XIcon data-icon="inline-start" />
+                      Отклонить
+                    </Button>
+                  }
+                />
               </div>
             )}
           </div>
