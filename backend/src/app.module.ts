@@ -20,6 +20,7 @@ import { AppointmentRequestsModule } from './modules/appointment-requests/appoin
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { validateEnvironment } from './config/env.validation.js';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { validateEnvironment } from './config/env.validation.js';
         logging: false,
       }),
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [
         {
