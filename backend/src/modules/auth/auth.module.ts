@@ -14,7 +14,7 @@ import { RefreshTokenStrategy } from './strategies/refresh.strategy.js';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        secret: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
       }),
     }),
   ],

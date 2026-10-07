@@ -32,7 +32,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
           return token;
         },
       ]),
-      secretOrKey: configService.get<string>('JWT_REFRESH_SECRET') as string,
+      secretOrKey: configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
       passReqToCallback: true,
     });
   }
