@@ -4,16 +4,38 @@ import { AppModule } from './app.module.js';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ERROR_MESSAGES } from './shared/constants/error-messages.js';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter.js';
 import { ThrottlerExceptionFilter } from './shared/filters/еhrottler-exception-filter.js';
+import { MediaService } from './modules/media/media.service.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
   );
+
+  const mediaService = app.get(MediaService);
+
+  app.use('/uploads', async (req: Request, res: Response, next: NextFunction) => {
+    const requestPath = decodeURIComponent(req.path || '/');
+    const filename = requestPath.split('/').filter(Boolean).at(-1);
+
+    if (!filename || filename.includes('..')) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    const isAllowed = await mediaService.isAllowedPublicUpload(filename);
+
+    if (!isAllowed) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { UsersService } from '../../users/users.service.js';
 
 function extractRefreshToken(req: Request): string | null {
   const cookieHeader = req.headers.cookie;
@@ -24,7 +25,10 @@ export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
   'jwt-refresh',
 ) {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly usersService: UsersService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
@@ -37,8 +41,25 @@ export class RefreshTokenStrategy extends PassportStrategy(
     });
   }
 
-  validate(req: Request, payload: Record<string, any>) {
+  async validate(req: Request, payload: { sub: string; email: string; role: string }) {
+    const user = await this.usersService.findById(payload.sub);
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
+
+    if (user.email !== payload.email) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
     const refreshToken = extractRefreshToken(req);
-    return { ...payload, refreshToken };
+
+    return {
+      ...payload,
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      refreshToken,
+    };
   }
 }

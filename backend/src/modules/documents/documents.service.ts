@@ -146,11 +146,24 @@ export class DocumentsService {
           },
         );
 
+      await this.mediaService.attach(
+        savedFile.id,
+        transaction,
+      );
+
       await transaction.commit();
 
       return document;
     } catch (error) {
       await transaction.rollback();
+
+      try {
+        await this.mediaService.deleteTemporary(
+          savedFile.id,
+        );
+      } catch {
+        // Переменная уже временная или уже удалена.
+      }
 
       try {
         await this.mediaService.removeFile(
@@ -255,12 +268,23 @@ export class DocumentsService {
         },
       );
 
+      await this.mediaService.attach(
+        savedFile.id,
+        transaction,
+      );
+
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();
 
-      // БД не обновилась —
-      // новый файл больше не нужен.
+      try {
+        await this.mediaService.deleteTemporary(
+          savedFile.id,
+        );
+      } catch {
+        // Переменная уже временная или уже удалена.
+      }
+
       try {
         await this.mediaService.removeFile(
           savedFile.filename,

@@ -278,6 +278,23 @@ export class MediaService {
     return media;
   }
 
+  async isAllowedPublicUpload(filename: string): Promise<boolean> {
+    const safeFilename = basename(filename);
+
+    if (safeFilename !== filename) {
+      return false;
+    }
+
+    const media = await this.mediaModel.findOne({
+      where: {
+        filename: safeFilename,
+        status: MediaStatus.ATTACHED,
+      },
+    });
+
+    return Boolean(media);
+  }
+
   async attach(
     id: string,
     transaction?: Transaction,
