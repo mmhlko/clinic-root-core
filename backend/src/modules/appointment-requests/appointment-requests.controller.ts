@@ -22,7 +22,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { UpdateAppointmentRequestStatusDto } from './dto/update-appointment-request-status.dto.js';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiBearerAuth('access-token')
 @Controller('appointment-requests')
@@ -33,7 +33,6 @@ export class AppointmentRequestsController {
 
   // Публичная форма на сайте
   @Post()
-  @UseGuards(ThrottlerGuard)
   @Throttle({
     default: {
       limit: 3,

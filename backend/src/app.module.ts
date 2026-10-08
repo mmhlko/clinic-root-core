@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -17,7 +18,7 @@ import { WorksModule } from './modules/works/works.module.js';
 import { FaqModule } from './modules/faq/faq.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { AppointmentRequestsModule } from './modules/appointment-requests/appointment-requests.module.js';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { validateEnvironment } from './config/env.validation.js';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -65,8 +66,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 600000,
-          limit: 3,
+          ttl: 60_000,
+          limit: 120,
         },
       ],
     }),
@@ -87,6 +88,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     DocumentsModule,
     AppointmentRequestsModule,
     DashboardModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule { }

@@ -10,6 +10,7 @@ const validEnvironment: Record<string, unknown> = {
   JWT_REFRESH_SECRET: 'refresh-secret',
   ROOT_ADMIN_EMAIL: 'admin@example.com',
   ROOT_ADMIN_PASSWORD: 'development-password',
+  NODE_ENV: 'development',
 };
 
 describe('validateEnvironment', () => {
@@ -47,6 +48,7 @@ describe('validateEnvironment', () => {
       validateEnvironment({
         ...validEnvironment,
         DATABASE_SYNCHRONIZE: 'true',
+        NODE_ENV: 'test',
       }),
     ).toThrow('DATABASE_SYNCHRONIZE=true is allowed only in development');
   });
@@ -62,5 +64,31 @@ describe('validateEnvironment', () => {
         DATABASE_SYNCHRONIZE: 'yes',
       }),
     ).toThrow('DATABASE_SYNCHRONIZE must be "true" or "false"');
+  });
+
+  it('requires a valid CORS allowlist in production', () => {
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+      }),
+    ).toThrow('CORS_ORIGINS must be configured in production');
+
+    expect(
+      validateEnvironment({
+        ...validEnvironment,
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://clinic.example.com,https://admin.example.com',
+      }).CORS_ORIGINS,
+    ).toBe('https://clinic.example.com,https://admin.example.com');
+
+    expect(() =>
+      validateEnvironment({
+        ...validEnvironment,
+        CORS_ORIGINS: 'https://clinic.example.com/admin',
+      }),
+    ).toThrow(
+      'CORS_ORIGINS must contain origins only: https://clinic.example.com/admin',
+    );
   });
 });

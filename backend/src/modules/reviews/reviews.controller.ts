@@ -24,6 +24,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { ReorderDto } from '../../shared/dto/reorder.dto.js';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Reviews')
 @ApiBearerAuth('access-token')
@@ -36,6 +37,7 @@ export class ReviewsController {
   // Публичное создание отзыва
   // Новый отзыв автоматически получает status = pending
   @Post()
+  @Throttle({ default: { limit: 3, ttl: 10 * 60_000 } })
   @ApiOperation({ summary: 'Создать отзыв' })
   async create(
     @Body() dto: CreateReviewDto,

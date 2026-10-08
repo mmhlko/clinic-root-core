@@ -10,6 +10,7 @@ import { ERROR_MESSAGES } from './shared/constants/error-messages.js';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter.js';
 import { ThrottlerExceptionFilter } from './shared/filters/еhrottler-exception-filter.js';
 import { MediaService } from './modules/media/media.service.js';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(
@@ -17,6 +18,21 @@ async function bootstrap() {
   );
 
   const mediaService = app.get(MediaService);
+  const configService = app.get(ConfigService);
+
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.enableCors({
+    origin: configService
+      .getOrThrow<string>('CORS_ORIGINS')
+      .split(',')
+      .map((origin) => origin.trim()),
+    credentials: true,
+  });
+
+  app.use('/uploads/files', (_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Content-Disposition', 'attachment');
+    next();
+  });
 
   app.use('/uploads', async (req: Request, res: Response, next: NextFunction) => {
     const requestPath = decodeURIComponent(req.path || '/');
@@ -78,7 +94,6 @@ async function bootstrap() {
     res.status(200).json({ status: 'ok' });
   });
 
-  const configService = app.get(ConfigService);
   await app.listen(configService.getOrThrow<string>('PORT'));
 }
 await bootstrap();

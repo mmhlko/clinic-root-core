@@ -8,6 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from './guards/roles.guard.js';
 import { Roles } from './decorators/roles.decorator.js';
 import { UserRole } from '../users/user-role.enum.js';
+import { Throttle } from '@nestjs/throttler';
 
 interface RefreshRequest extends Request {
   user: {
@@ -44,6 +45,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 15 * 60_000 } })
   @ApiOperation({ summary: 'Вход в систему' })
   async login(
     @Body() dto: LoginDto,
@@ -56,6 +58,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 30, ttl: 15 * 60_000 } })
   @ApiOperation({ summary: 'Обновление access token' })
   @UseGuards(AuthGuard('jwt-refresh'))
   async refresh(
@@ -87,6 +90,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Throttle({ default: { limit: 10, ttl: 15 * 60_000 } })
   @ApiOperation({ summary: 'Выход из системы' })
   @UseGuards(AuthGuard('jwt-refresh'))
   async logout(

@@ -3,10 +3,13 @@ services:
     build: ./backend
     container_name: clinics-backend
     env_file:
-      - ./.env
+      - ./backend/.env
     environment:
       NODE_ENV: production
       PORT: 3000
+      DATABASE_SYNCHRONIZE: 'false'
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     ports:
       - '3000:3000'
     networks:
@@ -29,8 +32,6 @@ services:
       args:
         BACKEND_API_URL: http://backend:3000
     container_name: clinics-frontend
-    env_file:
-      - ./.env
     environment:
       NODE_ENV: production
       BACKEND_API_URL: http://backend:3000
@@ -52,12 +53,10 @@ services:
     image: postgres:17-alpine
     container_name: clinics-postgres
     restart: unless-stopped
-    env_file:
-      - ./.env
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-clinics}
-      POSTGRES_USER: ${POSTGRES_USER:-clinics}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clinics_password}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in backend/.env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in backend/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in backend/.env}
     ports:
       - "5433:5432"
     networks:
