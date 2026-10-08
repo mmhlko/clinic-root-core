@@ -29,8 +29,12 @@ import {
   MediaStatus,
 } from './media.model.js';
 import { Cron } from '@nestjs/schedule';
+import {
+  validateMediaUploadContent,
+  type MediaUploadType,
+} from './media-upload.validation.js';
 
-type MediaType = 'image' | 'document';
+type MediaType = MediaUploadType;
 
 @Injectable()
 export class MediaService {
@@ -156,6 +160,8 @@ export class MediaService {
         'File is required',
       );
     }
+
+    await validateMediaUploadContent(file, type);
 
     const directory =
       this.getDirectory(type);

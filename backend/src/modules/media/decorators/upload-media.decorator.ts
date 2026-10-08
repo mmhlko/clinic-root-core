@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  applyDecorators,
-  UseInterceptors,
-} from '@nestjs/common';
+import { applyDecorators, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 
 import {
@@ -12,41 +8,16 @@ import {
 import {
   memoryStorage,
 } from 'multer';
-
-type MediaType = 'image' | 'document';
-
-const MEDIA_CONFIG = {
-  image: {
-    maxSize: 5 * 1024 * 1024,
-
-    mimeTypes: [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-    ],
-  },
-
-  document: {
-    maxSize: 10 * 1024 * 1024,
-
-    mimeTypes: [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ],
-  },
-} satisfies Record<
-  MediaType,
-  {
-    maxSize: number;
-    mimeTypes: string[];
-  }
->;
+import {
+  MEDIA_UPLOAD_CONFIG,
+  validateMediaUploadMetadata,
+  type MediaUploadType,
+} from '../media-upload.validation.js';
 
 export function UploadMedia(
-  type: MediaType,
+  type: MediaUploadType,
 ) {
-  const config = MEDIA_CONFIG[type];
+  const config = MEDIA_UPLOAD_CONFIG[type];
 
   return applyDecorators(
     ApiConsumes('multipart/form-data'),
@@ -76,18 +47,15 @@ export function UploadMedia(
           file,
           callback,
         ) => {
-          if (
-            !config.mimeTypes.includes(
-              file.mimetype,
-            )
-          ) {
+          try {
+            validateMediaUploadMetadata(file, type);
+          } catch (error) {
             callback(
-              new BadRequestException(
-                `Invalid ${type} file type`,
-              ),
+              error instanceof Error
+                ? error
+                : new Error(`Invalid ${type} file metadata`),
               false,
             );
-
             return;
           }
 
