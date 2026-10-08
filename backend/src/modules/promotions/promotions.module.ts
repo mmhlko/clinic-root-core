@@ -6,6 +6,7 @@ import { ServiceModel } from '../services/service.model.js';
 
 import { PromotionsService } from './promotions.service.js';
 import { PromotionsController } from './promotions.controller.js';
+import { MediaModule } from '../media/media.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PromotionsController } from './promotions.controller.js';
       PromotionModel,
       ServiceModel,
     ]),
+    MediaModule,
   ],
 
   controllers: [

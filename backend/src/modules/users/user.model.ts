@@ -3,6 +3,7 @@ import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize
 import { UserRole } from './user-role.enum.js';
 import { CreateUserDto } from './dto/users.dto.js';
 import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
+import { MediaModel } from '../media/media.model.js';
 
 export interface UserCreationAttributes {
   id?: string;
@@ -12,7 +13,7 @@ export interface UserCreationAttributes {
   role: UserRole;
   password: string;
   hashedRefreshToken?: string | null;
-  avatarUrl?: string | null;
+  photoMediaId?: string | null;
   locationId?: string | null;
 }
 
@@ -78,11 +79,21 @@ export class UserModel extends Model<UserModel, UserCreationAttributes> {
   })
   declare hashedRefreshToken: string | null;
 
+  @ForeignKey(() => MediaModel)
   @Column({
-    type: DataType.STRING,
+    type: DataType.UUID,
     allowNull: true,
+    references: {
+      model: 'media',
+      key: 'id',
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
   })
-  declare avatarUrl: string | null;
+  declare photoMediaId: string | null;
+
+  @BelongsTo(() => MediaModel)
+  declare photoMedia: MediaModel | null;
 
   @Column({
     type: DataType.BOOLEAN,

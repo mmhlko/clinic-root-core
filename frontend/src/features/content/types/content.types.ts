@@ -1,3 +1,5 @@
+import { MediaDbData } from "@/features/doctors/types/doctors.types";
+
 export type UserRole = "root" | "admin" | "manager";
 export type ReviewStatus = "pending" | "published" | "rejected";
 
@@ -24,7 +26,8 @@ export interface Promotion {
   id: string;
   title: string;
   description: string | null;
-  imageUrl: string | null;
+  photoMedia?: MediaDbData;
+  photoMediaId?: string | null;
   oldPrice: number | null;
   newPrice: number | null;
   validFrom: string | null;
@@ -76,13 +79,25 @@ export interface AdminUser {
   lastName: string;
   email: string;
   role: UserRole;
-  avatarUrl: string | null;
+  photoMedia?: MediaDbData;
   locationId: string | null;
   location?: ClinicLocation | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface AdminUserCreateData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: UserRole;
+  locationId: string | null;
+  photoMediaId?: string | null;
+  password: string
+}
+
+export type AdminUserUpdateData = Partial<AdminUserCreateData>
 export interface Clinic {
   id: string;
   name: string;
@@ -113,8 +128,7 @@ export interface ClinicFeature {
   id: string;
   title: string;
   description: string | null;
-  imageUrl: string | null;
-  icon: string | null;
+  photoMedia?: MediaDbData;  icon: string | null;
   sortOrder: number;
   isActive: boolean;
 }

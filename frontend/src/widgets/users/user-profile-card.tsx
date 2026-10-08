@@ -48,7 +48,7 @@ export function UserProfileCard({
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <Avatar className="size-20 shrink-0 rounded-xl">
             <AvatarImage
-              src={user.avatarUrl ?? undefined}
+              src={user.photoMedia?.url ?? undefined}
               alt={fullName}
             />
             <AvatarFallback className="rounded-xl text-xl font-semibold">

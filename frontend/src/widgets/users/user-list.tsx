@@ -150,7 +150,7 @@ export function UserList({
       <PersonIdentity
         name={getUserName(user)}
         subtitle={roleLabels[user.role]}
-        avatarUrl={getImageUrl(user.avatarUrl)}
+        avatarUrl={getImageUrl(user.photoMedia?.url)}
         initials={initials || user.email[0]?.toUpperCase() || "П"}
       />
     );

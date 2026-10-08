@@ -22,7 +22,7 @@ import { ServiceDirectionModel } from '../services/directions/service-direction.
 
 import { SkillModel } from './skills/skill.model.js';
 
-import { MediaModel, MediaStatus } from '../media/media.model.js';
+import { MediaModel } from '../media/media.model.js';
 
 import { MediaService } from '../media/media.service.js';
 
@@ -61,20 +61,12 @@ export class DoctorsService {
        * Проверяем фотографию,
        * если она передана.
        */
-      let photoMedia: MediaModel | null = null;
-
       if (dto.photoMediaId) {
-        photoMedia = await this.mediaModel.findOne({
-          where: {
-            id: dto.photoMediaId,
-            status: MediaStatus.TEMPORARY,
-          },
+        await this.mediaService.replaceImage(
+          null,
+          dto.photoMediaId,
           transaction,
-        });
-
-        if (!photoMedia) {
-          throw new NotFoundException('Temporary photo not found');
-        }
+        );
       }
 
       /*
@@ -104,7 +96,7 @@ export class DoctorsService {
 
           description: dto.description ?? null,
 
-          photoMediaId: photoMedia?.id ?? null,
+          photoMediaId: dto.photoMediaId ?? null,
 
           isActive: dto.isActive ?? false,
 
@@ -114,17 +106,6 @@ export class DoctorsService {
           transaction,
         },
       );
-
-      /*
-       * Прикрепляем фотографию.
-       */
-      if (photoMedia) {
-        photoMedia.status = MediaStatus.ATTACHED;
-
-        await photoMedia.save({
-          transaction,
-        });
-      }
 
       /*
        * Создаём образование.
@@ -397,57 +378,13 @@ export class DoctorsService {
        * Фотография.
        */
       if (dto.photoMediaId !== undefined) {
-        /*
-         * Фотография действительно
-         * изменилась.
-         */
         if (dto.photoMediaId !== doctor.photoMediaId) {
-          /*
-           * Сохраняем старое Media,
-           * чтобы удалить его после COMMIT.
-           */
-          if (doctor.photoMediaId) {
-            mediaToDelete = await this.mediaModel.findByPk(
-              doctor.photoMediaId,
-              {
-                transaction,
-              },
-            );
-          }
-
-          /*
-           * Устанавливаем новую
-           * фотографию.
-           */
-          if (dto.photoMediaId) {
-            const newPhoto = await this.mediaModel.findOne({
-              where: {
-                id: dto.photoMediaId,
-
-                status: MediaStatus.TEMPORARY,
-              },
-
-              transaction,
-            });
-
-            if (!newPhoto) {
-              throw new NotFoundException('Temporary photo not found');
-            }
-
-            doctor.photoMediaId = newPhoto.id;
-
-            newPhoto.status = MediaStatus.ATTACHED;
-
-            await newPhoto.save({
-              transaction,
-            });
-          } else {
-            /*
-             * null означает:
-             * фотографию удалить.
-             */
-            doctor.photoMediaId = null;
-          }
+          mediaToDelete = await this.mediaService.replaceImage(
+            doctor.photoMediaId,
+            dto.photoMediaId,
+            transaction,
+          );
+          doctor.photoMediaId = dto.photoMediaId;
         }
       }
 

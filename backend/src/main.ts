@@ -50,6 +50,7 @@ async function bootstrap() {
       return;
     }
 
+    // res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
   });
 

@@ -55,7 +55,7 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        avatarUrl: user.avatarUrl,
+        photoMedia: user.photoMedia,
       },
       ...tokens,
     };
@@ -78,7 +78,7 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        avatarUrl: user.avatarUrl,
+        photoMedia: user.photoMedia,
       },
       accessToken,
     };
@@ -106,7 +106,7 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        avatarUrl: user.avatarUrl,
+        photoMedia: user.photoMedia,
       },
     };
   }

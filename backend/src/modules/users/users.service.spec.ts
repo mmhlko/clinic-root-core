@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getModelToken } from '@nestjs/sequelize';
+import { getConnectionToken, getModelToken } from '@nestjs/sequelize';
 import { UsersService } from './users.service.js';
 import { UserModel } from './user.model.js';
 import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
+import { MediaService } from '../media/media.service.js';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -24,6 +25,19 @@ describe('UsersService', () => {
           provide: getModelToken(ClinicLocationModel),
           useValue: {
             findOne: vi.fn(),
+          },
+        },
+        {
+          provide: MediaService,
+          useValue: {
+            replaceImage: vi.fn(),
+            delete: vi.fn(),
+          },
+        },
+        {
+          provide: getConnectionToken(),
+          useValue: {
+            transaction: vi.fn((callback) => callback({})),
           },
         },
       ],

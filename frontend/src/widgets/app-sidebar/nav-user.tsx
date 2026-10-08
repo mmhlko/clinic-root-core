@@ -33,7 +33,7 @@ type SidebarUserMenuProps = {
 
 export function NavUser({ user, onLogout }: SidebarUserMenuProps) {
   const { isMobile } = useSidebar();
-  const userAvatarUrl = getImageUrl(user.avatarUrl)
+  const userAvatarUrl = getImageUrl(user.photoMedia?.url)
   const fullName =
     user.firstName && user.lastName
       ? `${user.firstName} ${user.lastName}`
@@ -51,7 +51,7 @@ export function NavUser({ user, onLogout }: SidebarUserMenuProps) {
               >
                 <Avatar className="h-9 w-9 shrink-0 rounded-full">
                   <AvatarImage
-                    src={userAvatarUrl ?? undefined}
+                    src={userAvatarUrl}
                     alt={fullName}
                   />
                   <AvatarFallback>

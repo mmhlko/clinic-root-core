@@ -44,9 +44,7 @@ export function UserEditPage({
     cleanup,
     commit,
   } = useImageUpload({
-    initialImage: user?.avatarUrl
-      ? { id: `user-${user.id}`, url: user.avatarUrl }
-      : null,
+    initialImage: user?.photoMedia
   });
 
   async function handleSave(data: {
@@ -66,14 +64,14 @@ export function UserEditPage({
       return;
     }
 
-    if (isCreate && data.role === "manager" && !data.locationId) {
-      toast.add({
-        type: "error",
-        description: "Выберите филиал для менеджера.",
-      });
-      return;
-    }
-
+    // if (isCreate && data.role === "manager" && !data.locationId) {
+    //   toast.add({
+    //     type: "error",
+    //     description: "Выберите филиал для менеджера.",
+    //   });
+    //   return;
+    // }
+ 
     setSaving(true);
     try {
       if (isCreate) {
@@ -83,7 +81,7 @@ export function UserEditPage({
           email: data.email,
           role: data.role,
           locationId: data.role === "manager" ? data.locationId : null,
-          avatarUrl: image?.url ?? null,
+          photoMediaId: image?.id,
           password,
         });
         commit();
@@ -94,7 +92,7 @@ export function UserEditPage({
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
-          avatarUrl: image?.url ?? null,
+          photoMediaId: image?.id ?? null,
           ...(password ? { password } : {}),
         });
 
@@ -104,7 +102,7 @@ export function UserEditPage({
           lastName: updated.lastName,
           email: updated.email,
           role: updated.role,
-          avatarUrl: updated.avatarUrl,
+          photoMedia: updated.photoMedia,
         });
         commit();
         toast.add({
@@ -119,7 +117,7 @@ export function UserEditPage({
           email: data.email,
           ...(currentRole === "root" ? { role: data.role } : {}),
           locationId: data.role === "manager" ? data.locationId : null,
-          avatarUrl: image?.url ?? null,
+          photoMediaId: image?.id ?? null,
         });
         commit();
         toast.add({

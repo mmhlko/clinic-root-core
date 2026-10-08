@@ -11,7 +11,6 @@ import {
   Settings,
   Stethoscope,
   Users,
-  ShieldCog,
 } from "lucide-react";
 
 import {

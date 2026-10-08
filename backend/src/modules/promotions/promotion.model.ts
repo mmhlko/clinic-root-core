@@ -8,6 +8,7 @@ import {
 } from 'sequelize-typescript';
 
 import { ServiceModel } from '../services/service.model.js';
+import { MediaModel } from '../media/media.model.js';
 
 export interface PromotionCreationAttributes {
   id?: string;
@@ -15,7 +16,7 @@ export interface PromotionCreationAttributes {
   title: string;
   description?: string | null;
 
-  imageUrl?: string | null;
+  photoMediaId?: string | null;
 
   oldPrice?: number | null;
   newPrice?: number | null;
@@ -55,11 +56,21 @@ export class PromotionModel extends Model<
   })
   declare description: string | null;
 
+  @ForeignKey(() => MediaModel)
   @Column({
-    type: DataType.STRING,
+    type: DataType.UUID,
     allowNull: true,
+    references: {
+      model: 'media',
+      key: 'id',
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
   })
-  declare imageUrl: string | null;
+  declare photoMediaId: string | null;
+
+  @BelongsTo(() => MediaModel)
+  declare photoMedia: MediaModel | null;
 
   @Column({
     type: DataType.DECIMAL(10, 2),

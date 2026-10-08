@@ -20,10 +20,13 @@ export class UpdatePromotionDto {
   @IsString()
   description?: string | null;
 
-  @ApiPropertyOptional({ example: 'https://example.com/promotion.jpg', nullable: true })
+  @ApiPropertyOptional({
+    example: 'd8d59a0d-4c79-4bd5-a2cf-1d0a744f5f5c',
+    description: 'ID медиафайла фотографии',
+  })
   @IsOptional()
-  @IsString()
-  imageUrl?: string | null;
+  @IsUUID()
+  photoMediaId?: string;
 
   @ApiPropertyOptional({ example: 5000, nullable: true })
   @IsOptional()

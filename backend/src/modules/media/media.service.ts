@@ -294,7 +294,7 @@ export class MediaService {
     const media = await this.mediaModel.findOne({
       where: {
         filename: safeFilename,
-        status: MediaStatus.ATTACHED,
+        // status: MediaStatus.ATTACHED,
       },
     });
 
@@ -319,6 +319,63 @@ export class MediaService {
     });
 
     return media;
+  }
+
+  async replaceImage(
+    previousMediaId: string | null,
+    nextMediaId: string | null,
+    transaction: Transaction,
+  ): Promise<MediaModel | null> {
+    const sameMediaId = previousMediaId === nextMediaId;
+    const previousMedia = previousMediaId && !sameMediaId
+      ? await this.findImageByMediaId(previousMediaId, transaction)
+      : null;
+
+    if (nextMediaId && /^[0-9a-f-]{36}$/i.test(nextMediaId)) {
+      const nextMedia = await this.mediaModel.findByPk(nextMediaId, {
+        transaction,
+      });
+      if (!nextMedia) {
+        throw new NotFoundException('Temporary image not found');
+      }
+      await this.attachImageMedia(nextMedia, sameMediaId, transaction);
+    }
+
+    return previousMedia;
+  }
+
+  private async attachImageMedia(
+    media: MediaModel,
+    sameMediaId: boolean,
+    transaction: Transaction,
+  ): Promise<void> {
+    if (media.status === MediaStatus.ATTACHED) {
+      if (!sameMediaId) {
+        throw new BadRequestException('Image is already attached');
+      }
+      return;
+    }
+
+    media.status = MediaStatus.ATTACHED;
+    await media.save({ transaction });
+  }
+
+  private findImageByMediaId(
+    mediaid: string,
+    transaction?: Transaction,
+  ) {
+    if (mediaid.startsWith('/uploads/images/')) {
+      return this.mediaModel.findOne({
+        where: { url: mediaid },
+        transaction,
+      });
+    }
+
+    if (/^[0-9a-f-]{36}$/i.test(mediaid)) {
+      return this.mediaModel.findByPk(mediaid, { transaction });
+    }
+
+    return Promise.resolve(null);
   }
 
   async delete(

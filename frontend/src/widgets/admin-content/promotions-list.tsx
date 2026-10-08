@@ -170,10 +170,10 @@ export function PromotionsList({
   }
 
   async function save(form: FormData): Promise<boolean> {
-    const body = {
+    const body: Partial<Promotion> = {
       title: String(form.get("title")),
       description: String(form.get("description") || ""),
-      imageUrl: String(form.get("imageUrl") || "") || null,
+      photoMediaId: String(form.get("photoMediaId") || "") || null,
       oldPrice: form.get("oldPrice") ? Number(form.get("oldPrice")) : null,
       newPrice: form.get("newPrice") ? Number(form.get("newPrice")) : null,
       validFrom: String(form.get("validFrom") || "") || null,
@@ -383,6 +383,19 @@ export function PromotionsList({
                 onClick={() => openSheet("view", item)}
               >
                 <span className="block font-medium">{item.title}</span>
+
+                {item.photoMedia && (
+                  <div className="overflow-hidden rounded-lg border">
+                    <Image
+                      src={item.photoMedia.url}
+                      alt={item.title}
+                      width={1200}
+                      height={675}
+                      className="h-auto w-full"
+                    />
+                  </div>
+                )}
+
                 <span className="mt-1 block text-sm text-muted-foreground">
                   {item.service?.name ?? "Без услуги"}
                 </span>
@@ -436,10 +449,10 @@ export function PromotionsList({
             <p className="whitespace-pre-wrap text-sm">
               {selected.description || "Без описания"}
             </p>
-            {selected.imageUrl && (
+            {selected.photoMedia && (
               <div className="overflow-hidden rounded-lg border">
                 <Image
-                  src={selected.imageUrl}
+                  src={selected.photoMedia.url}
                   alt={selected.title}
                   width={1200}
                   height={675}
@@ -510,9 +523,7 @@ function PromotionForm({
   onSave: (form: FormData) => Promise<boolean>;
   onCancel: () => void;
 }) {
-  const initialImage: UploadedImage | null = item?.imageUrl
-    ? { id: item.imageUrl, url: item.imageUrl }
-    : null;
+  const initialImage = item?.photoMedia;
   const { image, isUploading, isDeleting, upload, remove, cleanup, commit } =
     useImageUpload({ initialImage });
 
@@ -521,7 +532,7 @@ function PromotionForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    form.set("imageUrl", image?.url ?? "");
+    form.set("photoMediaId", image?.id ?? "");
     const saved = await onSave(form);
     if (saved) commit();
   }

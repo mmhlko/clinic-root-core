@@ -13,6 +13,8 @@ import { CreatePromotionDto } from './dto/create-promotion.dto.js';
 import { UpdatePromotionDto } from './dto/update-promotion.dto.js';
 import { Sequelize } from 'sequelize-typescript';
 import { Op } from 'sequelize';
+import { MediaService } from '../media/media.service.js';
+import { MediaModel } from '../media/media.model.js';
 
 @Injectable()
 export class PromotionsService {
@@ -24,6 +26,8 @@ export class PromotionsService {
     private readonly serviceModel: typeof ServiceModel,
 
     private readonly sequelize: Sequelize,
+
+    private readonly mediaService: MediaService,
   ) { }
 
   async create(dto: CreatePromotionDto) {
@@ -68,16 +72,26 @@ export class PromotionsService {
       validTo,
     );
 
-    return this.promotionModel.create({
-      title: dto.title,
-      description: dto.description ?? null,
-      imageUrl: dto.imageUrl ?? null,
-      oldPrice: dto.oldPrice ?? null,
-      newPrice: dto.newPrice ?? null,
-      validFrom,
-      validTo,
-      serviceId: dto.serviceId ?? null,
-      sortOrder: dto.sortOrder ?? 0,
+    return this.sequelize.transaction(async (transaction) => {
+      if (dto.photoMediaId) {
+        await this.mediaService.replaceImage(
+          null,
+          dto.photoMediaId,
+          transaction,
+        );
+      }
+
+      return this.promotionModel.create({
+        title: dto.title,
+        description: dto.description ?? null,
+        photoMediaId: dto.photoMediaId ?? null,
+        oldPrice: dto.oldPrice ?? null,
+        newPrice: dto.newPrice ?? null,
+        validFrom,
+        validTo,
+        serviceId: dto.serviceId ?? null,
+        sortOrder: dto.sortOrder ?? 0,
+      }, { transaction });
     });
   }
 
@@ -91,6 +105,10 @@ export class PromotionsService {
         {
           model: ServiceModel,
           as: 'service',
+        },
+        {
+          model: MediaModel,
+          as: 'photoMedia',
         },
       ],
 
@@ -118,7 +136,6 @@ export class PromotionsService {
         'Promotion not found',
       );
     }
-
     return promotion;
   }
 
@@ -134,6 +151,7 @@ export class PromotionsService {
         'Promotion not found',
       );
     }
+    const previousMediaId = promotion.photoMediaId;
 
     if (
       dto.serviceId !== undefined &&
@@ -183,8 +201,8 @@ export class PromotionsService {
       promotion.description = dto.description;
     }
 
-    if (dto.imageUrl !== undefined) {
-      promotion.imageUrl = dto.imageUrl;
+    if (dto.photoMediaId !== undefined) {
+      promotion.photoMediaId = dto.photoMediaId;
     }
 
     if (dto.oldPrice !== undefined) {
@@ -224,7 +242,18 @@ export class PromotionsService {
       promotion.sortOrder = dto.sortOrder;
     }
 
-    await promotion.save();
+    let mediaToDelete: MediaModel | null = null;
+    await this.sequelize.transaction(async (transaction) => {
+      if (dto.photoMediaId !== undefined) {
+        mediaToDelete = await this.mediaService.replaceImage(
+          previousMediaId,
+          dto.photoMediaId,
+          transaction,
+        );
+      }
+      await promotion.save({ transaction });
+    });
+    if (mediaToDelete) await this.mediaService.delete(mediaToDelete);
 
     return promotion;
   }

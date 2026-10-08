@@ -37,7 +37,7 @@ export function UserAccountPage({
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
-          avatarUrl: user.avatarUrl,
+          photoMediaId: user.photoMedia?.id,
           password,
         });
 
@@ -47,7 +47,7 @@ export function UserAccountPage({
           lastName: updated.lastName,
           email: updated.email,
           role: updated.role,
-          avatarUrl: updated.avatarUrl,
+          photoMedia: updated.photoMedia,
         });
       } else {
         await contentClientApi.updateUser(user.id, { password });

@@ -39,10 +39,13 @@ export class CreateUserDto {
   @IsUUID('4')
   locationId?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg', description: 'Ссылка на аватар' })
+  @ApiPropertyOptional({
+    example: 'd8d59a0d-4c79-4bd5-a2cf-1d0a744f5f5c',
+    description: 'ID медиафайла фотографии',
+  })
   @IsOptional()
-  @IsString()
-  avatarUrl?: string | null;
+  @IsUUID()
+  photoMediaId?: string;
 }
 
 export class UpdateUserDto {
@@ -78,8 +81,8 @@ export class UpdateUserDto {
   @IsUUID('4')
   locationId?: string | null;
 
-  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg', description: 'Ссылка на аватар' })
+  @ApiPropertyOptional({ example: 'd8d59a0d-4c79-4bd5-a2cf-1d0a744f5f5c' })
   @IsOptional()
-  @IsString()
-  avatarUrl?: string | null;
+  @IsUUID()
+  photoMediaId?: string | null;
 }

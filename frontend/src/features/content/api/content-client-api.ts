@@ -13,6 +13,8 @@ import type {
   ClinicFeature,
   ClinicSocialLink,
   ClinicStatistic,
+  AdminUserCreateData,
+  AdminUserUpdateData,
 } from "../types/content.types";
 import apiClient from "@/lib/api/client";
 
@@ -110,17 +112,17 @@ class ContentClientApi extends RootApi {
   reorderFaq(ids: string[]) {
     return this.requestPatch<{ success: boolean }>("/faq/reorder", { ids });
   }
-  createUser(body: Record<string, unknown>) {
+  createUser(body: AdminUserCreateData) {
     return this.requestPost<AdminUser>("/users", body);
   }
-  updateUser(id: string, body: Record<string, unknown>) {
+  updateUser(id: string, body: AdminUserUpdateData) {
     return this.requestPatch<AdminUser>(`/users/${id}`, body);
   }
   updateMyProfile(body: {
     firstName: string;
     lastName: string;
     email: string;
-    avatarUrl: string | null;
+    photoMediaId?: string | null;
     password?: string;
   }) {
     return this.requestPatch<AdminUser>("/users/me", body);

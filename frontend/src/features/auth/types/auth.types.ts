@@ -1,3 +1,5 @@
+import { MediaDbData } from "@/features/doctors/types/doctors.types";
+
 export type UserRole = 'root' | 'admin' | 'manager';
 
 export interface LoginDto {
@@ -11,7 +13,7 @@ export interface AuthUser {
   firstName: string | null;
   lastName: string | null;
   role: UserRole;
-  avatarUrl: string | null;
+  photoMedia?: MediaDbData;
 }
 
 export interface AuthResponse {
