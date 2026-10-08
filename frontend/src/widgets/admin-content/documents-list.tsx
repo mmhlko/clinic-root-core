@@ -195,6 +195,7 @@ export function DocumentsList({
           })
         }
         onAdd={() => openSheet("create")}
+        onItemClick={(item) => openSheet("view", item)}
         columnCount={5}
         emptyMessage="Документов пока нет."
         renderHeader={() => (

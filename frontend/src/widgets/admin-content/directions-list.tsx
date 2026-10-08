@@ -124,6 +124,7 @@ export function DirectionsList({ initialItems }: { initialItems: ServiceDirectio
           })
         }
         onAdd={() => openSheet("create")}
+        onItemClick={(item) => openSheet("view", item)}
         columnCount={4}
         emptyMessage="Направлений пока нет."
         renderHeader={() => (

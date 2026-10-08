@@ -38,6 +38,7 @@ interface SortableTableListProps<T> {
   dndId: string;
   reorderDisabled?: boolean;
   dragLabel?: string;
+  onItemClick?: (item: T) => void;
 }
 
 interface SortableTableRowProps<T> {
@@ -46,6 +47,7 @@ interface SortableTableRowProps<T> {
   renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
   dragLabel: string;
   reorderDisabled: boolean;
+  onItemClick?: (item: T) => void;
 }
 
 interface DragHandleProps {
@@ -83,6 +85,7 @@ function SortableTableRow<T>({
   renderCells,
   dragLabel,
   reorderDisabled,
+  onItemClick,
 }: SortableTableRowProps<T>) {
   const id = getId(item);
   const {
@@ -105,7 +108,28 @@ function SortableTableRow<T>({
         transition,
       }}
       data-dragging={isDragging}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      className={`relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 ${onItemClick ? "cursor-pointer" : ""}`}
+      tabIndex={onItemClick ? 0 : undefined}
+      onClick={(event) => {
+        if (!onItemClick) return;
+        const target = event.target;
+        if (
+          target instanceof Element &&
+          target.closest(
+            "button, a, input, textarea, select, [role='button'], [role='switch'], [role^='menuitem'], [data-slot='dropdown-menu-item']",
+          )
+        ) {
+          return;
+        }
+        onItemClick(item);
+      }}
+      onKeyDown={(event) => {
+        if (!onItemClick || event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onItemClick(item);
+        }
+      }}
     >
       {renderCells(
         item,
@@ -132,6 +156,7 @@ export function SortableTableList<T>({
   dndId,
   reorderDisabled = false,
   dragLabel = "Переместить врача",
+  onItemClick,
 }: SortableTableListProps<T>) {
   const itemsIds = items.map(getId);
 
@@ -168,6 +193,7 @@ export function SortableTableList<T>({
                   renderCells={renderCells}
                   dragLabel={dragLabel}
                   reorderDisabled={reorderDisabled}
+                  onItemClick={onItemClick}
                 />
               ))
             )}

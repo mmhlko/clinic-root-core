@@ -13,6 +13,15 @@ import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
@@ -280,6 +289,7 @@ export function PromotionsList({
           })
         }
         onAdd={() => openSheet("create")}
+        onItemClick={(item) => openSheet("view", item)}
         columnCount={5}
         emptyMessage="Акций пока нет."
         renderHeader={() => (
@@ -547,10 +557,33 @@ function PromotionForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="serviceId">Услуга</Label>
-        <select id="serviceId" name="serviceId" defaultValue={item?.serviceId ?? ""} className="h-9 w-full rounded-md border bg-background px-3 text-sm">
-          <option value="">Без услуги</option>
-          {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
-        </select>
+        <Select
+          items={[
+            { label: "Без услуги", value: null },
+            ...services.map((service) => ({
+              label: service.name,
+              value: service.id,
+            })),
+          ]}
+          id="serviceId"
+          name="serviceId"
+          defaultValue={item?.serviceId ?? null}
+        >
+          <SelectTrigger className="h-9 w-full">
+            <SelectValue placeholder="Без услуги" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Услуга</SelectLabel>
+              <SelectItem value={null}>Без услуги</SelectItem>
+              {services.map((service) => (
+                <SelectItem key={service.id} value={service.id}>
+                  {service.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex gap-2">
         <Button type="submit" disabled={saving || isUploading || isDeleting}>

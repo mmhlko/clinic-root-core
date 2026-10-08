@@ -28,6 +28,7 @@ interface ContentListProps<T> {
   onReorderError?: () => void;
   onAdd: () => void;
   addDisabled?: boolean;
+  onItemClick?: (item: T) => void;
   renderHeader: () => ReactNode;
   renderCells: (item: T, dragHandle: ReactNode) => ReactNode;
   renderCard: (item: T, dragHandle: ReactNode) => ReactNode;
@@ -47,6 +48,7 @@ export function ContentList<T>({
   onReorderError,
   onAdd,
   addDisabled = false,
+  onItemClick,
   renderHeader,
   renderCells,
   renderCard,
@@ -117,6 +119,7 @@ export function ContentList<T>({
           onDragEnd={handleFilteredDragEnd}
           dndId={`${title}-mobile-dnd`}
           reorderDisabled={reorderingDisabled}
+          onItemClick={onItemClick}
           emptyMessage={
             normalizedQuery
               ? "Ничего не найдено."
@@ -147,6 +150,7 @@ export function ContentList<T>({
           }
           renderHeader={renderHeader}
           renderCells={renderCells}
+          onItemClick={onItemClick}
         />
       </div>
     </div>

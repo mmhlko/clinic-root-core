@@ -15,6 +15,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
@@ -301,6 +310,7 @@ export function ReviewsList({
           })
         }
         onAdd={() => openSheet("create")}
+        onItemClick={(item) => openSheet("view", item)}
         columnCount={7}
         emptyMessage="Отзывов пока нет."
         renderHeader={() => (
@@ -377,7 +387,13 @@ export function ReviewsList({
             }
             actionsMenu={actionMenu(item)}
           >
-            <span className="block font-medium">{item.authorName}</span>
+            <button
+              type="button"
+              className="block text-left font-medium hover:underline"
+              onClick={() => openSheet("view", item)}
+            >
+              {item.authorName}
+            </button>
             <span className="mt-1 block text-sm text-muted-foreground">
               {getReviewStatusLabel(item.status)}
             </span>
@@ -511,19 +527,33 @@ export function ReviewsList({
             </div>
             <div className="space-y-2">
               <Label htmlFor="doctorId">Врач</Label>
-              <select
+              <Select
+                items={[
+                  { label: "Без врача", value: null },
+                  ...doctors.map((doctor) => ({
+                    label: `${doctor.lastName} ${doctor.firstName}`,
+                    value: doctor.id,
+                  })),
+                ]}
                 id="doctorId"
                 name="doctorId"
                 defaultValue={selected?.doctorId ?? ""}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">Без врача</option>
-                {doctors.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    {doctor.lastName} {doctor.firstName}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <SelectValue placeholder="Без врача" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Врач</SelectLabel>
+                    <SelectItem value={null}>Без врача</SelectItem>
+                    {doctors.map((doctor) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.lastName} {doctor.firstName}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={saving}>

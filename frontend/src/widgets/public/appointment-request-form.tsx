@@ -1,13 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { isAxiosError } from "axios";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { appointmentRequestsApi } from "@/features/appointment-requests/api/appointment-requests-api";
 import type { Service } from "@/features/content/types/content.types";
 import type { DoctorListItem } from "@/features/doctors/types/doctors.types";
+import { validateRussianMobilePhone } from "@/lib/validation/phone";
 
 export function AppointmentRequestForm({
   services,
@@ -18,6 +29,23 @@ export function AppointmentRequestForm({
 }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [doctorId, setDoctorId] = useState<string | null>(null);
+  const serviceItems = [
+    { label: "Не выбрано", value: null },
+    ...services.map((service) => ({
+      label: service.name,
+      value: service.id,
+    })),
+  ];
+  const doctorItems = [
+    { label: "Не выбрано", value: null },
+    ...doctors.map((doctor) => ({
+      label: `${doctor.lastName} ${doctor.firstName}`,
+      value: doctor.id,
+    })),
+  ];
   if (done)
     return (
       <div className="rounded-2xl border bg-card p-6">
@@ -30,24 +58,40 @@ export function AppointmentRequestForm({
   return (
     <form
       className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm"
-      onSubmit={async (e) => {
-        e.preventDefault();
+      onSubmit={async (event) => {
+        event.preventDefault();
+        if (loading) return;
+
+        const form = event.currentTarget;
+        const f = new FormData(form);
+        const phone = String(f.get("phone") ?? "");
+        const validationError = validateRussianMobilePhone(phone);
+        setPhoneError(validationError);
+        if (validationError) return;
+
         setLoading(true);
-        const f = new FormData(e.currentTarget);
         try {
           await appointmentRequestsApi.create({
             name: String(f.get("name")),
-            phone: String(f.get("phone")),
-            serviceId: String(f.get("serviceId") || "") || null,
-            doctorId: String(f.get("doctorId") || "") || null,
+            phone: phone.trim(),
+            serviceId,
+            doctorId,
             comment: String(f.get("comment") || "") || null,
           });
           setDone(true);
-        } catch (err: any) {
+        } catch (error: unknown) {
+          let description = "Не удалось отправить заявку.";
+          if (isAxiosError<{ message?: string | string[] }>(error)) {
+            const message = error.response?.data?.message;
+            if (Array.isArray(message)) {
+              description = message.join(" ");
+            } else if (message) {
+              description = message;
+            }
+          }
           toast.add({
             type: "error",
-            description:
-              err?.response?.data?.message ?? "Не удалось отправить заявку.",
+            description,
           });
         } finally {
           setLoading(false);
@@ -61,30 +105,77 @@ export function AppointmentRequestForm({
         </p>
       </div>
       <Input name="name" placeholder="Ваше имя *" required />
-      <Input name="phone" placeholder="Телефон *" type="tel" required />
+      <div className="space-y-1">
+        <Input
+          name="phone"
+          placeholder="Телефон *"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          maxLength={32}
+          required
+          aria-invalid={Boolean(phoneError)}
+          aria-describedby={phoneError ? "appointment-phone-error" : undefined}
+          onChange={(event) => {
+            if (
+              phoneError &&
+              !validateRussianMobilePhone(event.target.value)
+            ) {
+              setPhoneError(null);
+            }
+          }}
+        />
+        {phoneError && (
+          <p
+            id="appointment-phone-error"
+            className="text-sm text-destructive"
+            role="alert"
+          >
+            {phoneError}
+          </p>
+        )}
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <select
-          name="serviceId"
-          className="h-9 rounded-md border bg-background px-3 text-sm"
+        <Select
+          items={serviceItems}
+          value={serviceId}
+          onValueChange={setServiceId}
+          disabled={loading}
         >
-          <option value="">Услуга</option>
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="doctorId"
-          className="h-9 rounded-md border bg-background px-3 text-sm"
+          <SelectTrigger className="h-9 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Услуга</SelectLabel>
+              {serviceItems.map((item) => (
+                <SelectItem key={item.value ?? "none"} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select
+          items={doctorItems}
+          value={doctorId}
+          onValueChange={setDoctorId}
+          disabled={loading}
         >
-          <option value="">Врач</option>
-          {doctors.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.lastName} {d.firstName}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-9 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Врач</SelectLabel>
+              {doctorItems.map((item) => (
+                <SelectItem key={item.value ?? "none"} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
       <Textarea name="comment" placeholder="Комментарий" />
       <Button disabled={loading} type="submit" className="w-full">

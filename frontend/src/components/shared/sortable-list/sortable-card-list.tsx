@@ -26,6 +26,7 @@ interface SortableCardListProps<T> {
   emptyMessage?: string;
   dndId: string;
   reorderDisabled?: boolean;
+  onItemClick?: (item: T) => void;
 }
 
 interface SortableCardProps {
@@ -98,6 +99,7 @@ export function SortableCardList<T>({
   emptyMessage = "Элементов пока нет.",
   dndId,
   reorderDisabled = false,
+  onItemClick,
 }: SortableCardListProps<T>) {
   if (!items.length) {
     return (
@@ -121,13 +123,30 @@ export function SortableCardList<T>({
       >
         <div className="space-y-3">
           {items.map((item) => (
-            <SortableCard
+            <div
               key={getId(item)}
-              id={getId(item)}
-              reorderDisabled={reorderDisabled}
+              className={onItemClick ? "cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-ring" : undefined}
+              onClick={(event) => {
+                if (!onItemClick) return;
+                const target = event.target;
+                if (
+                  target instanceof Element &&
+                  target.closest(
+                    "button, a, input, textarea, select, [role='button'], [role='switch'], [role^='menuitem'], [data-slot='dropdown-menu-item']",
+                  )
+                ) {
+                  return;
+                }
+                onItemClick(item);
+              }}
             >
-              {(dragHandle) => renderCard(item, dragHandle)}
-            </SortableCard>
+              <SortableCard
+                id={getId(item)}
+                reorderDisabled={reorderDisabled}
+              >
+                {(dragHandle) => renderCard(item, dragHandle)}
+              </SortableCard>
+            </div>
           ))}
         </div>
       </SortableContext>

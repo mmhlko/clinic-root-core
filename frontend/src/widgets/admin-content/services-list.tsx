@@ -7,6 +7,15 @@ import { PencilIcon, SaveIcon, Tag, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/toast";
@@ -202,6 +211,7 @@ export function ServicesList({
           })
         }
         onAdd={() => openSheet("create")}
+        onItemClick={(item) => openSheet("view", item)}
         columnCount={6}
         emptyMessage="Услуг пока нет."
         renderHeader={() => (
@@ -342,24 +352,40 @@ export function ServicesList({
             />
             <div className="space-y-2">
               <Label htmlFor="directionId">Направление</Label>
-              <select
+              <Select
+                items={[
+                  { label: "Выберите направление", value: null },
+                  ...directions
+                    .filter((direction) => direction.isActive)
+                    .map((direction) => ({
+                      label: direction.name,
+                      value: direction.id,
+                    })),
+                ]}
                 id="directionId"
                 name="directionId"
+                defaultValue={selected?.directionId ?? null}
                 required
-                defaultValue={selected?.directionId ?? ""}
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
               >
-                <option value="" disabled>
-                  Выберите направление
-                </option>
-                {directions
-                  .filter((direction) => direction.isActive)
-                  .map((direction) => (
-                    <option key={direction.id} value={direction.id}>
-                      {direction.name}
-                    </option>
-                  ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <SelectValue placeholder="Выберите направление" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Направление</SelectLabel>
+                    <SelectItem value={null} disabled>
+                      Выберите направление
+                    </SelectItem>
+                    {directions
+                      .filter((direction) => direction.isActive)
+                      .map((direction) => (
+                        <SelectItem key={direction.id} value={direction.id}>
+                          {direction.name}
+                        </SelectItem>
+                      ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
             <ContentField
               label="Описание"
@@ -377,15 +403,26 @@ export function ServicesList({
               />
               <div className="space-y-2">
                 <Label htmlFor="isPriceFrom">Цена от</Label>
-                <select
+                <Select
+                  items={[
+                    { label: "Нет", value: "false" },
+                    { label: "Да", value: "true" },
+                  ]}
                   id="isPriceFrom"
                   name="isPriceFrom"
                   defaultValue={String(selected?.isPriceFrom ?? false)}
-                  className="h-9 w-full rounded-md border bg-background px-3 text-sm"
                 >
-                  <option value="false">Нет</option>
-                  <option value="true">Да</option>
-                </select>
+                  <SelectTrigger className="h-9 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Цена от</SelectLabel>
+                      <SelectItem value="false">Нет</SelectItem>
+                      <SelectItem value="true">Да</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex gap-2">

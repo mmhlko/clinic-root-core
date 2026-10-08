@@ -489,21 +489,15 @@ export function DoctorForm({
               <legend className="sr-only">Образование {index + 1}</legend>
               <div className="space-y-2">
                 <Label>Тип</Label>
-                <Select
+                <Select<DoctorEducationType>
+                  items={EDUCATION_TYPES}
                   value={education.type}
                   onValueChange={(value) => {
-                    patchEducation(index, {
-                      type: value as DoctorEducationType,
-                    });
+                    if (value) patchEducation(index, { type: value });
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Выберите тип">
-                      {(value) =>
-                        EDUCATION_TYPES.find((item) => item.value === value)
-                          ?.label ?? "Выберите тип"
-                      }
-                    </SelectValue>
+                    <SelectValue placeholder="Выберите тип" />
                   </SelectTrigger>
 
                   <SelectContent>

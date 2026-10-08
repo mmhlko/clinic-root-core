@@ -175,6 +175,9 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
           `${doctor.firstName} ${doctor.lastName} ${doctor.specialization}`
         }
         onAdd={() => router.push("/admin/doctors/new")}
+        onItemClick={(doctor) =>
+          router.push(`/admin/doctors/${doctor.id}/edit`)
+        }
         columnCount={3}
         emptyMessage="Врачей пока нет. Добавьте нового врача, чтобы он появился в списке."
         reorder={(ids) => doctorsClientApi.reorderDoctors(ids)}

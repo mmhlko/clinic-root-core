@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CalendarDaysIcon, PencilIcon, PhoneIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,15 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { statusColorsStyles } from "@/shared/constants/colors";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RequestDeleteDialog } from "@/features/appointment-requests/components/request-delete-dialog";
 import { RequestEditForm } from "@/features/appointment-requests/components/request-edit-form";
 import { type AppointmentRequest } from "@/features/appointment-requests/types/appointment-request.types";
@@ -102,11 +109,14 @@ export function RequestDetailsSheet({ request, open, onOpenChange, onUpdated, on
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {statusItems.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      <SelectLabel>Статус заявки</SelectLabel>
+                      {statusItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </section>

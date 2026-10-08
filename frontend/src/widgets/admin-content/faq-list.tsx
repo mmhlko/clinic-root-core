@@ -179,6 +179,7 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
         getId={(item) => item.id}
         getSearchText={(item) => `${item.question} ${item.answer}`}
         onAdd={() => openSheet("create")}
+        onItemClick={(item) => openSheet("view", item)}
         columnCount={4}
         emptyMessage="Вопросов пока нет."
         reorder={(ids) => contentClientApi.reorderFaq(ids)}
@@ -239,7 +240,13 @@ export function FaqList({ initialItems }: { initialItems: FaqItem[] }) {
             }
             actionsMenu={actionMenu(item)}
           >
-            <span className="block font-medium">{item.question}</span>
+            <button
+              type="button"
+              className="block text-left font-medium hover:underline"
+              onClick={() => openSheet("view", item)}
+            >
+              {item.question}
+            </button>
             <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
               {item.answer}
             </span>

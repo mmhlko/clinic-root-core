@@ -5,7 +5,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -319,11 +321,14 @@ export function SocialsSettings({ socialLinks }: {
                 <SelectValue placeholder="Выберите платформу" />
               </SelectTrigger>
               <SelectContent>
-                {socialPlatforms.map((platform) => (
-                  <SelectItem key={platform.value} value={platform.value}>
-                    {platform.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectLabel>Социальная сеть</SelectLabel>
+                  {socialPlatforms.map((platform) => (
+                    <SelectItem key={platform.value} value={platform.value}>
+                      {platform.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
