@@ -22,7 +22,7 @@ import {
 
 import { randomUUID } from 'crypto';
 
-import { Op, type Transaction } from 'sequelize';
+import { Op, type FindOptions, type Transaction } from 'sequelize';
 
 import {
   MediaModel,
@@ -291,12 +291,14 @@ export class MediaService {
       return false;
     }
 
-    const media = await this.mediaModel.findOne({
+    const publicUploadOptions: FindOptions<MediaModel> & { hooks: false } = {
       where: {
         filename: safeFilename,
         // status: MediaStatus.ATTACHED,
       },
-    });
+      hooks: false,
+    };
+    const media = await this.mediaModel.findOne(publicUploadOptions);
 
     return Boolean(media);
   }
@@ -380,6 +382,7 @@ export class MediaService {
 
   async delete(
     media: MediaModel,
+    skipTenantScope = false,
   ) {
     const type =
       this.getMediaTypeFromUrl(
@@ -415,7 +418,7 @@ export class MediaService {
       unlinkSync(filepath);
     }
 
-    await media.destroy();
+    await media.destroy({ hooks: !skipTenantScope });
   }
 
   async removeImage(
@@ -432,23 +435,12 @@ export class MediaService {
       );
     }
 
-    const filepath =
-      join(
-        this.imagesDir,
-        safeFilename,
-      );
-
-    if (!existsSync(filepath)) {
-      throw new NotFoundException(
-        'Image not found',
-      );
-    }
-
-    unlinkSync(filepath);
-
-    return {
-      message: 'Image deleted',
-    };
+    const media = await this.mediaModel.findOne({
+      where: { filename: safeFilename, url: { [Op.like]: '/uploads/images/%' } },
+    });
+    if (!media) throw new NotFoundException('Image not found');
+    await this.delete(media);
+    return { message: 'Image deleted' };
   }
 
   async removeFile(
@@ -465,23 +457,12 @@ export class MediaService {
       );
     }
 
-    const filepath =
-      join(
-        this.filesDir,
-        safeFilename,
-      );
-
-    if (!existsSync(filepath)) {
-      throw new NotFoundException(
-        'File not found',
-      );
-    }
-
-    unlinkSync(filepath);
-
-    return {
-      message: 'File deleted',
-    };
+    const media = await this.mediaModel.findOne({
+      where: { filename: safeFilename, url: { [Op.like]: '/uploads/files/%' } },
+    });
+    if (!media) throw new NotFoundException('File not found');
+    await this.delete(media);
+    return { message: 'File deleted' };
   }
 
   async deleteTemporary(id: string) {
@@ -511,14 +492,16 @@ export class MediaService {
       Date.now() - ttlHours * 60 * 60 * 1000,
     );
 
-    const temporaryMedia = await this.mediaModel.findAll({
+    const cleanupOptions: FindOptions<MediaModel> & { hooks: false } = {
       where: {
         status: MediaStatus.TEMPORARY,
         createdAt: {
           [Op.lt]: cutoff,
         },
       },
-    });
+      hooks: false,
+    };
+    const temporaryMedia = await this.mediaModel.findAll(cleanupOptions);
 
     if (temporaryMedia.length === 0) {
       return;
@@ -530,7 +513,7 @@ export class MediaService {
 
     for (const media of temporaryMedia) {
       try {
-        await this.delete(media);
+        await this.delete(media, true);
 
         this.logger.log(
           `Deleted temporary media: ${media.id} (${media.filename})`,

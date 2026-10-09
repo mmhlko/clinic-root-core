@@ -22,6 +22,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { validateEnvironment } from './config/env.validation.js';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ClinicTenantModule } from './modules/clinic/tenant/clinic-tenant.module.js';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     DocumentsModule,
     AppointmentRequestsModule,
     DashboardModule,
+    ClinicTenantModule,
   ],
   providers: [
     {

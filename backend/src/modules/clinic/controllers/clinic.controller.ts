@@ -17,6 +17,7 @@ import { ClinicService } from '../services/clinic.service.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { UserRole } from '../../users/user-role.enum.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { SkipClinicTenantContext } from '../tenant/skip-clinic-tenant.decorator.js';
 
 
 
@@ -51,6 +52,7 @@ export class ClinicController {
 
   // Создание клиники
   @Post()
+  @SkipClinicTenantContext()
   @Roles(
     UserRole.ROOT,
   )

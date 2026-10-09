@@ -9,6 +9,7 @@ import { RolesGuard } from './guards/roles.guard.js';
 import { Roles } from './decorators/roles.decorator.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { Throttle } from '@nestjs/throttler';
+import { SkipClinicTenantContext } from '../clinic/tenant/skip-clinic-tenant.decorator.js';
 
 interface RefreshRequest extends Request {
   user: {
@@ -38,6 +39,7 @@ const clearLegacyRefreshTokenCookie = (res: Response) => {
 
 @ApiTags('Auth')
 @ApiBearerAuth('access-token')
+@SkipClinicTenantContext()
 @Controller('auth')
 export class AuthController {
   constructor(

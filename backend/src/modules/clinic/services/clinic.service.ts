@@ -11,6 +11,7 @@ import { ClinicModel } from '../models/clinic.model.js';
 import { CreateClinicDto } from '../dto/create-clinic.dto.js';
 import { UpdateClinicDto } from '../dto/update-clinic.dto.js';
 import { ClinicStatus } from '../enum/clinic-status.enum.js';
+import { ClinicTenantContextStore } from '../tenant/tenant-context.store.js';
 
 @Injectable()
 export class ClinicService {
@@ -18,6 +19,7 @@ export class ClinicService {
     @InjectModel(ClinicModel)
     private readonly clinicModel:
       typeof ClinicModel,
+    private readonly tenantContext: ClinicTenantContextStore,
   ) {}
 
   async create(dto: CreateClinicDto) {
@@ -53,20 +55,8 @@ export class ClinicService {
   }
 
   async findPublic() {
-    const clinic =
-      await this.clinicModel.findOne(/* {
-        attributes: [
-          'id',
-          'name',
-          'shortDescription',
-          'description',
-          'slogan',
-          'logoUrl',
-          'faviconUrl',
-          'phone',
-          'email',
-        ],
-      } */);
+    const { clinicId } = this.tenantContext.require();
+    const clinic = await this.clinicModel.findByPk(clinicId);
 
     if (!clinic) {
       throw new NotFoundException(
@@ -78,8 +68,8 @@ export class ClinicService {
   }
 
   async findAdmin() {
-    const clinic =
-      await this.clinicModel.findOne();
+    const { clinicId } = this.tenantContext.require();
+    const clinic = await this.clinicModel.findByPk(clinicId);
 
     if (!clinic) {
       throw new NotFoundException(
@@ -91,8 +81,8 @@ export class ClinicService {
   }
 
   async update(dto: UpdateClinicDto) {
-    const clinic =
-      await this.clinicModel.findOne();
+    const { clinicId } = this.tenantContext.require();
+    const clinic = await this.clinicModel.findByPk(clinicId);
 
     if (!clinic) {
       throw new NotFoundException(
