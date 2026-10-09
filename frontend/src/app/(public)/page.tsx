@@ -281,7 +281,7 @@ export async function ClinicHome({ clinicSlug }: { clinicSlug: string }) {
       <footer className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between">
           <span>{clinic.name}</span>
-          <Link href="/admin/login" className="hover:text-foreground">
+          <Link href={`/${clinicSlug}/admin/login`} className="hover:text-foreground">
             Администрация
           </Link>
         </div>

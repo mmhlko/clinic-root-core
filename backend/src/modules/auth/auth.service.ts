@@ -31,7 +31,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmailWithClinic(dto.email);
 
     if (!user) {
       throw new UnauthorizedException('User not found or incorrect password');
@@ -56,6 +56,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         clinicId: user.clinicId,
+        clinicSlug: user.clinic?.slug ?? null,
         photoMedia: user.photoMedia,
       },
       ...tokens,
@@ -80,6 +81,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         clinicId: user.clinicId,
+        clinicSlug: user.clinic?.slug ?? null,
         photoMedia: user.photoMedia,
       },
       accessToken,
@@ -110,6 +112,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         clinicId: user.clinicId,
+        clinicSlug: user.clinic?.slug ?? null,
         photoMedia: user.photoMedia,
       },
     };
@@ -126,7 +129,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ) {
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findByIdWithClinic(userId);
 
     if (!user.isActive) {
       throw new ForbiddenException('User account is inactive');

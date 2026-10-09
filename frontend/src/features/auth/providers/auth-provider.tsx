@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { authApi } from '../api/auth-api';
 import type { AuthUser } from '../types/auth.types';
@@ -30,13 +30,19 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
+
+  const clinicAdminBase = pathname.match(/^\/([^/]+)\/admin(?:\/|$)/)?.[1];
+  const loginPath = clinicAdminBase
+    ? `/${encodeURIComponent(clinicAdminBase)}/admin/login`
+    : '/admin/login';
 
   useEffect(() => {
     const handleAuthExpired = () => {
       setUser(null);
-      router.replace('/admin/login');
+      router.replace(loginPath);
     };
     window.addEventListener('clinic:auth-expired', handleAuthExpired);
 
@@ -63,7 +69,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     return () => {
       window.removeEventListener('clinic:auth-expired', handleAuthExpired);
     };
-  }, [initialUser, router]);
+  }, [initialUser, loginPath, router]);
 
   const login = async (email: string, password: string) => {
     const response = await authApi.login({

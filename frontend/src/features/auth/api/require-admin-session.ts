@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 
 import { getUserSession } from "./user-session";
 
-export async function requireUserSession() {
+export async function requireUserSession(loginPath = "/admin/login") {
   const session = await getUserSession();
 
   if (!session) {
-    redirect("/admin/login");
+    redirect(loginPath);
   }
 
   return session;

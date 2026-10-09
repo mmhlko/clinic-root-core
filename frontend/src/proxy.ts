@@ -20,8 +20,13 @@ export function proxy(request: NextRequest) {
   }
 
   if (firstSegment === "admin") {
-    const clinicSlug = request.cookies.get("clinicSlug")?.value || "demo";
     const remainingPath = segments.slice(1).join("/");
+    // The unscoped login URL is the platform's demo login. Tenant logins use
+    // their explicit `/{clinicSlug}/admin/login` URL and must not depend on a
+    // stale clinicSlug cookie.
+    const clinicSlug = remainingPath === "login"
+      ? "demo"
+      : request.cookies.get("clinicSlug")?.value || "demo";
     const target = new URL(`/${clinicSlug}/admin${remainingPath ? `/${remainingPath}` : ""}`, request.url);
     target.search = request.nextUrl.search;
     return NextResponse.redirect(target);

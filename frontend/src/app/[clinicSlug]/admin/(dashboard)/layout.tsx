@@ -5,16 +5,29 @@ import { AppSidebar } from "@/widgets/app-sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { publicServerApi } from "@/features/api/public-server-api";
+import { redirect } from "next/navigation";
 
 export default async function AdminDashboardLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ clinicSlug: string }>;
 }) {
-  const [clinic, session] = await Promise.all([
-    publicServerApi.clinic(),
-    requireUserSession(),
-  ]);
+  const { clinicSlug } = await params;
+  const session = await requireUserSession(
+    `/${encodeURIComponent(clinicSlug)}/admin/login`,
+  );
+
+  if (session.user.role !== "root") {
+    const ownClinicSlug = session.user.clinicSlug;
+    if (!ownClinicSlug) redirect("/admin/login");
+    if (clinicSlug !== ownClinicSlug) {
+      redirect(`/${encodeURIComponent(ownClinicSlug)}/admin`);
+    }
+  }
+
+  const clinic = await publicServerApi.clinic(clinicSlug);
 
   return (
     <AuthProvider initialUser={session.user}>

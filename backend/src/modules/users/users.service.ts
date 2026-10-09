@@ -5,6 +5,7 @@ import { CreateUserDto, UpdateUserDto } from './dto/users.dto.js';
 import { UserRole } from './user-role.enum.js';
 import * as bcrypt from 'bcrypt';
 import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 import { InjectConnection } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { MediaService } from '../media/media.service.js';
@@ -351,6 +352,27 @@ export class UsersService {
 		});
 		if (!user) throw new NotFoundException('User not found');
 		return user;
+	}
+
+	async findByIdWithClinic(id: string) {
+		const user = await this.userModel.findByPk(id, {
+			include: [
+				{ model: MediaModel, as: 'photoMedia', attributes: ['id', 'url'] },
+				{ model: ClinicModel, as: 'clinic', attributes: ['id', 'slug'] },
+			],
+		});
+		if (!user) throw new NotFoundException('User not found');
+		return user;
+	}
+
+	async findByEmailWithClinic(email: string) {
+		return this.userModel.findOne({
+			where: { email },
+			include: [
+				{ model: MediaModel, as: 'photoMedia', attributes: ['id', 'url'] },
+				{ model: ClinicModel, as: 'clinic', attributes: ['id', 'slug'] },
+			],
+		});
 	}
 
 	async findUserById(id: string) {

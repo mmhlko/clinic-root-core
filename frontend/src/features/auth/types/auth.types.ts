@@ -14,6 +14,7 @@ export interface AuthUser {
   lastName: string | null;
   role: UserRole;
   clinicId?: string | null;
+  clinicSlug?: string | null;
   photoMedia: MediaDbData | null;
 }
 

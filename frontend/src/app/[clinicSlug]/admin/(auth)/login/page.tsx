@@ -1,20 +1,21 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { useAuth } from "@/features/auth/providers/auth-provider";
 import { AuthForm } from "@/features/auth/components/auth-form";
 
 export default function AdminLoginPage() {
+  const { clinicSlug } = useParams<{ clinicSlug: string }>();
   const router = useRouter();
   const { isLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/admin');
+      router.replace(`/${encodeURIComponent(clinicSlug)}/admin`);
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [clinicSlug, isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return null;
