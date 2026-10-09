@@ -13,6 +13,12 @@ export function proxy(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0];
 
+  // `/.well-known/*` is a reserved URL space, not a clinic slug. Keep these
+  // requests out of the dynamic `/:clinicSlug/admin` route tree.
+  if (firstSegment === ".well-known") {
+    return NextResponse.json({ message: "Not Found" }, { status: 404 });
+  }
+
   if (firstSegment === "admin") {
     const clinicSlug = request.cookies.get("clinicSlug")?.value || "demo";
     const remainingPath = segments.slice(1).join("/");
