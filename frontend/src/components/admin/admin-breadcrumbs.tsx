@@ -21,6 +21,7 @@ type Crumb = {
 const dashboardCrumb: Crumb = { label: "Дашборд", href: "/admin" };
 
 const pageCrumbs: Record<string, Crumb[]> = {
+  "/admin/clinics": [dashboardCrumb, { label: "Клиники" }],
   "/admin": [{ label: "Дашборд" }],
   "/admin/requests": [dashboardCrumb, { label: "Заявки" }],
   "/admin/doctors": [dashboardCrumb, { label: "Врачи" }],

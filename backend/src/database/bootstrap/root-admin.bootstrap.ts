@@ -1,6 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
 
 import { UsersService } from '../../modules/users/users.service.js';
 import { UserRole } from '../../modules/users/user-role.enum.js';
@@ -37,13 +36,11 @@ export class RootAdminBootstrap implements OnModuleInit {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
     await this.usersService.create({
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password,
       role: UserRole.ROOT,
     });
 

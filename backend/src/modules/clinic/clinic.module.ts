@@ -16,6 +16,7 @@ import { ClinicStatisticModel } from './models/clinic-statistic.model.js';
 import { ClinicStatisticService } from './services/clinic-statistic.service.js';
 import { ClinicStatisticController } from './controllers/clinic-statistic.controller.js';
 import { ClinicTenantModule } from './tenant/clinic-tenant.module.js';
+import { UserModel } from '../users/user.model.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ClinicTenantModule } from './tenant/clinic-tenant.module.js';
       ClinicSocialLinkModel,
       ClinicFeatureModel,
       ClinicStatisticModel,
+      UserModel,
     ]),
     ClinicTenantModule,
   ],

@@ -1,5 +1,7 @@
 import {
   IsDateString,
+  IsNotEmpty,
+  MaxLength,
   IsEmail,
   IsOptional,
   Matches,
@@ -12,10 +14,12 @@ export class CreateClinicDto {
   @ApiPropertyOptional({ example: 'demo' })
   @IsOptional()
   @IsString()
+  @MaxLength(80)
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   slug?: string;
   @ApiProperty({ example: 'Клиника Здоровье' })
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @ApiPropertyOptional({ example: 'Современная стоматология рядом с вами' })

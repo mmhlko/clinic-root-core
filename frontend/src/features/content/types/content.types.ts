@@ -2,6 +2,7 @@ import { MediaDbData } from "@/features/doctors/types/doctors.types";
 
 export type UserRole = "root" | "admin" | "manager";
 export type ReviewStatus = "pending" | "published" | "rejected";
+export type ClinicStatus = "demo" | "active" | "archived";
 
 export interface ServiceDirection {
   id: string;
@@ -101,6 +102,9 @@ export type AdminUserUpdateData = Partial<AdminUserCreateData>
 export interface Clinic {
   id: string;
   name: string;
+  slug: string;
+  status: ClinicStatus;
+  isSystemDemo: boolean;
   shortDescription: string | null;
   description: string | null;
   slogan: string | null;
@@ -111,6 +115,36 @@ export interface Clinic {
   licenseDate: string | null;
   inn: string | null;
   ogrn: string | null;
+}
+
+export interface CreateTenantClinicRequest {
+  clinic: {
+    name: string;
+    slug: string;
+    shortDescription?: string;
+    description?: string;
+    slogan?: string;
+    phone?: string;
+    email?: string;
+  };
+  admin: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+  };
+}
+
+export interface CreatedTenantClinic {
+  clinic: Clinic;
+  admin: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: UserRole;
+    initialPassword: string;
+  };
 }
 export interface ClinicLocation {
   id: string;

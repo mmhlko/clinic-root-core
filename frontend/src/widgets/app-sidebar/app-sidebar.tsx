@@ -11,6 +11,7 @@ import {
   Settings,
   Stethoscope,
   Users,
+  Building2,
 } from "lucide-react";
 
 import {
@@ -34,6 +35,12 @@ import Link from "next/link";
 
 
 const navItems: SidebarItem[] = [
+  {
+    title: "Клиники",
+    href: "/admin/clinics",
+    icon: Building2,
+    roles: ["root"] as const,
+  },
   {
     title: "Дашборд",
     href: "/admin",

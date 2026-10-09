@@ -15,12 +15,24 @@ import type {
   ClinicStatistic,
   AdminUserCreateData,
   AdminUserUpdateData,
+  CreateTenantClinicRequest,
+  CreatedTenantClinic,
+  ClinicStatus,
 } from "../types/content.types";
 import apiClient from "@/lib/api/client";
 
 class ContentClientApi extends RootApi {
   constructor() {
     super(apiClient);
+  }
+  platformClinics() {
+    return this.requestGet<Clinic[]>("/clinic/root");
+  }
+  createPlatformClinic(body: CreateTenantClinicRequest) {
+    return this.requestPost<CreatedTenantClinic, CreateTenantClinicRequest>("/clinic", body);
+  }
+  updatePlatformClinic(id: string, body: { slug?: string; status?: ClinicStatus }) {
+    return this.requestPatch<Clinic>(`/clinic/root/${id}`, body);
   }
   createDirection(body: {
     name: string;
