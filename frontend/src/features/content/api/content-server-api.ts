@@ -20,6 +20,11 @@ class ContentServerApi extends RootApi {
   constructor() {
     super(serverApiClient);
   }
+  platformClinics(token: string) {
+    return this.requestGet<Clinic[]>("/clinic/root", {
+      accessToken: token,
+    });
+  }
   directions(token: string) {
     return this.requestGet<ServiceDirection[]>("/service-directions/admin", {
       accessToken: token,

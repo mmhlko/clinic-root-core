@@ -5,3 +5,13 @@ export const getDoctorFullName = (doctor: Partial<Doctor>): string => {
     .filter(Boolean)
     .join(" ");
 };
+
+export function getPersonName(
+  firstName: string | null,
+  lastName: string | null,
+  middleName: string | null = null,
+) {
+  return [firstName, lastName, middleName]
+    .filter(Boolean)
+    .join(" ");
+}
