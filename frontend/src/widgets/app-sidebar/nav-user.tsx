@@ -25,6 +25,7 @@ import {
 import { AuthUser } from "@/features/auth/types/auth.types";
 import Link from "next/link";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 type SidebarUserMenuProps = {
   user: AuthUser;
@@ -33,6 +34,7 @@ type SidebarUserMenuProps = {
 
 export function NavUser({ user, onLogout }: SidebarUserMenuProps) {
   const { isMobile } = useSidebar();
+  const clinicAdminPath = useClinicAdminPath();
   const userAvatarUrl = getImageUrl(user.photoMedia?.url)
   const fullName =
     user.firstName && user.lastName
@@ -95,7 +97,7 @@ export function NavUser({ user, onLogout }: SidebarUserMenuProps) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer" render={<Link href={`/admin/users/${user.id}`} />}>
+              <DropdownMenuItem className="cursor-pointer" render={<Link href={clinicAdminPath(`/admin/users/${user.id}`)} />}>
                 <CircleUserRound />
                 Профиль
               </DropdownMenuItem>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 export default async function LegacyAdminPath({
   params,
@@ -6,5 +7,11 @@ export default async function LegacyAdminPath({
   params: Promise<{ path: string[] }>;
 }) {
   const { path } = await params;
-  redirect(`/demo/admin/${path.join("/")}`);
+  const clinicSlug = path.join("/") === "login"
+    ? "demo"
+    : (await cookies()).get("clinicSlug")?.value;
+  const safeClinicSlug = clinicSlug && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(clinicSlug)
+    ? clinicSlug
+    : "demo";
+  redirect(`/${encodeURIComponent(safeClinicSlug)}/admin/${path.map(encodeURIComponent).join("/")}`);
 }

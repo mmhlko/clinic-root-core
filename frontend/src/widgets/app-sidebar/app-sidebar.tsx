@@ -135,7 +135,7 @@ function filterVisibleItems(
 function scopeItemsToClinic(items: SidebarItem[], clinicSlug: string): SidebarItem[] {
   return items.map((item) => ({
     ...item,
-    href: item.href ? `/${clinicSlug}${item.href}` : undefined,
+    href: item.href ? `/${encodeURIComponent(clinicSlug)}${item.href}` : undefined,
     items: item.items ? scopeItemsToClinic(item.items, clinicSlug) : undefined,
   }));
 }
@@ -154,7 +154,7 @@ export function AppSidebar({
   );
   const handleLogout = async () => {
     await logout().catch(() => undefined);
-    router.replace(`/${clinic.slug}/admin/login`);
+    router.replace(`/${encodeURIComponent(clinic.slug)}/admin/login`);
   };
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -164,7 +164,7 @@ export function AppSidebar({
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               render={
-                <Link href={`/${clinic.slug}/admin`}>
+                <Link href={`/${encodeURIComponent(clinic.slug)}/admin`}>
                   <Stethoscope className="size-5!" />
                   <span className="text-base font-semibold">{clinic.name}</span>
                 </Link>

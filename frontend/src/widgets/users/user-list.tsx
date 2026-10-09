@@ -22,6 +22,7 @@ import type {
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
 import { activityColorsStyles } from "@/shared/constants/colors";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 interface UserListProps {
   users: AdminUser[];
@@ -45,6 +46,7 @@ export function UserList({
   currentUserId,
 }: UserListProps) {
   const router = useRouter();
+  const clinicAdminPath = useClinicAdminPath();
   const [users, setUsers] = useState(initialUsers);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -114,12 +116,12 @@ export function UserList({
     return [
       {
         label: "Просмотреть",
-        onSelect: (item) => router.push(`/admin/users/${item.id}`),
+        onSelect: (item) => router.push(clinicAdminPath(`/admin/users/${item.id}`)),
       },
       {
         label: "Редактировать",
         disabled: !canEdit(user) || busyId === user.id,
-        onSelect: (item) => router.push(`/admin/users/${item.id}/edit`),
+        onSelect: (item) => router.push(clinicAdminPath(`/admin/users/${item.id}/edit`)),
       },
       {
         label: "Удалить",
@@ -177,7 +179,7 @@ export function UserList({
         getSearchText={(user) =>
           `${getUserName(user)} ${user.email} ${roleLabels[user.role]}`
         }
-        onAdd={() => router.push("/admin/users/new")}
+        onAdd={() => router.push(clinicAdminPath("/admin/users/new"))}
         columnCount={3}
         emptyMessage="Пользователей пока нет."
         renderHeader={() => (
@@ -217,7 +219,7 @@ export function UserList({
           >
             <button
               className="w-full text-left"
-              onClick={() => router.push(`/admin/users/${user.id}`)}
+              onClick={() => router.push(clinicAdminPath(`/admin/users/${user.id}`))}
             >
               {identity(user)}
             </button>

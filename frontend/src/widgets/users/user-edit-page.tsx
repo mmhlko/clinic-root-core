@@ -14,6 +14,7 @@ import type {
 import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
 import { UserEditForm } from "@/features/users/components/user-edit-form";
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 interface UserEditPageProps {
   user?: AdminUser;
@@ -31,6 +32,7 @@ export function UserEditPage({
   isOwnProfile,
 }: UserEditPageProps) {
   const router = useRouter();
+  const clinicAdminPath = useClinicAdminPath();
   const { updateUser } = useAuth();
   const isCreate = !user;
 
@@ -86,7 +88,7 @@ export function UserEditPage({
         });
         commit();
         toast.add({ type: "success", description: "Пользователь добавлен." });
-        router.push("/admin/users");
+        router.push(clinicAdminPath("/admin/users"));
       } else if (user && isOwnProfile) {
         const updated = await contentClientApi.updateMyProfile({
           firstName: data.firstName,
@@ -109,7 +111,7 @@ export function UserEditPage({
           type: "success",
           description: "Профиль успешно сохранён.",
         });
-        router.push(`/admin/users/${user.id}`);
+        router.push(clinicAdminPath(`/admin/users/${user.id}`));
       } else if (user) {
         await contentClientApi.updateUser(user.id, {
           firstName: data.firstName,
@@ -124,7 +126,7 @@ export function UserEditPage({
           type: "success",
           description: "Пользователь обновлён.",
         });
-        router.push(`/admin/users/${user.id}`);
+        router.push(clinicAdminPath(`/admin/users/${user.id}`));
       }
 
       router.refresh();
@@ -148,9 +150,9 @@ export function UserEditPage({
   async function cancel() {
     await cleanup();
     if (isCreate) {
-      router.push("/admin/users");
+      router.push(clinicAdminPath("/admin/users"));
     } else if (user) {
-      router.push(`/admin/users/${user.id}`);
+      router.push(clinicAdminPath(`/admin/users/${user.id}`));
     }
   }
 

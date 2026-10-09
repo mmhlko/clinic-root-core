@@ -9,12 +9,12 @@ import { UserEditPage } from "@/widgets/users/user-edit-page";
 export default async function EditUserPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ clinicSlug: string; id: string }>;
 }) {
-  const [{ id }, session] = await Promise.all([
-    params,
-    requireUserSession(),
-  ]);
+  const { clinicSlug, id } = await params;
+  const session = await requireUserSession(
+    `/${encodeURIComponent(clinicSlug)}/admin/login`,
+  );
 
   const isOwnProfile =
     id === session.user.id;
@@ -24,9 +24,7 @@ export default async function EditUserPage({
     session.user.role === "admin";
 
   if (!isOwnProfile && !canManageUsers) {
-    redirect(
-      `/admin/users/${session.user.id}/edit`,
-    );
+    redirect(`/${encodeURIComponent(clinicSlug)}/admin/users/${session.user.id}/edit`);
   }
 
   let user: AdminUser;

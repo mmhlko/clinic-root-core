@@ -4,8 +4,13 @@ import { contentServerApi } from "@/features/content/api/content-server-api";
 import { UserList } from "@/widgets/users/user-list";
 import type { UserRole } from "@/features/content/types/content.types";
 
-export default async function UsersPage() {
-  const session = await requireRole(["root", "admin"] as UserRole[]);
+export default async function UsersPage({
+  params,
+}: {
+  params: Promise<{ clinicSlug: string }>;
+}) {
+  const { clinicSlug } = await params;
+  const session = await requireRole(["root", "admin"] as UserRole[], clinicSlug);
   const users = await contentServerApi.users(session.accessToken);
   return (
     <div className="mx-auto w-full">

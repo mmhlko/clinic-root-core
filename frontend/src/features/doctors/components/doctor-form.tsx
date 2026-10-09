@@ -36,6 +36,7 @@ import { DoctorReferenceMultiSelect } from "./doctor-reference-multi-select";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
 import { ImageUpload } from "@/features/image-upload/hooks/image-upload";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 interface DoctorEducationFormValue {
   id?: string;
@@ -168,6 +169,7 @@ export function DoctorForm({
   doctor,
 }: DoctorFormProps) {
   const router = useRouter();
+  const clinicAdminPath = useClinicAdminPath();
   const [values, setValues] = useState(() =>
     toFormValues(doctor, directions, initialSkills),
   );
@@ -250,7 +252,7 @@ export function DoctorForm({
 
   const handleCancel = async () => {
     await cleanup();
-    router.push("/admin/doctors");
+    router.push(clinicAdminPath("/admin/doctors"));
   };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -305,7 +307,7 @@ export function DoctorForm({
         description:
           mode === "create" ? "Врач добавлен." : "Данные врача сохранены.",
       });
-      router.push("/admin/doctors");
+      router.push(clinicAdminPath("/admin/doctors"));
       router.refresh();
     } catch (saveError) {
       toast.add({

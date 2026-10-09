@@ -24,6 +24,7 @@ import { RequestTrendChart } from "./request-trend-chart";
 import { Badge } from "@/components/ui/badge";
 
 type DashboardViewProps = {
+  clinicSlug: string;
   overview: DashboardOverview;
   requests: DashboardRequestCounts;
   pendingReviews: number;
@@ -145,7 +146,13 @@ function RequestStatusSummary({ requests }: { requests: DashboardRequestCounts }
   );
 }
 
-function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
+function RecentRequests({
+  requests,
+  clinicSlug,
+}: {
+  requests: DashboardRecentRequest[];
+  clinicSlug: string;
+}) {
   const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
     month: "short",
@@ -214,7 +221,7 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
         </>
       )}
       <CardFooter>
-        <Link href="/admin/requests" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+        <Link href={`/${encodeURIComponent(clinicSlug)}/admin/requests`} className="text-sm font-medium text-muted-foreground hover:text-foreground">
           К полному списку <span aria-hidden="true">→</span>
         </Link>
       </CardFooter>
@@ -223,6 +230,7 @@ function RecentRequests({ requests }: { requests: DashboardRecentRequest[] }) {
 }
 
 export function DashboardView({
+  clinicSlug,
   overview,
   requests,
   pendingReviews,
@@ -230,6 +238,8 @@ export function DashboardView({
   promotions,
   requestTrend,
 }: DashboardViewProps) {
+  const clinicAdminPath = (path: string) =>
+    `/${encodeURIComponent(clinicSlug)}${path}`;
   const expiringPromotions = getExpiringPromotionCount(promotions);
 
   return (
@@ -241,21 +251,21 @@ export function DashboardView({
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <AttentionCard
-            href="/admin/requests"
+            href={clinicAdminPath("/admin/requests")}
             title="Новые заявки"
             count={requests.new}
             description="Новые заявки пациентов"
             icon={MessageCircleWarning}
           />
           <AttentionCard
-            href="/admin/reviews"
+            href={clinicAdminPath("/admin/reviews")}
             title="Отзывы на модерации"
             count={pendingReviews}
             description="Ожидают проверки"
             icon={MessageCircleWarning}
           />
           <AttentionCard
-            href="/admin/promotions"
+            href={clinicAdminPath("/admin/promotions")}
             title="Акции"
             count={expiringPromotions}
             description="Заканчиваются в ближайшие 7 дней"
@@ -267,14 +277,14 @@ export function DashboardView({
       <section aria-labelledby="requests-heading" className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 id="requests-heading" className="text-lg font-semibold">Заявки</h2>
-          <Link href="/admin/requests" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+          <Link href={clinicAdminPath("/admin/requests")} className="text-sm font-medium text-muted-foreground hover:text-foreground">
             Все заявки <span aria-hidden="true">→</span>
           </Link>
         </div>
         <RequestStatusSummary requests={requests} />
         <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           <RequestTrendChart data={requestTrend} />
-          <RecentRequests requests={recentRequests} />
+          <RecentRequests requests={recentRequests} clinicSlug={clinicSlug} />
         </div>
       </section>
 
@@ -284,7 +294,7 @@ export function DashboardView({
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5">
           {contentItems.map(({ icon: Icon, ...item }) => (
-            <Link key={item.key} href={item.href} className="group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <Link key={item.key} href={clinicAdminPath(item.href)} className="group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               <Card className="h-full min-h-20 flex-row items-center justify-between gap-3 px-3 py-3 transition-colors group-hover:border-foreground/20 group-hover:bg-muted/50">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                   <Icon className="size-4" />

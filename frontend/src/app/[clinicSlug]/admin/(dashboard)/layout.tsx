@@ -21,7 +21,9 @@ export default async function AdminDashboardLayout({
 
   if (session.user.role !== "root") {
     const ownClinicSlug = session.user.clinicSlug;
-    if (!ownClinicSlug) redirect("/admin/login");
+    if (!ownClinicSlug) {
+      redirect(`/${encodeURIComponent(clinicSlug)}/admin/login`);
+    }
     if (clinicSlug !== ownClinicSlug) {
       redirect(`/${encodeURIComponent(ownClinicSlug)}/admin`);
     }

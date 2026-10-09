@@ -6,7 +6,13 @@ const RESERVED_ROOT_SEGMENTS = new Set([
   "uploads",
   "_next",
   "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  "manifest.json",
+  "site.webmanifest",
 ]);
+
+const CLINIC_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -24,9 +30,12 @@ export function proxy(request: NextRequest) {
     // The unscoped login URL is the platform's demo login. Tenant logins use
     // their explicit `/{clinicSlug}/admin/login` URL and must not depend on a
     // stale clinicSlug cookie.
+    const cookieClinicSlug = request.cookies.get("clinicSlug")?.value;
     const clinicSlug = remainingPath === "login"
       ? "demo"
-      : request.cookies.get("clinicSlug")?.value || "demo";
+      : cookieClinicSlug && CLINIC_SLUG_PATTERN.test(cookieClinicSlug)
+        ? cookieClinicSlug
+        : "demo";
     const target = new URL(`/${clinicSlug}/admin${remainingPath ? `/${remainingPath}` : ""}`, request.url);
     target.search = request.nextUrl.search;
     return NextResponse.redirect(target);
