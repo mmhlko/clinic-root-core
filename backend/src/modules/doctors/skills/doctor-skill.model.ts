@@ -7,10 +7,12 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { SkillModel } from './skill.model.js';
+import { ClinicModel } from '../../clinic/models/clinic.model.js';
 
 
 export interface DoctorSkillCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   doctorId: string;
   skillId: string;
   sortOrder?: number;
@@ -35,6 +37,13 @@ export class DoctorSkillModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.UUID,

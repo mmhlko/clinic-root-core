@@ -8,10 +8,12 @@ import {
 } from 'sequelize-typescript';
 import { ServiceDirectionModel } from './directions/service-direction.model.js';
 import type { PromotionModel } from '../promotions/promotion.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 
 export interface ServiceCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   directionId: string;
   name: string;
   description?: string | null;
@@ -34,6 +36,13 @@ export class ServiceModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @ForeignKey(() => ServiceDirectionModel)
   @Column({

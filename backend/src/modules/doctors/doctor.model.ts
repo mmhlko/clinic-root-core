@@ -11,9 +11,11 @@ import { DoctorEducationModel } from './doctor-education.model.js';
 import { DoctorDirectionModel } from './doctor-direction.model.js';
 import { DoctorSkillModel } from './skills/doctor-skill.model.js';
 import { MediaModel } from '../media/media.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface DoctorCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   firstName: string;
   lastName: string;
   middleName?: string | null;
@@ -38,6 +40,13 @@ export class DoctorModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

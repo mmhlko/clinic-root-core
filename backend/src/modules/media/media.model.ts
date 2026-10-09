@@ -3,7 +3,10 @@ import {
   Column,
   Model,
   DataType,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export enum MediaStatus {
   TEMPORARY = 'temporary',
@@ -12,6 +15,7 @@ export enum MediaStatus {
 
 export interface MediaCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   filename: string;
   url: string;
   mimeType: string;
@@ -32,6 +36,19 @@ export class MediaModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+    references: { model: 'clinic', key: 'id' },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+  })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

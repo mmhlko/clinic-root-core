@@ -3,10 +3,14 @@ import {
   Column,
   Model,
   DataType,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
+import { ClinicModel } from '../../clinic/models/clinic.model.js';
 
 export interface SkillCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   name: string;
   sortOrder?: number;
   isActive?: boolean;
@@ -16,8 +20,9 @@ export interface SkillCreationAttributes {
   tableName: 'skills',
   indexes: [
     {
+      name: 'skills_clinicId_name_unique',
       unique: true,
-      fields: ['name'],
+      fields: ['clinicId', 'name'],
     },
   ],
 })
@@ -31,6 +36,13 @@ export class SkillModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

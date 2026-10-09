@@ -10,6 +10,7 @@ import { ClinicModel } from '../models/clinic.model.js';
 
 import { CreateClinicDto } from '../dto/create-clinic.dto.js';
 import { UpdateClinicDto } from '../dto/update-clinic.dto.js';
+import { ClinicStatus } from '../enum/clinic-status.enum.js';
 
 @Injectable()
 export class ClinicService {
@@ -31,6 +32,9 @@ export class ClinicService {
 
     return this.clinicModel.create({
       name: dto.name,
+      slug: dto.slug ?? 'demo',
+      status: ClinicStatus.DEMO,
+      isSystemDemo: true,
       shortDescription:
         dto.shortDescription ?? null,
       description: dto.description ?? null,

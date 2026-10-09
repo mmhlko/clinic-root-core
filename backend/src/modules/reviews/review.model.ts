@@ -9,9 +9,11 @@ import {
 
 import { DoctorModel } from '../doctors/doctor.model.js';
 import { ReviewStatus } from './review-status.enum.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface ReviewCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   authorName: string;
   text: string;
   rating: number;
@@ -35,6 +37,13 @@ export class ReviewModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

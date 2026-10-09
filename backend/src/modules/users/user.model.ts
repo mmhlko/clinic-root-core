@@ -4,9 +4,11 @@ import { UserRole } from './user-role.enum.js';
 import { CreateUserDto } from './dto/users.dto.js';
 import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
 import { MediaModel } from '../media/media.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface UserCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   firstName?: string;
   lastName?: string;
   email: string;
@@ -51,6 +53,19 @@ export class UserModel extends Model<UserModel, UserCreationAttributes> {
     defaultValue: UserRole.MANAGER,
   })
   declare role: UserRole;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true,
+    references: { model: 'clinic', key: 'id' },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+  })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @ForeignKey(() => ClinicLocationModel)
   @Column({

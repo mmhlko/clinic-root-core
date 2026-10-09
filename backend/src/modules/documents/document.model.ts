@@ -3,10 +3,14 @@ import {
   Column,
   Model,
   DataType,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface DocumentCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   title: string;
   description?: string | null;
   fileUrl: string;
@@ -29,6 +33,13 @@ export class DocumentModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   // Название документа на сайте
   @Column({

@@ -4,10 +4,14 @@ import {
   Model,
   DataType,
 } from 'sequelize-typescript';
+import { ClinicStatus } from '../enum/clinic-status.enum.js';
 
 export interface ClinicCreationAttributes {
   id?: string;
   name: string;
+  slug: string;
+  status?: ClinicStatus;
+  isSystemDemo?: boolean;
   shortDescription?: string | null;
   description?: string | null;
   slogan?: string | null;
@@ -22,6 +26,7 @@ export interface ClinicCreationAttributes {
 
 @Table({
   tableName: 'clinic',
+  indexes: [{ name: 'clinic_slug_unique', unique: true, fields: ['slug'] }],
 })
 export class ClinicModel extends Model<
   ClinicModel,
@@ -39,6 +44,19 @@ export class ClinicModel extends Model<
     allowNull: false,
   })
   declare name: string;
+
+  @Column({ type: DataType.STRING(80), allowNull: false })
+  declare slug: string;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(ClinicStatus)),
+    allowNull: false,
+    defaultValue: ClinicStatus.DEMO,
+  })
+  declare status: ClinicStatus;
+
+  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  declare isSystemDemo: boolean;
 
   @Column({
     type: DataType.STRING,
