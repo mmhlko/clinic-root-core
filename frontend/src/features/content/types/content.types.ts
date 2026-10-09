@@ -75,11 +75,11 @@ export interface FaqItem {
 }
 export interface AdminUser {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName: string | null;
+  lastName: string | null;
   email: string;
   role: UserRole;
-  photoMedia?: MediaDbData;
+  photoMedia: MediaDbData | null;
   locationId: string | null;
   location?: ClinicLocation | null;
   isActive: boolean;

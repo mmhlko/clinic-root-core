@@ -60,7 +60,7 @@ describe('AuthService', () => {
       lastName: 'Lovelace',
       email: 'ada@example.com',
       role: UserRole.ADMIN,
-      avatarUrl: null,
+      photoMedia: null,
       isActive: true,
       hashedRefreshToken,
     });
@@ -74,7 +74,7 @@ describe('AuthService', () => {
         lastName: 'Lovelace',
         email: 'ada@example.com',
         role: UserRole.ADMIN,
-        avatarUrl: null,
+        photoMedia: null,
       },
       accessToken: 'short-lived-access-token',
     });

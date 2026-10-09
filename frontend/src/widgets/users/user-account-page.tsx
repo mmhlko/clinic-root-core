@@ -34,8 +34,8 @@ export function UserAccountPage({
     try {
       if (isOwnProfile) {
         const updated = await contentClientApi.updateMyProfile({
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.firstName ?? "",
+          lastName: user.lastName ?? "",
           email: user.email,
           photoMediaId: user.photoMedia?.id,
           password,

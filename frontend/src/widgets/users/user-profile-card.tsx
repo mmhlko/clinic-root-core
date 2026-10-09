@@ -40,7 +40,9 @@ export function UserProfileCard({
 }: UserProfileCardProps) {
   const location = user.location
 
-  const fullName = `${user.firstName} ${user.lastName}`.trim();
+  const firstName = user.firstName ?? "";
+  const lastName = user.lastName ?? "";
+  const fullName = `${firstName} ${lastName}`.trim();
 
   return (
     <Card className="overflow-hidden">
@@ -52,7 +54,7 @@ export function UserProfileCard({
               alt={fullName}
             />
             <AvatarFallback className="rounded-xl text-xl font-semibold">
-              {getInitials(user.firstName, user.lastName)}
+              {getInitials(firstName, lastName)}
             </AvatarFallback>
           </Avatar>
 

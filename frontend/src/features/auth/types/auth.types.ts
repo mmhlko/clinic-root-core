@@ -13,7 +13,7 @@ export interface AuthUser {
   firstName: string | null;
   lastName: string | null;
   role: UserRole;
-  photoMedia?: MediaDbData;
+  photoMedia: MediaDbData | null;
 }
 
 export interface AuthResponse {

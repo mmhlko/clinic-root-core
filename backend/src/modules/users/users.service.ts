@@ -368,7 +368,16 @@ export class UsersService {
 	}
 
 	async findByEmail(email: string) {
-		return this.userModel.findOne({ where: { email } });
+		return this.userModel.findOne({
+			where: { email },
+			include: [
+				{
+					model: MediaModel,
+					as: 'photoMedia',
+					attributes: ['id', 'url'],
+				},
+			],
+		});
 	}
 
 	async updateRefreshToken(userId: string, refreshToken: string | null) {
