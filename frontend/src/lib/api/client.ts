@@ -27,6 +27,13 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
+  if (typeof window !== "undefined") {
+    const clinicSlug = window.location.pathname.split("/").filter(Boolean)[0];
+    if (clinicSlug && clinicSlug !== "admin") {
+      config.headers["X-Clinic-Slug"] = clinicSlug;
+    }
+  }
+
   return config;
 });
 

@@ -115,7 +115,8 @@ function getCrumbs(pathname: string): Crumb[] {
 }
 
 export function AdminBreadcrumbs() {
-  const pathname = usePathname();
+  const currentPathname = usePathname();
+  const pathname = currentPathname.replace(/^\/[^/]+(?=\/admin(?:\/|$))/, "");
   const crumbs = getCrumbs(pathname);
 
   return (

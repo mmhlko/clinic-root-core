@@ -81,7 +81,8 @@ function NavGroup({
 }
 
 export function NavMain({ items }: { items: SidebarItem[] }) {
-  const pathname = usePathname();
+  const currentPathname = usePathname();
+  const pathname = currentPathname.replace(/^\/[^/]+(?=\/admin(?:\/|$))/, "");
   const { isMobile, setOpenMobile } = useSidebar();
   const isPathActive = (href: string) =>
     pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`));
