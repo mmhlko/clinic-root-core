@@ -4,6 +4,7 @@ export interface ApiRequestOptions {
 	accessToken?: string;
 	cookie?: string;
 	contentType?: string;
+	clinicSlug?: string;
 }
 
 export class RootApi {
@@ -88,6 +89,9 @@ export class RootApi {
 				? { Authorization: `Bearer ${options.accessToken}` }
 				: {}),
 			...(options?.cookie ? { Cookie: options.cookie } : {}),
+			...(options?.clinicSlug
+				? { "X-Clinic-Slug": options.clinicSlug }
+				: {}),
 		};
 	}
 }

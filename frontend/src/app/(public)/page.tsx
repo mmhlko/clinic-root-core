@@ -11,7 +11,11 @@ import { publicServerApi } from "@/features/api/public-server-api";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+export default function Home() {
+  return <ClinicHome clinicSlug="demo" />;
+}
+
+export async function ClinicHome({ clinicSlug }: { clinicSlug: string }) {
   const [
     clinic,
     locations,
@@ -23,15 +27,15 @@ export default async function Home() {
     documents,
     faq,
   ] = await Promise.all([
-    publicServerApi.clinic(),
-    publicServerApi.locations(),
-    publicServerApi.directions(),
-    publicServerApi.services(),
-    publicServerApi.promotions(),
-    publicServerApi.reviews(),
-    publicServerApi.doctors(),
-    publicServerApi.documents(),
-    publicServerApi.faq(),
+    publicServerApi.clinic(clinicSlug),
+    publicServerApi.locations(clinicSlug),
+    publicServerApi.directions(clinicSlug),
+    publicServerApi.services(clinicSlug),
+    publicServerApi.promotions(clinicSlug),
+    publicServerApi.reviews(clinicSlug),
+    publicServerApi.doctors(clinicSlug),
+    publicServerApi.documents(clinicSlug),
+    publicServerApi.faq(clinicSlug),
   ]);
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -236,7 +240,7 @@ export default async function Home() {
               )}
             </div>
           </div>
-          <AppointmentRequestForm services={services} doctors={doctors} />
+          <AppointmentRequestForm services={services} doctors={doctors} clinicSlug={clinicSlug} />
         </div>
       </section>
       <section id="contacts" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
