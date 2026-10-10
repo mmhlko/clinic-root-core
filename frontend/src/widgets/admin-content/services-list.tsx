@@ -2,10 +2,11 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { ListIcon } from "lucide-react";
-import { PencilIcon, SaveIcon, Tag, XIcon } from "lucide-react";
+import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -29,8 +30,6 @@ import { ContentList } from "@/widgets/admin-content/content-list";
 import { ContentSheet } from "@/widgets/admin-content/content-sheet";
 import { contentClientApi } from "@/features/content/api/content-client-api";
 import type { Service, ServiceDirection } from "@/features/content/types/content.types";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { PromotionHoverCard } from "@/components/shared/promotion-hover-card";
 import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
 import { activityColorsStyles } from "@/shared/constants/colors";
@@ -56,6 +55,7 @@ export function ServicesList({
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const filterTabs = useMemo<ContentFilterTab<string>[]>(
     () => [
       {
@@ -80,6 +80,20 @@ export function ServicesList({
     [directions, items],
   );
 
+  const serviceGroups = useMemo(() => {
+    const orderedDirections = [...directions].sort((left, right) => left.sortOrder - right.sortOrder);
+    return orderedDirections
+      .filter((direction) => directionFilter === "all" || direction.id === directionFilter)
+      .map((direction) => ({
+        id: direction.id,
+        title: direction.name,
+        items: items
+          .filter((item) => item.directionId === direction.id)
+          .sort((left, right) => left.sortOrder - right.sortOrder),
+      }))
+      .filter((group) => group.items.length > 0 || directionFilter === group.id);
+  }, [directions, directionFilter, items]);
+
   function openSheet(nextMode: SheetMode, item: Service | null = null) {
     setSelected(item);
     setMode(nextMode);
@@ -100,9 +114,13 @@ export function ServicesList({
 
     setSaving(true);
     try {
-      const result = selected
+      const savedService = selected
         ? await contentClientApi.updateService(selected.id, body)
         : await contentClientApi.createService(body);
+      const result = {
+        ...savedService,
+        direction: directions.find((direction) => direction.id === savedService.directionId) ?? null,
+      };
       setItems((current) =>
         selected
           ? current.map((item) => (item.id === result.id ? result : item))
@@ -182,52 +200,67 @@ export function ServicesList({
 
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <ContentFilterTabs
         value={directionFilter}
         onValueChange={setDirectionFilter}
         items={filterTabs}
       />
-      <ContentList
-        title="Услуги"
-        items={items}
-        filter={(item) =>
-          directionFilter === "all" ||
-          (directionFilter === UNASSIGNED_DIRECTION
-            ? !item.direction
-            : item.direction?.id === directionFilter)
-        }
-        disableReorder={directionFilter !== "all"}
-        setItems={setItems}
-        getId={(item) => item.id}
-        getSearchText={(item) =>
-          `${item.name} ${item.description ?? ""} ${item.direction?.name ?? ""}`
-        }
-        reorder={(ids) => contentClientApi.reorderServices(ids)}
-        onReorderError={() =>
-          toast.add({
-            type: "error",
-            description: "Не удалось сохранить порядок услуг.",
-          })
-        }
-        onAdd={() => openSheet("create")}
-        onItemClick={(item) => openSheet("view", item)}
-        columnCount={6}
-        emptyMessage="Услуг пока нет."
-        renderHeader={() => (
-          <TableRow>
-            <TableHead className="w-10 px-2">
-              <span className="sr-only">Перемещение</span>
-            </TableHead>
-            <TableHead>Услуга</TableHead>
-            <TableHead>Направление</TableHead>
-            <TableHead>Цена</TableHead>
-            <TableHead>Акция</TableHead>
-            <TableHead>Видимость</TableHead>
-            <TableHead className="w-12 text-right" />
-          </TableRow>
-        )}
-        renderCells={(item, dragHandle) => (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Поиск услуг…"
+          className="sm:max-w-sm"
+        />
+        <Button onClick={() => openSheet("create")}>Добавить услугу</Button>
+      </div>
+      {serviceGroups.map((group) => (
+        <section key={group.id} className="space-y-2">
+          <h2 className="text-lg font-semibold">{group.title}</h2>
+          <ContentList
+            title={group.title}
+            items={group.items}
+            showToolbar={false}
+            searchValue={query}
+            setItems={(update) => setItems((current) => {
+              const currentGroup = current.filter((item) => item.directionId === group.id);
+              const nextGroup = typeof update === "function" ? update(currentGroup) : update;
+              const nextIds = new Set(nextGroup.map((item) => item.id));
+              return [
+                ...current.filter((item) => item.directionId !== group.id && !nextIds.has(item.id)),
+                ...nextGroup.map((item, index) => ({ ...item, sortOrder: index })),
+              ];
+            })}
+            getId={(item) => item.id}
+            getSearchText={(item) =>
+              `${item.name} ${item.description ?? ""} ${item.direction?.name ?? ""}`
+            }
+            reorder={(ids) => contentClientApi.reorderServices(group.id, ids)}
+            onReorderError={() =>
+              toast.add({
+                type: "error",
+                description: "Не удалось сохранить порядок услуг.",
+              })
+            }
+            onAdd={() => openSheet("create")}
+            onItemClick={(item) => openSheet("view", item)}
+            columnCount={6}
+            emptyMessage="Услуг пока нет."
+            renderHeader={() => (
+              <TableRow>
+                <TableHead className="w-10 px-2">
+                  <span className="sr-only">Перемещение</span>
+                </TableHead>
+                <TableHead>Услуга</TableHead>
+                <TableHead>Направление</TableHead>
+                <TableHead>Цена</TableHead>
+                <TableHead>Акция</TableHead>
+                <TableHead>Видимость</TableHead>
+                <TableHead className="w-12 text-right" />
+              </TableRow>
+            )}
+            renderCells={(item, dragHandle) => (
           <>
             <TableCell className="w-10 px-2">{dragHandle}</TableCell>
             <TableCell>
@@ -260,7 +293,7 @@ export function ServicesList({
             <TableCell className="text-right">{actionMenu(item)}</TableCell>
           </>
         )}
-        renderCard={(item, dragHandle) => (
+            renderCard={(item, dragHandle) => (
           <SortableCard
             item={item}
             dragHandle={dragHandle}
@@ -292,7 +325,9 @@ export function ServicesList({
             </button>
           </SortableCard>
         )}
-      />
+          />
+        </section>
+      ))}
 
       <ContentSheet
         open={open}

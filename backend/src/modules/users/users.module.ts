@@ -4,12 +4,15 @@ import { UsersController } from './users.controller.js';
 import { UserModel } from './user.model.js';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 import { MediaModule } from '../media/media.module.js';
+import { ClinicTenantModule } from '../clinic/tenant/clinic-tenant.module.js';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([UserModel, ClinicLocationModel]),
+    SequelizeModule.forFeature([UserModel, ClinicLocationModel, ClinicModel]),
     MediaModule,
+    ClinicTenantModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],

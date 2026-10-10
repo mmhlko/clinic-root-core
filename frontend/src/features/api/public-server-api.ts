@@ -17,32 +17,32 @@ class PublicServerApi extends RootApi {
   constructor() {
     super(serverApiClient);
   }
-  clinic() {
-    return this.requestGet<Clinic>("/clinic");
+  clinic(clinicSlug = "demo") {
+    return this.requestGet<Clinic>("/clinic", { clinicSlug });
   }
-  locations() {
-    return this.requestGet<ClinicLocation[]>("/clinic/locations");
+  locations(clinicSlug = "demo") {
+    return this.requestGet<ClinicLocation[]>("/clinic/locations", { clinicSlug });
   }
-  directions() {
-    return this.requestGet<ServiceDirection[]>("/service-directions");
+  directions(clinicSlug = "demo") {
+    return this.requestGet<ServiceDirection[]>("/service-directions", { clinicSlug });
   }
-  services() {
-    return this.requestGet<Service[]>("/services");
+  services(clinicSlug = "demo") {
+    return this.requestGet<Service[]>("/services", { clinicSlug });
   }
-  promotions() {
-    return this.requestGet<Promotion[]>("/promotions");
+  promotions(clinicSlug = "demo") {
+    return this.requestGet<Promotion[]>("/promotions", { clinicSlug });
   }
-  reviews() {
-    return this.requestGet<Review[]>("/reviews");
+  reviews(clinicSlug = "demo") {
+    return this.requestGet<Review[]>("/reviews", { clinicSlug });
   }
-  doctors() {
-    return this.requestGet<DoctorListItem[]>("/doctors");
+  doctors(clinicSlug = "demo") {
+    return this.requestGet<DoctorListItem[]>("/doctors", { clinicSlug });
   }
-  documents() {
-    return this.requestGet<DocumentItem[]>("/documents");
+  documents(clinicSlug = "demo") {
+    return this.requestGet<DocumentItem[]>("/documents", { clinicSlug });
   }
-  faq() {
-    return this.requestGet<FaqItem[]>("/faq");
+  faq(clinicSlug = "demo") {
+    return this.requestGet<FaqItem[]>("/faq", { clinicSlug });
   }
 }
 export const publicServerApi = new PublicServerApi();

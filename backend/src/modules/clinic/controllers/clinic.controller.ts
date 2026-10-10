@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Patch,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -11,12 +12,17 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 
-import { CreateClinicDto } from '../dto/create-clinic.dto.js';
 import { UpdateClinicDto } from '../dto/update-clinic.dto.js';
 import { ClinicService } from '../services/clinic.service.js';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { UserRole } from '../../users/user-role.enum.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
+import { SkipClinicTenantContext } from '../tenant/skip-clinic-tenant.decorator.js';
+import { CreateTenantClinicDto } from '../dto/create-tenant-clinic.dto.js';
+import { UpdatePlatformClinicDto } from '../dto/update-platform-clinic.dto.js';
+import { ClinicImportDto } from '../import/clinic-import.dto.js';
+import { ClinicImportService } from '../import/clinic-import.service.js';
+import { validateClinicImportPayload } from '../import/clinic-import.validation.js';
 
 
 
@@ -26,12 +32,48 @@ export class ClinicController {
   constructor(
     private readonly clinicService:
       ClinicService,
+    private readonly clinicImportService: ClinicImportService,
   ) {}
+
+  @Post('import/preview')
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async previewImport(@Body() payload: unknown) {
+    const dto: ClinicImportDto = await validateClinicImportPayload(payload);
+    return this.clinicImportService.preview(dto);
+  }
+
+  @Post('import')
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async import(@Body() payload: unknown) {
+    const dto: ClinicImportDto = await validateClinicImportPayload(payload);
+    return this.clinicImportService.import(dto);
+  }
 
   // Публичные данные клиники
   @Get()
   async findPublic() {
     return this.clinicService.findPublic();
+  }
+
+  @Get('root')
+  @SkipClinicTenantContext()
+  @Roles(UserRole.ROOT)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async findAllForPlatform() {
+    return this.clinicService.findAllForPlatform();
+  }
+
+  @Patch('root/:id')
+  @SkipClinicTenantContext()
+  @Roles(UserRole.ROOT)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async updateForPlatform(
+    @Param('id') id: string,
+    @Body() dto: UpdatePlatformClinicDto,
+  ) {
+    return this.clinicService.updateForPlatform(id, dto);
   }
 
   // Все данные для админки
@@ -51,6 +93,7 @@ export class ClinicController {
 
   // Создание клиники
   @Post()
+  @SkipClinicTenantContext()
   @Roles(
     UserRole.ROOT,
   )
@@ -59,9 +102,9 @@ export class ClinicController {
     RolesGuard,
   )
   async create(
-    @Body() dto: CreateClinicDto,
+    @Body() dto: CreateTenantClinicDto,
   ) {
-    return this.clinicService.create(dto);
+    return this.clinicService.createPlatformClinic(dto);
   }
 
   // Изменение клиники

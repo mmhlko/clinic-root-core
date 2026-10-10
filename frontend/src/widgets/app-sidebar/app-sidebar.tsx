@@ -11,6 +11,8 @@ import {
   Settings,
   Stethoscope,
   Users,
+  Building2,
+  ArrowLeftIcon,
 } from "lucide-react";
 
 import {
@@ -34,6 +36,12 @@ import Link from "next/link";
 
 
 const navItems: SidebarItem[] = [
+  {
+    title: "Клиники",
+    href: "/admin/clinics",
+    icon: Building2,
+    roles: ["root"] as const,
+  },
   {
     title: "Дашборд",
     href: "/admin",
@@ -125,6 +133,14 @@ function filterVisibleItems(
     .filter((item) => item.href || item.items?.length);
 }
 
+function scopeItemsToClinic(items: SidebarItem[], clinicSlug: string): SidebarItem[] {
+  return items.map((item) => ({
+    ...item,
+    href: item.href ? `/${encodeURIComponent(clinicSlug)}${item.href}` : undefined,
+    items: item.items ? scopeItemsToClinic(item.items, clinicSlug) : undefined,
+  }));
+}
+
 export function AppSidebar({
   user,
   clinic,
@@ -133,22 +149,41 @@ export function AppSidebar({
   const router = useRouter();
   const { logout, user: authUser } = useAuth();
   const currentUser = authUser ?? user;
-  const visibleNavItems = filterVisibleItems(navItems, currentUser.role);
+  const contextualNavItems = clinic.isSystemDemo
+    ? navItems
+    : navItems.filter((item) => item.href !== "/admin/clinics");
+  const visibleNavItems = scopeItemsToClinic(
+    filterVisibleItems(contextualNavItems, currentUser.role),
+    clinic.slug,
+  );
   const handleLogout = async () => {
     await logout().catch(() => undefined);
-    router.replace("/admin/login");
+    router.replace(`/${encodeURIComponent(clinic.slug)}/admin/login`);
   };
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
+          {currentUser.role === "root" && !clinic.isSystemDemo && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Вернуться в платформу"
+                render={
+                  <Link href="/demo/admin">
+                    <ArrowLeftIcon />
+                    <span>В платформу</span>
+                  </Link>
+                }
+              />
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               render={
-                <Link href="/admin">
+                <Link href={`/${encodeURIComponent(clinic.slug)}/admin`}>
                   <Stethoscope className="size-5!" />
-                  <span className="text-base font-semibold">{clinic.name}</span>
+                  <span className="text-base font-semibold text-wrap capitalize">{clinic.slug}</span>
                 </Link>
               }
             ></SidebarMenuButton>

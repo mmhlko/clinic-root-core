@@ -3,10 +3,14 @@ import {
   Column,
   Model,
   DataType,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
+import { ClinicModel } from './clinic.model.js';
 
 export interface ClinicFeatureCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   title: string;
   description?: string | null;
   imageUrl?: string | null;
@@ -28,6 +32,13 @@ export class ClinicFeatureModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

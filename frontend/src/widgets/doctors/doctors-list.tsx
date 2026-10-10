@@ -13,6 +13,7 @@ import { PersonIdentity } from "@/components/shared/person-identity";
 import { toast } from "@/components/ui/toast";
 import { getImageUrl } from "@/shared/helpers/getImageUrl";
 import { useReorder } from "@/shared/hooks/use-reorder";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 import { SortableCard } from "@/components/shared/sortable-list/sortable-card";
 import { ContentActionsMenu } from "../admin-content/content-actions-menu";
 import { useRouter } from "next/navigation";
@@ -32,6 +33,7 @@ interface DoctorsListProps {
 
 export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
   const router = useRouter();
+  const clinicAdminPath = useClinicAdminPath();
   const [doctors, setDoctors] = useState(initialDoctors);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<DoctorFilter>("all");
@@ -137,7 +139,7 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
           {
             label: "Редактировать",
             onSelect: (doctor) =>
-              router.push(`/admin/doctors/${doctor.id}/edit`),
+              router.push(clinicAdminPath(`/admin/doctors/${doctor.id}/edit`)),
           },
           {
             label: "Удалить",
@@ -174,9 +176,9 @@ export function DoctorsList({ doctors: initialDoctors }: DoctorsListProps) {
         getSearchText={(doctor) =>
           `${doctor.firstName} ${doctor.lastName} ${doctor.specialization}`
         }
-        onAdd={() => router.push("/admin/doctors/new")}
+        onAdd={() => router.push(clinicAdminPath("/admin/doctors/new"))}
         onItemClick={(doctor) =>
-          router.push(`/admin/doctors/${doctor.id}/edit`)
+          router.push(clinicAdminPath(`/admin/doctors/${doctor.id}/edit`))
         }
         columnCount={3}
         emptyMessage="Врачей пока нет. Добавьте нового врача, чтобы он появился в списке."

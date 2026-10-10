@@ -8,9 +8,11 @@ import {
 } from 'sequelize-typescript';
 import { DoctorEducationType } from './types/doctor-education-type.enum.js';
 import { DoctorModel } from './doctor.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface DoctorEducationCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   doctorId: string;
   type: DoctorEducationType;
   title: string;
@@ -33,6 +35,13 @@ export class DoctorEducationModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @ForeignKey(() => DoctorModel)
   @Column({

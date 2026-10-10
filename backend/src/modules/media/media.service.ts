@@ -21,14 +21,17 @@ import {
 } from 'path';
 
 import { randomUUID } from 'crypto';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 
-import { Op, type Transaction } from 'sequelize';
+import { Op, type FindOptions, type Transaction } from 'sequelize';
 
 import {
   MediaModel,
   MediaStatus,
 } from './media.model.js';
 import { Cron } from '@nestjs/schedule';
+import { ClinicTenantContextStore } from '../clinic/tenant/tenant-context.store.js';
 import {
   validateMediaUploadContent,
   type MediaUploadType,
@@ -55,6 +58,7 @@ export class MediaService {
   constructor(
     @InjectModel(MediaModel)
     private readonly mediaModel: typeof MediaModel,
+    private readonly tenantContext: ClinicTenantContextStore,
   ) {
     this.ensureDirectory(this.imagesDir);
     this.ensureDirectory(this.filesDir);
@@ -115,20 +119,20 @@ export class MediaService {
     };
   }
 
-  private getDirectory(
-    type: MediaType,
-  ) {
-    return type === 'image'
-      ? this.imagesDir
-      : this.filesDir;
+  private getDirectory(type: MediaType, clinicSlug?: string) {
+    const root = type === 'image' ? this.imagesDir : this.filesDir;
+    if (!clinicSlug) return root;
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(clinicSlug)) {
+      throw new BadRequestException('Invalid clinic slug for media path');
+    }
+    const directory = join(root, clinicSlug);
+    this.ensureDirectory(directory);
+    return directory;
   }
 
-  private getUrlPrefix(
-    type: MediaType,
-  ) {
-    return type === 'image'
-      ? '/uploads/images'
-      : '/uploads/files';
+  private getUrlPrefix(type: MediaType, clinicSlug?: string) {
+    const root = type === 'image' ? '/uploads/images' : '/uploads/files';
+    return clinicSlug ? `${root}/${clinicSlug}` : root;
   }
 
   private getMediaTypeFromUrl(
@@ -163,11 +167,11 @@ export class MediaService {
 
     await validateMediaUploadContent(file, type);
 
-    const directory =
-      this.getDirectory(type);
+    const clinicSlug = this.tenantContext.require().clinicSlug;
+    const directory = this.getDirectory(type, clinicSlug);
 
     const urlPrefix =
-      this.getUrlPrefix(type);
+      this.getUrlPrefix(type, clinicSlug);
 
     const savedFile =
       this.saveFile(
@@ -241,6 +245,173 @@ export class MediaService {
     );
   }
 
+  async saveImportedImage(sourceUrl: string, transaction?: Transaction) {
+    const context = this.tenantContext.require();
+    const downloaded = await this.downloadPublicResource(sourceUrl, 'image');
+    const extension = this.extensionForMime(downloaded.mimeType);
+    const file = {
+      fieldname: 'file',
+      originalname: `imported${extension}`,
+      encoding: '7bit',
+      mimetype: downloaded.mimeType,
+      size: downloaded.buffer.length,
+      buffer: downloaded.buffer,
+      destination: '',
+      filename: '',
+      path: '',
+      stream: undefined as never,
+    } satisfies Express.Multer.File;
+    await validateMediaUploadContent(file, 'image');
+    const directory = this.getDirectory('image', context.clinicSlug);
+    const saved = this.saveFile(file, directory);
+    const url = `${this.getUrlPrefix('image', context.clinicSlug)}/${saved.filename}`;
+    try {
+      const media = await this.mediaModel.create({
+        clinicId: context.clinicId,
+        filename: saved.filename,
+        url,
+        mimeType: saved.mimeType,
+        size: saved.size,
+        status: MediaStatus.ATTACHED,
+      }, { transaction });
+      return { id: media.id, url: media.url };
+    } catch (error) {
+      const filepath = join(directory, saved.filename);
+      if (existsSync(filepath)) unlinkSync(filepath);
+      throw error;
+    }
+  }
+
+  async saveImportedDocument(sourceUrl: string, transaction?: Transaction) {
+    const context = this.tenantContext.require();
+    const downloaded = await this.downloadPublicResource(sourceUrl, 'document');
+    const extension = this.extensionForMime(downloaded.mimeType);
+    const file = {
+      fieldname: 'file', originalname: `imported${extension}`, encoding: '7bit',
+      mimetype: downloaded.mimeType, size: downloaded.buffer.length, buffer: downloaded.buffer,
+      destination: '', filename: '', path: '', stream: undefined as never,
+    } satisfies Express.Multer.File;
+    await validateMediaUploadContent(file, 'document');
+    const directory = this.getDirectory('document', context.clinicSlug);
+    const saved = this.saveFile(file, directory);
+    const url = `${this.getUrlPrefix('document', context.clinicSlug)}/${saved.filename}`;
+    try {
+      const media = await this.mediaModel.create({
+        clinicId: context.clinicId, filename: saved.filename, url,
+        mimeType: saved.mimeType, size: saved.size, status: MediaStatus.ATTACHED,
+      }, { transaction });
+      return { id: media.id, url: media.url, filename: saved.filename, fileType: extension.slice(1) };
+    } catch (error) {
+      const filepath = join(directory, saved.filename);
+      if (existsSync(filepath)) unlinkSync(filepath);
+      throw error;
+    }
+  }
+
+  private extensionForMime(mimeType: string) {
+    const extensions: Record<string, string> = {
+      'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+      'application/pdf': '.pdf', 'application/msword': '.doc',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+    };
+    const extension = extensions[mimeType];
+    if (!extension) throw new BadRequestException('Unsupported imported file type');
+    return extension;
+  }
+
+  private async downloadPublicResource(source: string, type: MediaType) {
+    let current = source;
+    const allowedMimeTypes = type === 'image'
+      ? ['image/jpeg', 'image/png', 'image/webp']
+      : ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const maxSize = type === 'image' ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+    for (let redirect = 0; redirect <= 3; redirect += 1) {
+      const url = this.assertPublicHttpsUrl(current);
+      await this.assertPublicHost(url.hostname);
+      const response = await fetch(url, {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(8_000),
+        headers: { Accept: allowedMimeTypes.join(',') },
+      });
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location || redirect === 3) throw new BadRequestException('Image URL redirected too many times');
+        current = new URL(location, url).toString();
+        continue;
+      }
+      if (!response.ok) throw new BadRequestException(`Image download failed (${response.status})`);
+      const mimeType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
+      if (!allowedMimeTypes.includes(mimeType ?? '')) {
+        throw new BadRequestException(type === 'image'
+          ? 'Imported image must be JPEG, PNG, or WebP'
+          : 'Imported document must be PDF, DOC, or DOCX');
+      }
+      const declaredSize = Number(response.headers.get('content-length') ?? 0);
+      if (declaredSize > maxSize) throw new BadRequestException(`Imported ${type} exceeds the size limit`);
+      if (!response.body) throw new BadRequestException('Image response is empty');
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          size += value.byteLength;
+          if (size > maxSize) {
+            await reader.cancel();
+            throw new BadRequestException(`Imported ${type} exceeds the size limit`);
+          }
+          chunks.push(value);
+        }
+      }
+      return { buffer: Buffer.concat(chunks), mimeType: mimeType! };
+    }
+    throw new BadRequestException('Image download failed');
+  }
+
+  removeImportedFileAfterRollback(url: string) {
+    const type = this.getMediaTypeFromUrl(url);
+    const prefix = type === 'image' ? '/uploads/images/' : '/uploads/files/';
+    const parts = url.startsWith(prefix) ? url.slice(prefix.length).split('/') : [];
+    if (parts.length !== 2 || parts.some((part) => !part || part === '.' || part === '..')) return;
+    const directory = this.getDirectory(type, parts[0]);
+    const filename = basename(parts[1]);
+    if (filename !== parts[1]) return;
+    const filepath = join(directory, filename);
+    if (existsSync(filepath)) unlinkSync(filepath);
+  }
+
+  private assertPublicHttpsUrl(value: string) {
+    let url: URL;
+    try { url = new URL(value); } catch { throw new BadRequestException('Invalid image URL'); }
+    if (url.protocol !== 'https:' || url.username || url.password) {
+      throw new BadRequestException('Imported image URL must use HTTPS');
+    }
+    return url;
+  }
+
+  private async assertPublicHost(hostname: string) {
+    const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local')) {
+      throw new BadRequestException('Private image host is not allowed');
+    }
+    const addresses = isIP(host) ? [{ address: host }] : await lookup(host, { all: true, verbatim: true });
+    if (addresses.length === 0 || addresses.some(({ address }) => !this.isPublicIp(address))) {
+      throw new BadRequestException('Private image host is not allowed');
+    }
+  }
+
+  private isPublicIp(address: string) {
+    if (isIP(address) === 4) {
+      const [a, b] = address.split('.').map(Number);
+      return !(a === 0 || a === 10 || a === 127 || a >= 224 || (a === 169 && b === 254) ||
+        (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
+        (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19)));
+    }
+    const normalized = address.toLowerCase();
+    return normalized.startsWith('2') || normalized.startsWith('3');
+  }
+
   async findById(
     id: string,
     transaction?: Transaction,
@@ -291,12 +462,14 @@ export class MediaService {
       return false;
     }
 
-    const media = await this.mediaModel.findOne({
+    const publicUploadOptions: FindOptions<MediaModel> & { hooks: false } = {
       where: {
         filename: safeFilename,
         // status: MediaStatus.ATTACHED,
       },
-    });
+      hooks: false,
+    };
+    const media = await this.mediaModel.findOne(publicUploadOptions);
 
     return Boolean(media);
   }
@@ -380,14 +553,21 @@ export class MediaService {
 
   async delete(
     media: MediaModel,
+    skipTenantScope = false,
   ) {
     const type =
       this.getMediaTypeFromUrl(
         media.url,
       );
 
-    const directory =
-      this.getDirectory(type);
+    const urlPrefix = type === 'image' ? '/uploads/images/' : '/uploads/files/';
+    const relativePath = media.url.startsWith(urlPrefix) ? media.url.slice(urlPrefix.length) : '';
+    const parts = relativePath.split('/');
+    if (parts.length > 2 || parts.some((part) => !part || part === '.' || part === '..')) {
+      throw new BadRequestException('Invalid media URL');
+    }
+    const clinicSlug = parts.length === 2 ? parts[0] : undefined;
+    const directory = this.getDirectory(type, clinicSlug);
 
     const safeFilename =
       basename(media.filename);
@@ -398,6 +578,9 @@ export class MediaService {
       throw new BadRequestException(
         'Invalid filename',
       );
+    }
+    if (parts.at(-1) !== safeFilename) {
+      throw new BadRequestException('Media URL and filename do not match');
     }
 
     const filepath =
@@ -415,7 +598,7 @@ export class MediaService {
       unlinkSync(filepath);
     }
 
-    await media.destroy();
+    await media.destroy({ hooks: !skipTenantScope });
   }
 
   async removeImage(
@@ -432,23 +615,12 @@ export class MediaService {
       );
     }
 
-    const filepath =
-      join(
-        this.imagesDir,
-        safeFilename,
-      );
-
-    if (!existsSync(filepath)) {
-      throw new NotFoundException(
-        'Image not found',
-      );
-    }
-
-    unlinkSync(filepath);
-
-    return {
-      message: 'Image deleted',
-    };
+    const media = await this.mediaModel.findOne({
+      where: { filename: safeFilename, url: { [Op.like]: '/uploads/images/%' } },
+    });
+    if (!media) throw new NotFoundException('Image not found');
+    await this.delete(media);
+    return { message: 'Image deleted' };
   }
 
   async removeFile(
@@ -465,23 +637,12 @@ export class MediaService {
       );
     }
 
-    const filepath =
-      join(
-        this.filesDir,
-        safeFilename,
-      );
-
-    if (!existsSync(filepath)) {
-      throw new NotFoundException(
-        'File not found',
-      );
-    }
-
-    unlinkSync(filepath);
-
-    return {
-      message: 'File deleted',
-    };
+    const media = await this.mediaModel.findOne({
+      where: { filename: safeFilename, url: { [Op.like]: '/uploads/files/%' } },
+    });
+    if (!media) throw new NotFoundException('File not found');
+    await this.delete(media);
+    return { message: 'File deleted' };
   }
 
   async deleteTemporary(id: string) {
@@ -511,14 +672,16 @@ export class MediaService {
       Date.now() - ttlHours * 60 * 60 * 1000,
     );
 
-    const temporaryMedia = await this.mediaModel.findAll({
+    const cleanupOptions: FindOptions<MediaModel> & { hooks: false } = {
       where: {
         status: MediaStatus.TEMPORARY,
         createdAt: {
           [Op.lt]: cutoff,
         },
       },
-    });
+      hooks: false,
+    };
+    const temporaryMedia = await this.mediaModel.findAll(cleanupOptions);
 
     if (temporaryMedia.length === 0) {
       return;
@@ -530,7 +693,7 @@ export class MediaService {
 
     for (const media of temporaryMedia) {
       try {
-        await this.delete(media);
+        await this.delete(media, true);
 
         this.logger.log(
           `Deleted temporary media: ${media.id} (${media.filename})`,

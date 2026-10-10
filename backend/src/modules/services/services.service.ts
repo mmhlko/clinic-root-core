@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -69,7 +70,7 @@ export class ServicesService {
       description: dto.description ?? null,
       price: dto.price ?? null,
       isPriceFrom: dto.isPriceFrom ?? false,
-      sortOrder: dto.sortOrder ?? 0,
+      sortOrder: await this.nextSortOrder(dto.directionId),
     });
   }
 
@@ -78,7 +79,10 @@ export class ServicesService {
       where: onlyActive
         ? { isActive: true }
         : undefined,
-      order: [['sortOrder', 'ASC']],
+      order: [
+        [{ model: ServiceDirectionModel, as: 'direction' }, 'sortOrder', 'ASC'],
+        ['sortOrder', 'ASC'],
+      ],
       include: [
         {
           model: ServiceDirectionModel,
@@ -118,7 +122,10 @@ export class ServicesService {
         );
       }
 
-      service.directionId = dto.directionId;
+      if (service.directionId !== dto.directionId) {
+        service.directionId = dto.directionId;
+        service.sortOrder = await this.nextSortOrder(dto.directionId);
+      }
     }
 
     if (dto.name !== undefined) {
@@ -285,11 +292,28 @@ export class ServicesService {
     }
   }
 
-  async reorderServices(serviceIds: string[]) {
+  private async nextSortOrder(directionId: string) {
+    const lastService = await this.serviceModel.findOne({
+      where: { directionId },
+      order: [['sortOrder', 'DESC']],
+    });
+    return (lastService?.sortOrder ?? -1) + 1;
+  }
+
+  async reorderServices(directionId: string, serviceIds: string[]) {
     return this.sequelize.transaction(async (transaction) => {
+      const directionServiceCount = await this.serviceModel.count({
+        where: { directionId },
+        transaction,
+      });
+      if (directionServiceCount !== serviceIds.length) {
+        throw new BadRequestException('Reorder must include every service in the direction');
+      }
+
       const services = await this.serviceModel.findAll({
         where: {
           id: serviceIds,
+          directionId,
         },
 
         transaction,

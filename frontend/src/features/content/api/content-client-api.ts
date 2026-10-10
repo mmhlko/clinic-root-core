@@ -15,12 +15,30 @@ import type {
   ClinicStatistic,
   AdminUserCreateData,
   AdminUserUpdateData,
+  CreateTenantClinicRequest,
+  CreatedTenantClinic,
+  ClinicStatus,
 } from "../types/content.types";
 import apiClient from "@/lib/api/client";
 
 class ContentClientApi extends RootApi {
   constructor() {
     super(apiClient);
+  }
+  platformClinics() {
+    return this.requestGet<Clinic[]>("/clinic/root");
+  }
+  createPlatformClinic(body: CreateTenantClinicRequest) {
+    return this.requestPost<CreatedTenantClinic, CreateTenantClinicRequest>("/clinic", body);
+  }
+  updatePlatformClinic(id: string, body: { slug?: string; status?: ClinicStatus }) {
+    return this.requestPatch<Clinic>(`/clinic/root/${id}`, body);
+  }
+  previewClinicImport(body: unknown, clinicSlug: string) {
+    return this.requestPost<ClinicImportPreview, unknown>("/clinic/import/preview", body, { clinicSlug, timeout: 30_000 });
+  }
+  runClinicImport(body: unknown, clinicSlug: string) {
+    return this.requestPost<ClinicImportResult, unknown>("/clinic/import", body, { clinicSlug, timeout: 180_000 });
   }
   createDirection(body: {
     name: string;
@@ -41,8 +59,8 @@ class ContentClientApi extends RootApi {
   createService(body: Partial<Service>) {
     return this.requestPost<Service>("/services", body);
   }
-  reorderServices(ids: string[]) {
-    return this.requestPatch<{ success: boolean }>("/services/reorder", { ids });
+  reorderServices(directionId: string, ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/services/reorder", { directionId, ids });
   }
   updateService(id: string, body: Partial<Service>) {
     return this.requestPatch<Service>(`/services/${id}`, body);
@@ -175,3 +193,22 @@ class ContentClientApi extends RootApi {
   }
 }
 export const contentClientApi = new ContentClientApi();
+
+export interface ClinicImportPreview {
+  schemaVersion: number;
+  clinicSlug: string;
+  entities: Record<string, number>;
+  changes: {
+    created: Record<string, number>;
+    updated: Record<string, number>;
+  };
+  policy: "upsert-keep-missing";
+}
+
+export interface ClinicImportResult {
+  clinicSlug: string;
+  clinic: "updated";
+  mediaDownloaded: number;
+  created: Record<string, number>;
+  updated: Record<string, number>;
+}

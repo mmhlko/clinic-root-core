@@ -31,7 +31,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmailWithClinic(dto.email);
 
     if (!user) {
       throw new UnauthorizedException('User not found or incorrect password');
@@ -46,7 +46,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const tokens = await this.getTokens(user.id, user.email, user.role);
+    const tokens = await this.getTokens(user.id, user.email, user.role, user.clinicId);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
     return {
       user: {
@@ -55,6 +55,8 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        clinicId: user.clinicId,
+        clinicSlug: user.clinic?.slug ?? null,
         photoMedia: user.photoMedia,
       },
       ...tokens,
@@ -64,7 +66,7 @@ export class AuthService {
   async getSessionFromRefreshToken(userId: string, refreshToken: string) {
     const user = await this.getUserFromValidRefreshToken(userId, refreshToken);
     const accessToken = await this.jwtService.signAsync(
-      { sub: user.id, email: user.email, role: user.role },
+      { sub: user.id, email: user.email, role: user.role, clinicId: user.clinicId },
       {
         secret: this.jwtAccessSecret,
         expiresIn: this.jwtAccessExpire,
@@ -78,6 +80,8 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        clinicId: user.clinicId,
+        clinicSlug: user.clinic?.slug ?? null,
         photoMedia: user.photoMedia,
       },
       accessToken,
@@ -91,6 +95,7 @@ export class AuthService {
       user.id,
       user.email,
       user.role,
+      user.clinicId,
     );
 
     await this.updateRefreshToken(
@@ -106,6 +111,8 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        clinicId: user.clinicId,
+        clinicSlug: user.clinic?.slug ?? null,
         photoMedia: user.photoMedia,
       },
     };
@@ -122,7 +129,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ) {
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findByIdWithClinic(userId);
 
     if (!user.isActive) {
       throw new ForbiddenException('User account is inactive');
@@ -150,8 +157,13 @@ export class AuthService {
     return this.usersService.updateRefreshToken(userId, hash);
   }
 
-  private async getTokens(userId: string, email: string, role: UserRole) {
-    const payload = { sub: userId, email, role };
+  private async getTokens(
+    userId: string,
+    email: string,
+    role: UserRole,
+    clinicId: string | null,
+  ) {
+    const payload = { sub: userId, email, role, clinicId };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         payload,

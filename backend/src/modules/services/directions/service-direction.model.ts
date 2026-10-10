@@ -4,11 +4,15 @@ import {
   Model,
   DataType,
   HasMany,
+  ForeignKey,
+  BelongsTo,
 } from 'sequelize-typescript';
 import { DoctorDirectionModel } from '../../doctors/doctor-direction.model.js';
+import { ClinicModel } from '../../clinic/models/clinic.model.js';
 
 export interface ServiceDirectionCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   name: string;
   description?: string | null;
   sortOrder?: number;
@@ -17,6 +21,7 @@ export interface ServiceDirectionCreationAttributes {
 
 @Table({
   tableName: 'service_directions',
+  indexes: [{ name: 'service_directions_clinicId_name_unique', unique: true, fields: ['clinicId', 'name'] }],
 })
 export class ServiceDirectionModel extends Model<
   ServiceDirectionModel,
@@ -32,7 +37,6 @@ export class ServiceDirectionModel extends Model<
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    unique: true,
   })
   declare name: string;
 
@@ -58,4 +62,11 @@ export class ServiceDirectionModel extends Model<
 
   @HasMany(() => DoctorDirectionModel)
   declare doctors: DoctorDirectionModel[];
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 }

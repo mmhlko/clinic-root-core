@@ -28,6 +28,7 @@ interface AuthUser {
   sub: string;
   email: string;
   role: UserRole;
+  clinicId: string | null;
 }
 
 interface AuthRequest extends Request {
@@ -112,7 +113,7 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ) {
     const currentUser = req.user;
-    const targetUser = await this.usersService.findById(id);
+    const targetUser = await this.usersService.findByIdInCurrentClinic(id);
 
     // ROOT может редактировать любого
     if (currentUser.role === UserRole.ROOT) {
@@ -164,7 +165,7 @@ export class UsersController {
     @Body('isActive', ParseBoolPipe) isActive: boolean,
   ) {
     const currentUser = req.user;
-    const targetUser = await this.usersService.findById(id);
+    const targetUser = await this.usersService.findByIdInCurrentClinic(id);
 
     if (currentUser.sub === targetUser.id) {
       throw new ForbiddenException(
@@ -201,7 +202,7 @@ export class UsersController {
     @Param('id') id: string,
   ) {
     const currentUser = req.user;
-    const targetUser = await this.usersService.findById(id);
+    const targetUser = await this.usersService.findByIdInCurrentClinic(id);
 
     if (currentUser.sub === targetUser.id) {
       throw new ForbiddenException('User cannot delete themselves');

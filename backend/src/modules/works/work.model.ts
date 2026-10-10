@@ -8,9 +8,11 @@ import {
 } from 'sequelize-typescript';
 
 import { ServiceModel } from '../services/service.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface WorkCreationAttributes {
   id?: string;
+  clinicId?: string | null;
 
   title: string;
   description?: string | null;
@@ -37,6 +39,13 @@ export class WorkModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

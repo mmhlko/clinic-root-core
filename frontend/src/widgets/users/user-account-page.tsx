@@ -12,6 +12,7 @@ import { UserPasswordReset } from "./user-password-reset";
 import { UserProfileCard } from "./user-profile-card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 interface UserAccountPageProps {
   user: AdminUser;
@@ -24,6 +25,7 @@ export function UserAccountPage({
   isOwnProfile,
   canEdit,
 }: UserAccountPageProps) {
+  const clinicAdminPath = useClinicAdminPath();
   const { updateUser } = useAuth();
   const [resettingPassword, setResettingPassword] = useState(false);
 
@@ -77,7 +79,7 @@ export function UserAccountPage({
           <Button
             variant="outline"
             nativeButton={false}
-            render={<Link href={`/admin/users/${user.id}/edit`} />}
+            render={<Link href={clinicAdminPath(`/admin/users/${user.id}/edit`)} />}
           >
             Редактировать
           </Button>

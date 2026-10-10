@@ -17,7 +17,7 @@ import type {
 import { getContentApiErrorMessage } from "@/widgets/admin-content/content-api-error";
 import { Separator } from "@/components/ui/separator";
 
-type EditableClinicField = Exclude<keyof Clinic, "id">;
+type EditableClinicField = Exclude<keyof Clinic, "id" | "slug" | "status" | "isSystemDemo">;
 
 type Props = {
   clinic: Clinic;
@@ -39,7 +39,7 @@ export function ClinicSettingsManager({ clinic: initialClinic }: Props) {
   const save = async () => {
     setSaving(true);
     try {
-      const body: Omit<Clinic, "id"> = {
+      const body: Omit<Clinic, "id" | "slug" | "status" | "isSystemDemo"> = {
         name: clinic.name,
         shortDescription: clinic.shortDescription,
         description: clinic.description,

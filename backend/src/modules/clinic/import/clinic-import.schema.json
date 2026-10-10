@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clinics.example/schema/clinic-import-v1.json",
+  "title": "ClinicImport",
+  "description": "Полная или частичная выгрузка данных одной клиники. Пропущенные поля и записи остаются без изменений.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "clinic"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "clinic": { "$ref": "#/$defs/clinic" },
+    "locations": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/location" } },
+    "socialLinks": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/socialLink" } },
+    "statistics": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/statistic" } },
+    "features": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/feature" } },
+    "directions": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/direction" } },
+    "doctors": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/doctor" } },
+    "reviews": { "type": "array", "maxItems": 2000, "items": { "$ref": "#/$defs/review" } },
+    "promotions": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/promotion" } },
+    "faq": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/faq" } }
+    ,"documents": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/document" } }
+  },
+  "$defs": {
+    "clinic": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "shortDescription": { "type": ["string", "null"], "maxLength": 500 },
+        "description": { "type": ["string", "null"] },
+        "slogan": { "type": ["string", "null"], "maxLength": 255 },
+        "phone": { "type": ["string", "null"], "maxLength": 80 },
+        "email": { "type": ["string", "null"], "format": "email", "maxLength": 255 },
+        "legalName": { "type": ["string", "null"], "maxLength": 255 },
+        "licenseNumber": { "type": ["string", "null"], "maxLength": 100 },
+        "licenseDate": { "type": ["string", "null"], "format": "date-time" },
+        "inn": { "type": ["string", "null"], "maxLength": 20 },
+        "ogrn": { "type": ["string", "null"], "maxLength": 20 }
+      }, "minProperties": 1
+    },
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["name", "address"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "address": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "phone": { "type": ["string", "null"], "maxLength": 80 },
+        "email": { "type": ["string", "null"], "format": "email", "maxLength": 255 },
+        "workingHours": { "type": ["object", "null"], "additionalProperties": { "type": "string" } },
+        "mapUrl": { "type": ["string", "null"], "format": "uri" },
+        "description": { "type": ["string", "null"] },
+        "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" }
+      }
+    },
+    "socialLink": {
+      "type": "object", "additionalProperties": false, "required": ["platform", "url"],
+      "properties": {
+        "platform": { "enum": ["vk", "telegram", "max", "whatsapp", "youtube", "rutube"] },
+        "url": { "type": "string", "format": "uri" }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" }
+      }
+    },
+    "statistic": {
+      "type": "object", "additionalProperties": false, "required": ["value", "label"],
+      "properties": { "value": { "type": "string", "minLength": 1, "maxLength": 100 }, "label": { "type": "string", "minLength": 1, "maxLength": 160 }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" } }
+    },
+    "feature": {
+      "type": "object", "additionalProperties": false, "required": ["title"],
+      "properties": { "title": { "type": "string", "minLength": 1, "maxLength": 160 }, "description": { "type": ["string", "null"] }, "icon": { "type": ["string", "null"] }, "imageUrl": { "type": ["string", "null"], "format": "uri", "description": "Будет скачано при импорте и сохранено в локальное медиа клиники." }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" } }
+    },
+    "service": {
+      "type": "object", "additionalProperties": false, "required": ["name"],
+      "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 160 }, "description": { "type": ["string", "null"] }, "price": { "type": ["number", "null"], "minimum": 0 }, "isPriceFrom": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" } }
+    },
+    "direction": {
+      "type": "object", "additionalProperties": false, "required": ["name"],
+      "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 160 }, "description": { "type": ["string", "null"] }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" }, "services": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/service" } } }
+    },
+    "doctor": {
+      "type": "object", "additionalProperties": false, "required": ["firstName", "lastName", "specialization"],
+      "properties": { "firstName": { "type": "string", "minLength": 1, "maxLength": 100 }, "lastName": { "type": "string", "minLength": 1, "maxLength": 100 }, "middleName": { "type": ["string", "null"], "maxLength": 100 }, "specialization": { "type": "string", "minLength": 1, "maxLength": 160 }, "experienceStartYear": { "type": ["integer", "null"], "minimum": 1900 }, "description": { "type": ["string", "null"] }, "photoUrl": { "type": ["string", "null"], "format": "uri", "description": "Будет скачано при импорте и сохранено в локальное медиа клиники." }, "isActive": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 } }
+    },
+    "review": {
+      "type": "object", "additionalProperties": false, "required": ["authorName", "text", "rating"],
+      "properties": { "authorName": { "type": "string", "minLength": 1, "maxLength": 160 }, "text": { "type": "string", "minLength": 1, "maxLength": 10000 }, "rating": { "type": "integer", "minimum": 1, "maximum": 5 }, "reviewDate": { "type": ["string", "null"], "format": "date-time" }, "isActive": { "type": "boolean" } }
+    },
+    "promotion": {
+      "type": "object", "additionalProperties": false, "required": ["title"],
+      "properties": { "title": { "type": "string", "minLength": 1, "maxLength": 200 }, "description": { "type": ["string", "null"] }, "photoUrl": { "type": ["string", "null"], "format": "uri", "description": "Будет скачано при импорте и сохранено в локальное медиа клиники." }, "oldPrice": { "type": ["number", "null"], "minimum": 0 }, "newPrice": { "type": ["number", "null"], "minimum": 0 }, "validFrom": { "type": ["string", "null"], "format": "date-time" }, "validTo": { "type": ["string", "null"], "format": "date-time" }, "directionName": { "type": "string" }, "serviceName": { "type": "string" }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean"} }
+    },
+    "faq": {
+      "type": "object", "additionalProperties": false, "required": ["question", "answer"],
+      "properties": { "question": { "type": "string", "minLength": 1, "maxLength": 500 }, "answer": { "type": "string", "minLength": 1, "maxLength": 10000 }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" } }
+    }
+    ,"document": {
+      "type": "object", "additionalProperties": false, "required": ["title", "sourceUrl"],
+      "properties": { "title": { "type": "string", "minLength": 1, "maxLength": 255 }, "description": { "type": ["string", "null"] }, "sourceUrl": { "type": "string", "format": "uri", "description": "Исходный HTTPS URL используется только для скачивания. В приложении сохраняется локальный файл." }, "fileName": { "type": "string", "maxLength": 255 }, "sortOrder": { "type": "integer", "minimum": 0 }, "isActive": { "type": "boolean" } }
+    }
+  }
+}

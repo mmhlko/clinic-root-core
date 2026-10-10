@@ -7,9 +7,11 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { ServiceDirectionModel } from '../services/directions/service-direction.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface DoctorDirectionCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   doctorId: string;
   directionId: string;
   sortOrder?: number;
@@ -34,6 +36,13 @@ export class DoctorDirectionModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.UUID,

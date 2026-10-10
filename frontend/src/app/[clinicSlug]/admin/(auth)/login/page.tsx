@@ -1,0 +1,42 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+import { useAuth } from "@/features/auth/providers/auth-provider";
+import { AuthForm } from "@/features/auth/components/auth-form";
+
+export default function AdminLoginPage() {
+  const { clinicSlug } = useParams<{ clinicSlug: string }>();
+  const router = useRouter();
+  const { isLoading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace(`/${encodeURIComponent(clinicSlug)}/admin`);
+    }
+  }, [clinicSlug, isLoading, isAuthenticated, router]);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
+            УД
+          </div>
+          <h1 className="text-2xl font-semibold text-slate-900">Администрация</h1>
+          <p className="mt-2 text-sm text-slate-500">Войдите в систему управления клиникой</p>
+        </div>
+        <AuthForm />
+      </div>
+    </main>
+  );
+}

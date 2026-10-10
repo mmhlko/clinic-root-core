@@ -1,14 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserModel } from './user.model.js';
 import { InjectModel } from '@nestjs/sequelize';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto.js';
 import { UserRole } from './user-role.enum.js';
 import * as bcrypt from 'bcrypt';
 import { ClinicLocationModel } from '../clinic/models/clinic-location.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 import { InjectConnection } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { MediaService } from '../media/media.service.js';
 import { MediaModel } from '../media/media.model.js';
+import { ClinicTenantContextStore } from '../clinic/tenant/tenant-context.store.js';
 
 @Injectable()
 export class UsersService {
@@ -22,11 +24,21 @@ export class UsersService {
 
 		private readonly mediaService: MediaService,
 
+		private readonly tenantContext: ClinicTenantContextStore,
+
 		@InjectConnection()
 		private readonly sequelize: Sequelize,
 	) { }
 
 	async create(dto: CreateUserDto) {
+		const tenantContext = this.tenantContext.get();
+		const clinicId = dto.role === UserRole.ROOT
+			? null
+			: tenantContext?.clinicId;
+
+		if (dto.role !== UserRole.ROOT && !clinicId) {
+			throw new ForbiddenException('A clinic context is required to create this user');
+		}
 
 		// if (
 		// 	dto.role === UserRole.MANAGER &&
@@ -48,21 +60,13 @@ export class UsersService {
 
 		let locationId: string | null = null;
 
-		if (dto.role === UserRole.MANAGER) {
-			// const location =
-			// 	await this.clinicLocationModel.findOne({
-			// 		where: {
-			// 			id: dto.locationId,
-			// 			isActive: true,
-			// 		},
-			// 	});
-
-			// if (!location) {
-			// 	throw new NotFoundException(
-			// 		'Clinic location not found',
-			// 	);
-			// }
-
+		if (dto.role === UserRole.MANAGER && dto.locationId) {
+			const location = await this.clinicLocationModel.findOne({
+				where: { id: dto.locationId, isActive: true },
+			});
+			if (!location) {
+				throw new NotFoundException('Clinic location not found');
+			}
 			locationId = dto.locationId!;
 		}
 
@@ -92,6 +96,7 @@ export class UsersService {
 				email: dto.email,
 				password: hashedPassword,
 				role: dto.role ?? UserRole.MANAGER,
+				clinicId,
 				locationId,
 				photoMediaId: dto.photoMediaId ?? null,
 			}, { 
@@ -116,6 +121,7 @@ export class UsersService {
 			lastName: user.lastName,
 			email: user.email,
 			role: user.role,
+			clinicId: user.clinicId,
 			photoMedia: user.photoMedia,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
@@ -125,7 +131,7 @@ export class UsersService {
 	}
 
 	async update(id: string, dto: UpdateUserDto) {
-		const user = await this.findById(id);
+		const user = await this.findByIdInCurrentClinic(id);
 
 		if (!user) {
 			throw new NotFoundException(
@@ -242,6 +248,7 @@ export class UsersService {
 			lastName: user.lastName,
 			email: user.email,
 			role: user.role,
+			clinicId: user.clinicId,
 			photoMedia: user.photoMedia,
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
@@ -304,6 +311,7 @@ export class UsersService {
 			lastName: user.lastName,
 			email: user.email,
 			role: user.role,
+			clinicId: user.clinicId,
 			photoMedia: user.photoMedia,
 			isActive: user.isActive,
 			createdAt: user.createdAt,
@@ -313,7 +321,7 @@ export class UsersService {
 	}
 
 	async setActive(id: string, isActive: boolean) {
-		const user = await this.findById(id);
+		const user = await this.findByIdInCurrentClinic(id);
 
 		user.isActive = isActive;
 
@@ -327,7 +335,7 @@ export class UsersService {
 	}
 
 	async remove(id: string) {
-		const user = await this.findById(id);
+		const user = await this.findByIdInCurrentClinic(id);
 		await user.destroy();
 		return { id };
 	}
@@ -346,8 +354,32 @@ export class UsersService {
 		return user;
 	}
 
-	async findUserById(id: string) {
+	async findByIdWithClinic(id: string) {
 		const user = await this.userModel.findByPk(id, {
+			include: [
+				{ model: MediaModel, as: 'photoMedia', attributes: ['id', 'url'] },
+				{ model: ClinicModel, as: 'clinic', attributes: ['id', 'slug'] },
+			],
+		});
+		if (!user) throw new NotFoundException('User not found');
+		return user;
+	}
+
+	async findByEmailWithClinic(email: string) {
+		return this.userModel.findOne({
+			where: { email },
+			include: [
+				{ model: MediaModel, as: 'photoMedia', attributes: ['id', 'url'] },
+				{ model: ClinicModel, as: 'clinic', attributes: ['id', 'slug'] },
+			],
+		});
+	}
+
+	async findUserById(id: string) {
+		const context = this.tenantContext.require();
+		const isOwnRootProfile = context.actorRole === UserRole.ROOT && context.actorId === id;
+		const user = await this.userModel.findOne({
+			where: isOwnRootProfile ? { id } : { id, clinicId: context.clinicId },
 			attributes: {
 				exclude: ['password', 'hashedRefreshToken']
 			},
@@ -362,6 +394,16 @@ export class UsersService {
 					attributes: ['id', 'url'],
 				},
 			]
+		});
+		if (!user) throw new NotFoundException('User not found');
+		return user;
+	}
+
+	async findByIdInCurrentClinic(id: string) {
+		const context = this.tenantContext.require();
+		const user = await this.userModel.findOne({
+			where: { id, clinicId: context.clinicId },
+			include: [{ model: MediaModel, as: 'photoMedia', attributes: ['id', 'url'] }],
 		});
 		if (!user) throw new NotFoundException('User not found');
 		return user;
@@ -387,8 +429,9 @@ export class UsersService {
 	}
 
 	async findAll(roles?: UserRole[]) {
+		const { clinicId } = this.tenantContext.require();
 		const users = await this.userModel.findAll({
-			where: roles ? { role: roles } : undefined,
+			where: roles ? { role: roles, clinicId } : { clinicId },
 			attributes: {
 				exclude: ['password', 'hashedRefreshToken'],
 			},

@@ -10,9 +10,11 @@ import {
 import { AppointmentRequestStatus } from './appointment-request-status.enum.js';
 import { DoctorModel } from '../doctors/doctor.model.js';
 import { ServiceModel } from '../services/service.model.js';
+import { ClinicModel } from '../clinic/models/clinic.model.js';
 
 export interface AppointmentRequestCreationAttributes {
   id?: string;
+  clinicId?: string | null;
   name: string;
   phone: string;
   serviceId?: string | null;
@@ -34,6 +36,13 @@ export class AppointmentRequestModel extends Model<
     primaryKey: true,
   })
   declare id: string;
+
+  @ForeignKey(() => ClinicModel)
+  @Column({ type: DataType.UUID, allowNull: true })
+  declare clinicId: string | null;
+
+  @BelongsTo(() => ClinicModel)
+  declare clinic: ClinicModel | null;
 
   @Column({
     type: DataType.STRING,

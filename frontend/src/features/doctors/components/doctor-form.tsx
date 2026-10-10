@@ -36,6 +36,7 @@ import { DoctorReferenceMultiSelect } from "./doctor-reference-multi-select";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { useImageUpload } from "@/features/image-upload/hooks/use-image-upload";
 import { ImageUpload } from "@/features/image-upload/hooks/image-upload";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 interface DoctorEducationFormValue {
   id?: string;
@@ -100,7 +101,7 @@ function toFormValues(
     lastName: doctor?.lastName ?? "",
     middleName: doctor?.middleName ?? "",
     specialization: doctor?.specialization ?? "",
-    experienceStartYear: doctor ? String(doctor.experienceStartYear) : "",
+    experienceStartYear: doctor?.experienceStartYear ? String(doctor.experienceStartYear) : "",
     description: doctor?.description ?? "",
     photoMediaId: doctor?.photoMedia?.id ?? null,
     photoUrl: doctor?.photoMedia?.url ?? null,
@@ -168,6 +169,7 @@ export function DoctorForm({
   doctor,
 }: DoctorFormProps) {
   const router = useRouter();
+  const clinicAdminPath = useClinicAdminPath();
   const [values, setValues] = useState(() =>
     toFormValues(doctor, directions, initialSkills),
   );
@@ -250,7 +252,7 @@ export function DoctorForm({
 
   const handleCancel = async () => {
     await cleanup();
-    router.push("/admin/doctors");
+    router.push(clinicAdminPath("/admin/doctors"));
   };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -270,7 +272,9 @@ export function DoctorForm({
           lastName: values.lastName.trim(),
           middleName: values.middleName.trim() || undefined,
           specialization: values.specialization.trim(),
-          experienceStartYear: Number(values.experienceStartYear),
+          ...(values.experienceStartYear
+            ? { experienceStartYear: Number(values.experienceStartYear) }
+            : {}),
           description: values.description.trim() || undefined,
           photoMediaId: image?.id,
           isActive: values.isActive,
@@ -290,7 +294,9 @@ export function DoctorForm({
           lastName: values.lastName.trim(),
           middleName: values.middleName.trim() || null,
           specialization: values.specialization.trim(),
-          experienceStartYear: Number(values.experienceStartYear),
+          experienceStartYear: values.experienceStartYear
+            ? Number(values.experienceStartYear)
+            : null,
           description: values.description.trim() || null,
           photoMediaId: image?.id ?? null,
           educations,
@@ -305,7 +311,7 @@ export function DoctorForm({
         description:
           mode === "create" ? "Врач добавлен." : "Данные врача сохранены.",
       });
-      router.push("/admin/doctors");
+      router.push(clinicAdminPath("/admin/doctors"));
       router.refresh();
     } catch (saveError) {
       toast.add({
@@ -426,7 +432,6 @@ export function DoctorForm({
                 onChange={(event) =>
                   updateValues("specialization", event.target.value)
                 }
-                required
               />
             </div>
             <div className="space-y-2">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import { usePathname } from "next/navigation";
+import { useClinicAdminPath } from "@/shared/hooks/use-clinic-admin-path";
 
 import {
   Breadcrumb,
@@ -21,6 +22,7 @@ type Crumb = {
 const dashboardCrumb: Crumb = { label: "Дашборд", href: "/admin" };
 
 const pageCrumbs: Record<string, Crumb[]> = {
+  "/admin/clinics": [dashboardCrumb, { label: "Клиники" }],
   "/admin": [{ label: "Дашборд" }],
   "/admin/requests": [dashboardCrumb, { label: "Заявки" }],
   "/admin/doctors": [dashboardCrumb, { label: "Врачи" }],
@@ -115,7 +117,9 @@ function getCrumbs(pathname: string): Crumb[] {
 }
 
 export function AdminBreadcrumbs() {
-  const pathname = usePathname();
+  const currentPathname = usePathname();
+  const clinicAdminPath = useClinicAdminPath();
+  const pathname = currentPathname.replace(/^\/[^/]+(?=\/admin(?:\/|$))/, "");
   const crumbs = getCrumbs(pathname);
 
   return (
@@ -131,7 +135,7 @@ export function AdminBreadcrumbs() {
                 {isCurrent || !crumb.href ? (
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink render={<Link href={crumb.href} />}>
+                  <BreadcrumbLink render={<Link href={clinicAdminPath(crumb.href)} />}>
                     {crumb.label}
                   </BreadcrumbLink>
                 )}

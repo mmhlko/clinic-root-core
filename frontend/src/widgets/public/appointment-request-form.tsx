@@ -23,9 +23,11 @@ import { validateRussianMobilePhone } from "@/lib/validation/phone";
 export function AppointmentRequestForm({
   services,
   doctors,
+  clinicSlug = "demo",
 }: {
   services: Service[];
   doctors: DoctorListItem[];
+  clinicSlug?: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -77,7 +79,7 @@ export function AppointmentRequestForm({
             serviceId,
             doctorId,
             comment: String(f.get("comment") || "") || null,
-          });
+          }, clinicSlug);
           setDone(true);
         } catch (error: unknown) {
           let description = "Не удалось отправить заявку.";

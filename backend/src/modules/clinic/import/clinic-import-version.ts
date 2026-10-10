@@ -1,0 +1,1 @@
+export const CLINIC_IMPORT_SCHEMA_VERSION = 1;

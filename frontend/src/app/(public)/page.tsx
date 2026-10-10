@@ -8,10 +8,16 @@ import {
 } from "lucide-react";
 import { AppointmentRequestForm } from "@/widgets/public/appointment-request-form";
 import { publicServerApi } from "@/features/api/public-server-api";
+import { PersonIdentity } from "@/components/shared/person-identity";
+import { getDoctorFullName, getPersonName } from "@/shared/helpers/getDoctorFullName";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+export default function Home() {
+  return <ClinicHome clinicSlug="demo" />;
+}
+
+export async function ClinicHome({ clinicSlug }: { clinicSlug: string }) {
   const [
     clinic,
     locations,
@@ -23,15 +29,15 @@ export default async function Home() {
     documents,
     faq,
   ] = await Promise.all([
-    publicServerApi.clinic(),
-    publicServerApi.locations(),
-    publicServerApi.directions(),
-    publicServerApi.services(),
-    publicServerApi.promotions(),
-    publicServerApi.reviews(),
-    publicServerApi.doctors(),
-    publicServerApi.documents(),
-    publicServerApi.faq(),
+    publicServerApi.clinic(clinicSlug),
+    publicServerApi.locations(clinicSlug),
+    publicServerApi.directions(clinicSlug),
+    publicServerApi.services(clinicSlug),
+    publicServerApi.promotions(clinicSlug),
+    publicServerApi.reviews(clinicSlug),
+    publicServerApi.doctors(clinicSlug),
+    publicServerApi.documents(clinicSlug),
+    publicServerApi.faq(clinicSlug),
   ]);
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -160,16 +166,12 @@ export default async function Home() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {doctors.map((d) => (
             <article key={d.id} className="rounded-2xl border p-5">
-              <div className="flex size-14 items-center justify-center rounded-full bg-muted font-semibold">
-                {d.firstName?.[0]}
-                {d.lastName?.[0]}
-              </div>
-              <h3 className="mt-4 font-semibold">
-                {d.lastName} {d.firstName}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {d.specialization}
-              </p>
+              <PersonIdentity
+                name={getPersonName(d.firstName, d.lastName, d.middleName)}
+                avatarUrl={d.photoMedia?.url}
+                subtitle={d.specialization}
+                initials={`${d.firstName[0]}${d.lastName[0]}`}
+              />
               <p className="mt-3 text-sm text-muted-foreground">
                 {d.experienceStartYear ? `Опыт с ${d.experienceStartYear}` : ""}
               </p>
@@ -236,7 +238,7 @@ export default async function Home() {
               )}
             </div>
           </div>
-          <AppointmentRequestForm services={services} doctors={doctors} />
+          <AppointmentRequestForm services={services} doctors={doctors} clinicSlug={clinicSlug} />
         </div>
       </section>
       <section id="contacts" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
@@ -277,7 +279,7 @@ export default async function Home() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row md:items-center md:justify-between">
           <span>{clinic.name}</span>
-          <Link href="/admin/login" className="hover:text-foreground">
+          <Link href={`/${clinicSlug}/admin/login`} className="hover:text-foreground">
             Администрация
           </Link>
         </div>

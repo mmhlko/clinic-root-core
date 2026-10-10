@@ -66,11 +66,12 @@ export class CreateDoctorDto {
   @IsString()
   specialization: string;
 
-  @ApiProperty({ example: 2014, description: 'Год начала стажа' })
+  @ApiPropertyOptional({ example: 2014, description: 'Год начала стажа' })
   @IsInt()
   @Min(1900)
   @Max(new Date().getFullYear())
-  experienceStartYear: number;
+  @IsOptional()
+  experienceStartYear?: number;
 
   @ApiPropertyOptional({ example: 'Опыт работы 12 лет', description: 'Описание врача' })
   @IsOptional()

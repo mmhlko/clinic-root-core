@@ -14,8 +14,8 @@ class AppointmentRequestsApi extends RootApi {
     super(apiClient);
   }
 
-  create(dto: Pick<AppointmentRequest, "name" | "phone"> & Partial<Pick<AppointmentRequest, "serviceId" | "doctorId" | "comment">>) {
-    return this.requestPost<AppointmentRequest>("/appointment-requests", dto);
+  create(dto: Pick<AppointmentRequest, "name" | "phone"> & Partial<Pick<AppointmentRequest, "serviceId" | "doctorId" | "comment">>, clinicSlug = "demo") {
+    return this.requestPost<AppointmentRequest>("/appointment-requests", dto, { clinicSlug });
   }
 
   getAll() {
