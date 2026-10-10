@@ -80,7 +80,7 @@ export class UpdateDoctorDto {
   @IsInt()
   @Min(1900)
   @Max(new Date().getFullYear())
-  experienceStartYear?: number;
+  experienceStartYear?: number | null;
 
   @ApiPropertyOptional({ example: 'Опыт работы более 10 лет.' })
   @IsOptional()

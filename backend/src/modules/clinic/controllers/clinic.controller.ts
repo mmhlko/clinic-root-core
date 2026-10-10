@@ -20,6 +20,9 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { SkipClinicTenantContext } from '../tenant/skip-clinic-tenant.decorator.js';
 import { CreateTenantClinicDto } from '../dto/create-tenant-clinic.dto.js';
 import { UpdatePlatformClinicDto } from '../dto/update-platform-clinic.dto.js';
+import { ClinicImportDto } from '../import/clinic-import.dto.js';
+import { ClinicImportService } from '../import/clinic-import.service.js';
+import { validateClinicImportPayload } from '../import/clinic-import.validation.js';
 
 
 
@@ -29,7 +32,24 @@ export class ClinicController {
   constructor(
     private readonly clinicService:
       ClinicService,
+    private readonly clinicImportService: ClinicImportService,
   ) {}
+
+  @Post('import/preview')
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async previewImport(@Body() payload: unknown) {
+    const dto: ClinicImportDto = await validateClinicImportPayload(payload);
+    return this.clinicImportService.preview(dto);
+  }
+
+  @Post('import')
+  @Roles(UserRole.ROOT, UserRole.ADMIN, UserRole.MANAGER)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async import(@Body() payload: unknown) {
+    const dto: ClinicImportDto = await validateClinicImportPayload(payload);
+    return this.clinicImportService.import(dto);
+  }
 
   // Публичные данные клиники
   @Get()

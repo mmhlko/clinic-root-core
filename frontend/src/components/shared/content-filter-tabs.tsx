@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "cn";
 
@@ -29,6 +30,7 @@ export function ContentFilterTabs<T extends string>({
 }: ContentFilterTabsProps<T>) {
   return (
     <Tabs
+      className="w-full min-w-0 max-w-full"
       value={value}
       aria-label="Фильтр списка"
       onValueChange={(nextValue) => {
@@ -36,13 +38,16 @@ export function ContentFilterTabs<T extends string>({
         if (nextItem) onValueChange(nextItem.value);
       }}
     >
-      <div className="overflow-x-auto scrollbar-none">
+      <ScrollArea
+        scrollbarOrientation="horizontal"
+        className="h-12 w-full min-w-0 max-w-full"
+      >
         <TabsList variant="line" className="w-max min-w-full justify-start">
           {items.map((item) => (
             <TabsTrigger
               key={item.value}
               value={item.value}
-              className="shrink-0 gap-1.5 px-2.5 text-xs sm:px-3 sm:text-sm"
+              className="flex-none gap-1.5 px-2.5 text-xs sm:px-3 sm:text-sm"
             >
               {item.icon && <item.icon className="size-3.5 sm:size-4" />}
               {item.label}
@@ -57,7 +62,7 @@ export function ContentFilterTabs<T extends string>({
             </TabsTrigger>
           ))}
         </TabsList>
-      </div>
+      </ScrollArea>
     </Tabs>
   );
 }

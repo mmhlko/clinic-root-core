@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { AppointmentRequestForm } from "@/widgets/public/appointment-request-form";
 import { publicServerApi } from "@/features/api/public-server-api";
+import { PersonIdentity } from "@/components/shared/person-identity";
+import { getDoctorFullName, getPersonName } from "@/shared/helpers/getDoctorFullName";
 
 export const dynamic = "force-dynamic";
 
@@ -164,16 +166,12 @@ export async function ClinicHome({ clinicSlug }: { clinicSlug: string }) {
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {doctors.map((d) => (
             <article key={d.id} className="rounded-2xl border p-5">
-              <div className="flex size-14 items-center justify-center rounded-full bg-muted font-semibold">
-                {d.firstName?.[0]}
-                {d.lastName?.[0]}
-              </div>
-              <h3 className="mt-4 font-semibold">
-                {d.lastName} {d.firstName}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {d.specialization}
-              </p>
+              <PersonIdentity
+                name={getPersonName(d.firstName, d.lastName, d.middleName)}
+                avatarUrl={d.photoMedia?.url}
+                subtitle={d.specialization}
+                initials={`${d.firstName[0]}${d.lastName[0]}`}
+              />
               <p className="mt-3 text-sm text-muted-foreground">
                 {d.experienceStartYear ? `Опыт с ${d.experienceStartYear}` : ""}
               </p>

@@ -20,7 +20,7 @@ export interface DoctorCreationAttributes {
   lastName: string;
   middleName?: string | null;
   specialization: string;
-  experienceStartYear: number;
+  experienceStartYear?: number | null;
   description?: string | null;
   photoMediaId?: string | null;
   isActive?: boolean;
@@ -74,9 +74,9 @@ export class DoctorModel extends Model<
 
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    allowNull: true,
   })
-  declare experienceStartYear: number;
+  declare experienceStartYear: number | null;
 
   @Column({
     type: DataType.TEXT,

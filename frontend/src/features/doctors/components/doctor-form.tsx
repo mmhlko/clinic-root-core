@@ -101,7 +101,7 @@ function toFormValues(
     lastName: doctor?.lastName ?? "",
     middleName: doctor?.middleName ?? "",
     specialization: doctor?.specialization ?? "",
-    experienceStartYear: doctor ? String(doctor.experienceStartYear) : "",
+    experienceStartYear: doctor?.experienceStartYear ? String(doctor.experienceStartYear) : "",
     description: doctor?.description ?? "",
     photoMediaId: doctor?.photoMedia?.id ?? null,
     photoUrl: doctor?.photoMedia?.url ?? null,
@@ -272,7 +272,9 @@ export function DoctorForm({
           lastName: values.lastName.trim(),
           middleName: values.middleName.trim() || undefined,
           specialization: values.specialization.trim(),
-          experienceStartYear: Number(values.experienceStartYear),
+          ...(values.experienceStartYear
+            ? { experienceStartYear: Number(values.experienceStartYear) }
+            : {}),
           description: values.description.trim() || undefined,
           photoMediaId: image?.id,
           isActive: values.isActive,
@@ -292,7 +294,9 @@ export function DoctorForm({
           lastName: values.lastName.trim(),
           middleName: values.middleName.trim() || null,
           specialization: values.specialization.trim(),
-          experienceStartYear: Number(values.experienceStartYear),
+          experienceStartYear: values.experienceStartYear
+            ? Number(values.experienceStartYear)
+            : null,
           description: values.description.trim() || null,
           photoMediaId: image?.id ?? null,
           educations,
@@ -428,7 +432,6 @@ export function DoctorForm({
                 onChange={(event) =>
                   updateValues("specialization", event.target.value)
                 }
-                required
               />
             </div>
             <div className="space-y-2">

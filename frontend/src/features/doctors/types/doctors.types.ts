@@ -58,7 +58,7 @@ export interface DoctorListItem {
   lastName: string;
   middleName: string | null;
   specialization: string;
-  experienceStartYear: number;
+  experienceStartYear: number | null;
   photoMedia?: MediaDbData;
   isActive: boolean;
   createdAt: string;
@@ -86,7 +86,7 @@ export interface CreateDoctorRequest {
   lastName: string;
   middleName?: string;
   specialization: string;
-  experienceStartYear: number;
+  experienceStartYear?: number;
   description?: string;
   photoMediaId?: string;
   isActive: boolean;
@@ -100,7 +100,7 @@ export interface UpdateDoctorRequest {
   lastName?: string;
   middleName?: string | null;
   specialization?: string;
-  experienceStartYear?: number;
+  experienceStartYear?: number | null;
   description?: string | null;
   photoMediaId?: string | null;
   educations?: UpdateDoctorEducationRequest[];

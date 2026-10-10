@@ -5,6 +5,7 @@ export interface ApiRequestOptions {
 	cookie?: string;
 	contentType?: string;
 	clinicSlug?: string;
+	timeout?: number;
 }
 
 export class RootApi {
@@ -29,7 +30,10 @@ export class RootApi {
 		const response = await this.client.post<TResponse>(
 			url,
 			body,
-			{ headers: this.getHeaders(options, body) },
+			{
+				headers: this.getHeaders(options, body),
+				...(options?.timeout ? { timeout: options.timeout } : {}),
+			},
 		);
 
 		return response.data;

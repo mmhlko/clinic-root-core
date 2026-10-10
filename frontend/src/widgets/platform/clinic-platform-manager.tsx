@@ -33,6 +33,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertBlock } from "@/components/shared/alert-block";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileJson2Icon } from "lucide-react";
+import { ClinicImportPanel } from "./clinic-import-panel";
 
 const statusLabels: Record<ClinicStatus, string> = {
   demo: "Демо",
@@ -44,7 +47,7 @@ type ClinicPlatformManagerProps = {
   initialItems: Clinic[];
 };
 
-type SheetMode = "view" | "create" | "edit";
+type SheetMode = "view" | "create" | "edit" | "import";
 
 export function ClinicPlatformManager({
   initialItems,
@@ -308,21 +311,35 @@ export function ClinicPlatformManager({
         open={open}
         onOpenChange={setOpen}
         title={
-          mode === "view"
+          mode === "import"
+            ? `Импорт данных: ${selected?.name ?? ""}`
+            : mode === "view"
             ? `Клиника: ${selected?.name ?? ""}`
             : mode === "create"
               ? "Новая клиника"
               : "Редактировать клинику"
         }
         description={
-          mode === "view"
+          mode === "import"
+            ? "Проверьте структуру JSON перед импортом."
+            : mode === "view"
             ? "Информация о клинике и ссылки."
             : mode === "create"
               ? "Создайте клинику и учётную запись администратора."
               : "Измените параметры клиники."
         }
       >
-        {mode === "view" && selected ? (
+        {mode === "import" && selected ? (
+          <ClinicImportPanel
+            clinicSlug={selected.slug}
+            onBack={() => setMode("view")}
+            onClinicUpdated={(profile) => {
+              const updated = { ...selected, ...profile };
+              setSelected(updated);
+              setClinics((current) => current.map((clinic) => clinic.id === updated.id ? updated : clinic));
+            }}
+          />
+        ) : mode === "view" && selected ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <Badge className={getClinicStatusColor(selected.status)}>
@@ -385,6 +402,22 @@ export function ClinicPlatformManager({
                 }
               ></Button>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileJson2Icon /> Импорт данных сайта
+                </CardTitle>
+                <CardDescription>
+                  Добавьте или обновите контент клиники из JSON. Отсутствующие записи сохранятся.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button type="button" variant="outline" onClick={() => setMode("import")}>
+                  Импортировать JSON
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <form
