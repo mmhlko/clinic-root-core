@@ -22,7 +22,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { UserRole } from '../users/user-role.enum.js';
 import { UpdateServiceDto } from './dto/update-service.dto.js';
-import { ReorderDto } from '../../shared/dto/reorder.dto.js';
+import { ReorderServicesDto } from './dto/reorder-services.dto.js';
 
 @ApiTags('Services')
 @ApiBearerAuth('access-token')
@@ -69,9 +69,9 @@ export class ServicesController {
   )
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async reorder(
-    @Body() dto: ReorderDto
+    @Body() dto: ReorderServicesDto
   ) {
-    return this.servicesService.reorderServices(dto.ids)
+    return this.servicesService.reorderServices(dto.directionId, dto.ids)
   }
 
   @Patch(':id')

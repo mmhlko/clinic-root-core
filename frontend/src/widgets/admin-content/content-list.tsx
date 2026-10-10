@@ -21,6 +21,8 @@ interface ContentListProps<T> {
   items: T[];
   filter?: (item: T) => boolean;
   disableReorder?: boolean;
+  showToolbar?: boolean;
+  searchValue?: string;
   setItems: Dispatch<SetStateAction<T[]>>;
   getId: (item: T) => string;
   getSearchText?: (item: T) => string;
@@ -41,6 +43,8 @@ export function ContentList<T>({
   items,
   filter,
   disableReorder = false,
+  showToolbar = true,
+  searchValue,
   setItems,
   getId,
   getSearchText,
@@ -55,7 +59,8 @@ export function ContentList<T>({
   columnCount,
   emptyMessage,
 }: ContentListProps<T>) {
-  const [query, setQuery] = useState("");
+  const [localQuery, setLocalQuery] = useState("");
+  const query = searchValue ?? localQuery;
   const normalizedQuery = query.trim().toLowerCase();
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -98,10 +103,10 @@ export function ContentList<T>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {showToolbar && <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => setLocalQuery(event.target.value)}
           placeholder={`Поиск: ${title.toLowerCase()}…`}
           className="sm:max-w-sm"
         />
@@ -109,7 +114,7 @@ export function ContentList<T>({
           <PlusIcon data-icon="inline-start" />
           Добавить
         </Button>
-      </div>
+      </div>}
 
       <div className="space-y-3 md:hidden">
         <SortableCardList

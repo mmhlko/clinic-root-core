@@ -12,6 +12,7 @@ import {
   Stethoscope,
   Users,
   Building2,
+  ArrowLeftIcon,
 } from "lucide-react";
 
 import {
@@ -148,8 +149,11 @@ export function AppSidebar({
   const router = useRouter();
   const { logout, user: authUser } = useAuth();
   const currentUser = authUser ?? user;
+  const contextualNavItems = clinic.isSystemDemo
+    ? navItems
+    : navItems.filter((item) => item.href !== "/admin/clinics");
   const visibleNavItems = scopeItemsToClinic(
-    filterVisibleItems(navItems, currentUser.role),
+    filterVisibleItems(contextualNavItems, currentUser.role),
     clinic.slug,
   );
   const handleLogout = async () => {
@@ -160,13 +164,26 @@ export function AppSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
+          {currentUser.role === "root" && !clinic.isSystemDemo && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Вернуться в платформу"
+                render={
+                  <Link href="/demo/admin">
+                    <ArrowLeftIcon />
+                    <span>В платформу</span>
+                  </Link>
+                }
+              />
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
               render={
                 <Link href={`/${encodeURIComponent(clinic.slug)}/admin`}>
                   <Stethoscope className="size-5!" />
-                  <span className="text-base font-semibold">{clinic.name}</span>
+                  <span className="text-base font-semibold text-wrap capitalize">{clinic.slug}</span>
                 </Link>
               }
             ></SidebarMenuButton>

@@ -59,8 +59,8 @@ class ContentClientApi extends RootApi {
   createService(body: Partial<Service>) {
     return this.requestPost<Service>("/services", body);
   }
-  reorderServices(ids: string[]) {
-    return this.requestPatch<{ success: boolean }>("/services/reorder", { ids });
+  reorderServices(directionId: string, ids: string[]) {
+    return this.requestPatch<{ success: boolean }>("/services/reorder", { directionId, ids });
   }
   updateService(id: string, body: Partial<Service>) {
     return this.requestPatch<Service>(`/services/${id}`, body);
